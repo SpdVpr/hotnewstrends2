@@ -613,7 +613,28 @@
       "articleId": "GMxV37TmmC6oPS0yRJTw"
     },
     {
-      "id": "job_2025-09-17_20_al_nassr___fc_istiklol_dushanbe",
+      "id": "job_2025-09-17_20_offset",
+      "trendId": "trend_1758132544665_b2Zmc2V0",
+      "trend": {
+        "id": "trend_1758132544665_b2Zmc2V0",
+        "title": "offset",
+        "slug": "offset",
+        "category": "general",
+        "formattedTraffic": "65576+",
+        "traffic": 65576,
+        "source": "SerpAPI + RSS",
+        "firstSeen": "2025-09-17T18:09:04.665Z",
+        "lastSeen": "2025-09-17T18:46:44.372Z",
+        "articleGenerated": false,
+        "hash": "b2Zmc2V0"
+      },
+      "status": "pending",
+      "position": 20,
+      "createdAt": "2025-09-17T20:01:55.915Z",
+      "scheduledAt": "2025-09-17T18:40:00.000Z"
+    },
+    {
+      "id": "job_2025-09-17_21_al_nassr___fc_istiklol_dushanbe",
       "trendId": "trend_1758135167227_YWxuYXNzciAgZmMg",
       "trend": {
         "id": "trend_1758135167227_YWxuYXNzciAgZmMg",
@@ -624,17 +645,17 @@
         "traffic": 65114,
         "source": "SerpAPI + RSS",
         "firstSeen": "2025-09-17T18:52:47.227Z",
-        "lastSeen": "2025-09-17T19:47:45.168Z",
+        "lastSeen": "2025-09-17T20:01:55.911Z",
         "articleGenerated": false,
         "hash": "YWxuYXNzciAgZmMg"
       },
       "status": "pending",
-      "position": 20,
-      "createdAt": "2025-09-17T19:47:45.178Z",
-      "scheduledAt": "2025-09-17T18:40:00.000Z"
+      "position": 21,
+      "createdAt": "2025-09-17T20:01:55.915Z",
+      "scheduledAt": "2025-09-17T19:20:00.000Z"
     },
     {
-      "id": "job_2025-09-17_21_liverpool_f_c__vs_atl_tico_madrid_timeline",
+      "id": "job_2025-09-17_22_liverpool_f_c__vs_atl_tico_madrid_timeline",
       "trendId": "trend_1758132544665_bGl2ZXJwb29sIGZj",
       "trend": {
         "id": "trend_1758132544665_bGl2ZXJwb29sIGZj",
@@ -650,12 +671,12 @@
         "hash": "bGl2ZXJwb29sIGZj"
       },
       "status": "pending",
-      "position": 21,
-      "createdAt": "2025-09-17T19:47:45.178Z",
-      "scheduledAt": "2025-09-17T19:20:00.000Z"
+      "position": 22,
+      "createdAt": "2025-09-17T20:01:55.915Z",
+      "scheduledAt": "2025-09-17T20:00:00.000Z"
     },
     {
-      "id": "job_2025-09-17_22_liverpool_vs_atl_tico_madrid",
+      "id": "job_2025-09-17_23_liverpool_vs_atl_tico_madrid",
       "trendId": "trend_1758135167226_bGl2ZXJwb29sIHZz",
       "trend": {
         "id": "trend_1758135167226_bGl2ZXJwb29sIHZz",
@@ -666,17 +687,17 @@
         "traffic": 59284,
         "source": "SerpAPI + RSS",
         "firstSeen": "2025-09-17T18:52:47.227Z",
-        "lastSeen": "2025-09-17T19:47:45.169Z",
+        "lastSeen": "2025-09-17T20:01:55.911Z",
         "articleGenerated": false,
         "hash": "bGl2ZXJwb29sIHZz"
       },
       "status": "pending",
-      "position": 22,
-      "createdAt": "2025-09-17T19:47:45.178Z",
-      "scheduledAt": "2025-09-17T20:00:00.000Z"
+      "position": 23,
+      "createdAt": "2025-09-17T20:01:55.915Z",
+      "scheduledAt": "2025-09-17T20:40:00.000Z"
     },
     {
-      "id": "job_2025-09-17_23_bradley_steven_perry",
+      "id": "job_2025-09-17_24_bradley_steven_perry",
       "trendId": "trend_1758126741473_YnJhZGxleSBzdGV2",
       "trend": {
         "id": "trend_1758126741473_YnJhZGxleSBzdGV2",
@@ -687,37 +708,16 @@
         "traffic": 58019,
         "source": "SerpAPI + RSS",
         "firstSeen": "2025-09-17T16:32:21.473Z",
-        "lastSeen": "2025-09-17T19:47:45.169Z",
+        "lastSeen": "2025-09-17T20:01:55.912Z",
         "articleGenerated": false,
         "hash": "YnJhZGxleSBzdGV2"
       },
       "status": "pending",
-      "position": 23,
-      "createdAt": "2025-09-17T19:47:45.178Z",
-      "scheduledAt": "2025-09-17T20:40:00.000Z"
-    },
-    {
-      "id": "job_2025-09-17_24_steve_irwin",
-      "trendId": "trend_1758126741472_c3RldmUgaXJ3aW4=",
-      "trend": {
-        "id": "trend_1758126741472_c3RldmUgaXJ3aW4=",
-        "title": "steve irwin",
-        "slug": "steve-irwin",
-        "category": "general",
-        "formattedTraffic": "56138+",
-        "traffic": 56138,
-        "source": "SerpAPI + RSS",
-        "firstSeen": "2025-09-17T16:32:21.472Z",
-        "lastSeen": "2025-09-17T17:16:07.109Z",
-        "articleGenerated": false,
-        "hash": "c3RldmUgaXJ3aW4="
-      },
-      "status": "pending",
       "position": 24,
-      "createdAt": "2025-09-17T19:47:45.178Z",
+      "createdAt": "2025-09-17T20:01:55.915Z",
       "scheduledAt": "2025-09-17T21:20:00.000Z"
     }
   ],
   "createdAt": "2025-09-17T16:29:54.155Z",
-  "updatedAt": "2025-09-17T19:47:45.178Z"
+  "updatedAt": "2025-09-17T20:01:55.915Z"
 }

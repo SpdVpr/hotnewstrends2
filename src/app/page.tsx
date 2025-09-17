@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { Navigation } from '@/components/Navigation';
 import { ArticleCard } from '@/components/ArticleCard';
 import { CategoryFilter, ScrollableCategoryFilter } from '@/components/CategoryFilter';
@@ -317,10 +318,10 @@ export default function Home() {
               Where Speed Meets Style, and Function Meets Beauty.
             </p>
             <div className="flex justify-center space-x-6 text-sm text-text-secondary">
-              <a href="#" className="hover:text-primary transition-colors">About</a>
-              <a href="#" className="hover:text-primary transition-colors">Privacy</a>
-              <a href="#" className="hover:text-primary transition-colors">Terms</a>
-              <a href="#" className="hover:text-primary transition-colors">Contact</a>
+              <Link href="/about" className="hover:text-primary transition-colors">About</Link>
+              <Link href="/privacy" className="hover:text-primary transition-colors">Privacy</Link>
+              <Link href="/terms" className="hover:text-primary transition-colors">Terms</Link>
+              <Link href="/contact" className="hover:text-primary transition-colors">Contact</Link>
             </div>
             <div className="mt-6 text-xs text-text-secondary">
               © 2025 HotNewsTrends.com. All rights reserved.
