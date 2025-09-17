@@ -50,8 +50,8 @@ export default function RootLayout({
               (function() {
                 try {
                   const savedTheme = localStorage.getItem('theme');
-                  const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                  const theme = savedTheme || (systemPrefersDark ? 'dark' : 'light');
+                  // Default to light theme, ignore system preferences
+                  const theme = savedTheme || 'light';
 
                   if (theme === 'dark') {
                     document.documentElement.setAttribute('data-theme', 'dark');
