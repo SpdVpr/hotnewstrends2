@@ -91,7 +91,8 @@ async function getCategoryArticles(categorySlug: string): Promise<Article[]> {
 }
 
 export async function generateMetadata({ params }: CategoryPageProps): Promise<Metadata> {
-  const category = await getCategory(params.slug);
+  const { slug } = await params;
+  const category = await getCategory(slug);
   
   if (!category) {
     return {
@@ -113,7 +114,8 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
 }
 
 export default async function CategoryPage({ params }: CategoryPageProps) {
-  const category = await getCategory(params.slug);
+  const { slug } = await params;
+  const category = await getCategory(slug);
   
   if (!category) {
     notFound();

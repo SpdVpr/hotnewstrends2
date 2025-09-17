@@ -24,6 +24,25 @@ export default function Home() {
     { id: 'entertainment', name: 'Entertainment', slug: 'entertainment', color: '#FF2D92' },
   ];
 
+  // Helper function to match categories (handles both string and object formats)
+  const matchesCategory = (articleCategory: any, selectedCategory: string): boolean => {
+    if (selectedCategory === 'all') return true;
+
+    if (typeof articleCategory === 'string') {
+      // Direct string comparison (case-insensitive)
+      return articleCategory.toLowerCase() === selectedCategory.toLowerCase();
+    } else if (articleCategory && typeof articleCategory === 'object') {
+      // Object comparison - check slug, id, and name
+      return (
+        articleCategory.slug?.toLowerCase() === selectedCategory.toLowerCase() ||
+        articleCategory.id?.toLowerCase() === selectedCategory.toLowerCase() ||
+        articleCategory.name?.toLowerCase() === selectedCategory.toLowerCase()
+      );
+    }
+
+    return false;
+  };
+
   // Fetch trending topics from Firebase
   const fetchTrendingTopics = async () => {
     try {
@@ -108,10 +127,7 @@ export default function Home() {
           selectedCategory: selectedCategory
         });
 
-        const matches = typeof article.category === 'string'
-          ? article.category.toLowerCase() === selectedCategory.toLowerCase()
-          : (article.category?.slug?.toLowerCase() === selectedCategory.toLowerCase() ||
-             article.category?.id?.toLowerCase() === selectedCategory.toLowerCase());
+        const matches = matchesCategory(article.category, selectedCategory);
 
         console.log('🎯 Match result:', matches);
         return matches;
