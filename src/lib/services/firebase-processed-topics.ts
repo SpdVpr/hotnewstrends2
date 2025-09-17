@@ -1,6 +1,7 @@
 import {
   collection,
   doc,
+  getDoc,
   setDoc,
   getDocs,
   query,
@@ -21,24 +22,24 @@ class FirebaseProcessedTopicsService {
 
   /**
    * Mark a topic as processed (add to blacklist for 48 hours)
+   * Uses document ID based on sanitized keyword for simple lookup
    */
   async markTopicAsProcessed(keyword: string): Promise<void> {
     try {
       const now = new Date();
       const expiresAt = new Date(now.getTime() + 48 * 60 * 60 * 1000); // +48 hours
-      
-      const processedTopic: ProcessedTopic = {
-        keyword: keyword.toLowerCase().trim(),
-        processedAt: now,
-        expiresAt
+
+      const normalizedKeyword = keyword.toLowerCase().trim();
+      const docId = this.sanitizeKeyword(keyword);
+
+      const processedTopic = {
+        keyword: normalizedKeyword,
+        processedAt: Timestamp.fromDate(now),
+        expiresAt: Timestamp.fromDate(expiresAt)
       };
 
-      const docRef = doc(db, this.collectionName, this.sanitizeKeyword(keyword));
-      await setDoc(docRef, {
-        keyword: processedTopic.keyword,
-        processedAt: Timestamp.fromDate(processedTopic.processedAt),
-        expiresAt: Timestamp.fromDate(processedTopic.expiresAt)
-      });
+      const docRef = doc(db, this.collectionName, docId);
+      await setDoc(docRef, processedTopic);
 
       console.log(`🚫 Topic "${keyword}" marked as processed until ${expiresAt.toLocaleString()}`);
     } catch (error) {
@@ -49,31 +50,36 @@ class FirebaseProcessedTopicsService {
 
   /**
    * Check if a topic has been processed in the last 48 hours
+   * Uses document ID lookup instead of complex query to avoid index requirements
    */
   async isTopicProcessed(keyword: string): Promise<boolean> {
     try {
       const normalizedKeyword = keyword.toLowerCase().trim();
       const now = new Date();
 
-      // Query for the specific topic
-      const docRef = doc(db, this.collectionName, this.sanitizeKeyword(keyword));
-      const docSnap = await getDocs(query(
-        collection(db, this.collectionName),
-        where('keyword', '==', normalizedKeyword),
-        where('expiresAt', '>', Timestamp.fromDate(now))
-      ));
+      // Use document ID lookup instead of complex query
+      const docId = this.sanitizeKeyword(keyword);
+      const docRef = doc(db, this.collectionName, docId);
+      const docSnap = await getDoc(docRef);
 
-      const isProcessed = !docSnap.empty;
-      
-      if (isProcessed) {
-        const processedTopic = docSnap.docs[0].data();
-        const expiresAt = processedTopic.expiresAt.toDate();
-        console.log(`🚫 Topic "${keyword}" already processed, expires: ${expiresAt.toLocaleString()}`);
-      } else {
+      if (!docSnap.exists()) {
         console.log(`✅ Topic "${keyword}" not processed - safe to add to queue`);
+        return false;
       }
 
-      return isProcessed;
+      const data = docSnap.data();
+      const expiresAt = data.expiresAt.toDate();
+
+      if (expiresAt <= now) {
+        // Expired - clean up and allow processing
+        await deleteDoc(docRef);
+        console.log(`🧹 Topic "${keyword}" expired and cleaned up - safe to add to queue`);
+        return false;
+      }
+
+      console.log(`🚫 Topic "${keyword}" already processed, expires: ${expiresAt.toLocaleString()}`);
+      return true;
+
     } catch (error) {
       console.error(`❌ Failed to check if topic "${keyword}" is processed:`, error);
       // On error, allow processing (err on the side of generation)

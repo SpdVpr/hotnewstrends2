@@ -9,6 +9,7 @@ import { LoadingSpinner } from '@/components/ui/Loading';
 interface TrendingTopic {
   title: string;
   formattedTraffic: string;
+  searchVolume: number;
   category: string;
   source?: string;
   originalTitle?: string;
@@ -109,7 +110,23 @@ export function GoogleTrendsPanel() {
     );
   }
 
-  const currentTrends = trendsData?.topics || [];
+  // Parse search volume from formattedTraffic for sorting
+  const parseSearchVolume = (formattedTraffic: string): number => {
+    // Extract numbers from strings like "108,044 searches", "50,000+", etc.
+    const match = formattedTraffic.match(/[\d,]+/);
+    if (match) {
+      return parseInt(match[0].replace(/,/g, ''), 10);
+    }
+    return 0;
+  };
+
+  // Sort trends by search volume (highest first)
+  const currentTrends = (trendsData?.topics || [])
+    .sort((a, b) => {
+      const aVolume = a.searchVolume || parseSearchVolume(a.formattedTraffic);
+      const bVolume = b.searchVolume || parseSearchVolume(b.formattedTraffic);
+      return bVolume - aVolume;
+    });
 
   return (
     <Card>
@@ -165,6 +182,11 @@ export function GoogleTrendsPanel() {
                     )}
                     <div className="flex items-center gap-2 mb-2">
                       <Badge variant="secondary">{trend.formattedTraffic}</Badge>
+                      {trend.searchVolume && (
+                        <Badge variant="primary" className="text-xs">
+                          {trend.searchVolume.toLocaleString()} searches
+                        </Badge>
+                      )}
                       <Badge variant="secondary">{trend.category}</Badge>
                       {trend.source && (
                         <Badge variant="secondary" className="text-xs">
@@ -201,7 +223,9 @@ export function GoogleTrendsPanel() {
                 <div className="mb-3">
                   <div className="text-sm text-text-secondary mb-1">Trend details:</div>
                   <div className="text-xs text-text-secondary">
-                    Traffic: {trend.formattedTraffic} • Category: {trend.category}
+                    Traffic: {trend.formattedTraffic}
+                    {trend.searchVolume && ` (${trend.searchVolume.toLocaleString()} searches)`}
+                    • Category: {trend.category}
                     {trend.source && ` • Source: ${trend.source}`}
                   </div>
                 </div>

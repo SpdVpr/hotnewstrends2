@@ -504,16 +504,38 @@ class AutomationService {
     const basicFiltered = this.filterHighPotentialTopics(topics, minConfidence, minGrowthRate);
     console.log(`📊 After basic filtering: ${basicFiltered.length} topics`);
 
-    // Then check blacklist
+    // Then check blacklist and current queue
     const { firebaseProcessedTopicsService } = await import('./firebase-processed-topics');
     const allowedTopics: TrendingTopic[] = [];
 
+    // Get current queue topics to avoid duplicates
+    const currentQueueTopics = this.scheduledArticles.map(article => article.topic.toLowerCase().trim());
+    console.log(`📋 Current queue topics: [${currentQueueTopics.map(t => `"${t}"`).join(', ')}]`);
+
     for (const topic of basicFiltered) {
       try {
+        // Check if already processed in last 48h
         const isProcessed = await firebaseProcessedTopicsService.isTopicProcessed(topic.keyword);
 
         if (isProcessed) {
           console.log(`🚫 Skipping "${topic.keyword}" - already processed in last 48h`);
+          continue;
+        }
+
+        // Check if already in current queue
+        const normalizedKeyword = topic.keyword.toLowerCase().trim();
+        if (currentQueueTopics.includes(normalizedKeyword)) {
+          console.log(`🚫 Skipping "${topic.keyword}" - already in current queue`);
+          continue;
+        }
+
+        // Check if already selected in this batch
+        const alreadySelected = allowedTopics.some(selected =>
+          selected.keyword.toLowerCase().trim() === normalizedKeyword
+        );
+
+        if (alreadySelected) {
+          console.log(`🚫 Skipping "${topic.keyword}" - already selected in this batch`);
           continue;
         }
 
