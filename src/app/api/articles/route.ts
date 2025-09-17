@@ -110,6 +110,24 @@ export async function GET(request: NextRequest) {
 
     const totalPages = Math.ceil(total / limit);
 
+    // Debug: Log category information for first few articles
+    if (articles.length > 0) {
+      console.log('🔍 DEBUG: Article categories analysis:');
+      const categoryStats: Record<string, number> = {};
+
+      articles.slice(0, 5).forEach((article, index) => {
+        console.log(`${index + 1}. ${article.title?.substring(0, 40)}...`);
+        console.log(`   Category: ${JSON.stringify(article.category)}`);
+        console.log(`   Type: ${typeof article.category}`);
+
+        const categoryKey = typeof article.category === 'string' ? article.category :
+                           article.category?.name || article.category?.slug || article.category?.id || 'unknown';
+        categoryStats[categoryKey] = (categoryStats[categoryKey] || 0) + 1;
+      });
+
+      console.log('📊 Available categories:', Object.keys(categoryStats));
+    }
+
     // Add real analytics and metadata
     const enrichedArticles = articles.map(article => {
       const wordCount = article.content ? article.content.split(' ').length : 0;
