@@ -14,10 +14,10 @@ export default function Home() {
   const [trendingTopics, setTrendingTopics] = useState<string[]>([]);
   const [currentTrendIndex, setCurrentTrendIndex] = useState(0);
 
-  // Categories data
+  // Categories data - matching Firebase structure
   const categories: Category[] = [
-    { id: 'technology', name: 'Technology', slug: 'technology', color: '#007AFF' },
     { id: 'news', name: 'News', slug: 'news', color: '#FF3B30' },
+    { id: 'technology', name: 'Technology', slug: 'technology', color: '#007AFF' },
     { id: 'business', name: 'Business', slug: 'business', color: '#34C759' },
     { id: 'science', name: 'Science', slug: 'science', color: '#5856D6' },
     { id: 'health', name: 'Health', slug: 'health', color: '#FF9500' },
@@ -28,18 +28,31 @@ export default function Home() {
   const matchesCategory = (articleCategory: any, selectedCategory: string): boolean => {
     if (selectedCategory === 'all') return true;
 
+    console.log('🔍 matchesCategory:', { articleCategory, selectedCategory, type: typeof articleCategory });
+
     if (typeof articleCategory === 'string') {
       // Direct string comparison (case-insensitive)
-      return articleCategory.toLowerCase() === selectedCategory.toLowerCase();
+      const matches = articleCategory.toLowerCase() === selectedCategory.toLowerCase();
+      console.log('📝 String match:', { articleCategory, selectedCategory, matches });
+      return matches;
     } else if (articleCategory && typeof articleCategory === 'object') {
       // Object comparison - check slug, id, and name
-      return (
-        articleCategory.slug?.toLowerCase() === selectedCategory.toLowerCase() ||
-        articleCategory.id?.toLowerCase() === selectedCategory.toLowerCase() ||
-        articleCategory.name?.toLowerCase() === selectedCategory.toLowerCase()
-      );
+      const slugMatch = articleCategory.slug?.toLowerCase() === selectedCategory.toLowerCase();
+      const idMatch = articleCategory.id?.toLowerCase() === selectedCategory.toLowerCase();
+      const nameMatch = articleCategory.name?.toLowerCase() === selectedCategory.toLowerCase();
+      const matches = slugMatch || idMatch || nameMatch;
+
+      console.log('📝 Object match:', {
+        slug: articleCategory.slug,
+        id: articleCategory.id,
+        name: articleCategory.name,
+        selectedCategory,
+        slugMatch, idMatch, nameMatch, matches
+      });
+      return matches;
     }
 
+    console.log('❌ No match - unknown category type');
     return false;
   };
 
