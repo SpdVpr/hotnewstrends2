@@ -871,6 +871,10 @@ class AutomationService {
   }
 
   // Public methods for manual control
+  async runCycle(): Promise<void> {
+    return this.runAutomationCycle();
+  }
+
   async generateArticleManually(topic: string, category: string): Promise<ArticleGenerationJob> {
     const mockTopic: TrendingTopic = {
       keyword: topic,
