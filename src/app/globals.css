@@ -1,5 +1,20 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
+
+/* Critical CSS - loaded first */
+html {
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-display: swap;
+}
+
+/* Prevent layout shift */
+.aspect-video {
+  aspect-ratio: 16 / 9;
+}
+
+/* Optimize image loading */
+img {
+  content-visibility: auto;
+}
 
 :root {
   /* HotNewsTrends Brand Colors */

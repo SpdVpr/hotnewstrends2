@@ -59,8 +59,8 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
         }
       },
       {
-        rootMargin: '50px 0px', // Start loading 50px before the image enters viewport
-        threshold: 0.1
+        rootMargin: '200px 0px', // Start loading 200px before the image enters viewport for better UX
+        threshold: 0.01 // Trigger earlier
       }
     );
 
@@ -106,11 +106,11 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
     onError?.();
   };
 
-  // Generate responsive sizes if not provided
+  // Generate responsive sizes if not provided - optimized for article cards
   const responsiveSizes = sizes || (
-    fill 
+    fill
       ? '100vw'
-      : '(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw'
+      : '(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 378px'
   );
 
   // Error fallback component

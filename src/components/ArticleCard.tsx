@@ -1,5 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Card, CardContent, CardFooter } from '@/components/ui/Card';
 import { Badge, TrendingBadge, CategoryBadge } from '@/components/ui/Badge';
 import { cn, formatRelativeTime, getImagePlaceholder } from '@/lib/utils';
@@ -45,11 +46,16 @@ const ArticleCard: React.FC<ArticleCardProps> = ({
         {/* Article Image */}
         <div className="aspect-video bg-surface relative overflow-hidden">
           {image ? (
-            // Use regular img tag for external images to avoid Next.js domain restrictions
-            <img
+            <Image
               src={image}
               alt={imageAlt || title}
-              className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
+              fill
+              className="object-cover transition-transform duration-200 group-hover:scale-105"
+              sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 378px"
+              priority={priority}
+              quality={85}
+              placeholder="blur"
+              blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
             />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-primary/20 to-orange/20 flex items-center justify-center">
