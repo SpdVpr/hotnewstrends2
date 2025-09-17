@@ -11,6 +11,8 @@ export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
+  const [trendingTopics, setTrendingTopics] = useState<string[]>([]);
+  const [currentTrendIndex, setCurrentTrendIndex] = useState(0);
 
   // Categories data
   const categories: Category[] = [
@@ -21,6 +23,21 @@ export default function Home() {
     { id: 'health', name: 'Health', slug: 'health', color: '#FF9500' },
     { id: 'entertainment', name: 'Entertainment', slug: 'entertainment', color: '#FF2D92' },
   ];
+
+  // Fetch trending topics from Firebase
+  const fetchTrendingTopics = async () => {
+    try {
+      const response = await fetch('/api/trends?source=firebase&limit=10');
+      if (response.ok) {
+        const data = await response.json();
+        const topics = data.data?.topics || [];
+        const topicNames = topics.map((topic: any) => topic.keyword || topic.title).filter(Boolean);
+        setTrendingTopics(topicNames.slice(0, 8)); // Max 8 topics for rotation
+      }
+    } catch (error) {
+      console.error('Error fetching trending topics:', error);
+    }
+  };
 
   // Fetch articles from API
   const fetchArticles = async () => {
@@ -56,14 +73,35 @@ export default function Home() {
     fetchArticles();
   }, [selectedCategory]);
 
+  // Fetch trending topics on component mount
+  useEffect(() => {
+    fetchTrendingTopics();
+    // Refresh trending topics every 5 minutes
+    const interval = setInterval(fetchTrendingTopics, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Animate trending topics rotation
+  useEffect(() => {
+    if (trendingTopics.length > 1) {
+      const interval = setInterval(() => {
+        setCurrentTrendIndex((prev) => (prev + 1) % trendingTopics.length);
+      }, 3000); // Change every 3 seconds
+      return () => clearInterval(interval);
+    }
+  }, [trendingTopics.length]);
+
   // Filter articles based on selected category (client-side backup)
   const filteredArticles = selectedCategory === 'all'
     ? (Array.isArray(articles) ? articles : [])
-    : (Array.isArray(articles) ? articles.filter(article =>
-        typeof article.category === 'string'
+    : (Array.isArray(articles) ? articles.filter(article => {
+        console.log('Filtering article:', article.title, 'Category:', article.category, 'Selected:', selectedCategory);
+        return typeof article.category === 'string'
           ? article.category === selectedCategory
-          : article.category?.slug === selectedCategory || article.category?.id === selectedCategory
-      ) : []);
+          : article.category?.slug === selectedCategory || article.category?.id === selectedCategory;
+      }) : []);
+
+  console.log('Selected category:', selectedCategory, 'Filtered articles:', filteredArticles.length);
 
   return (
     <div className="min-h-screen bg-background">
@@ -76,11 +114,11 @@ export default function Home() {
         <section className="mb-12">
           <div className="text-center mb-8">
             <h1 className="text-4xl md:text-5xl font-bold text-text mb-4">
-              Where Speed Meets Style
+              Latest Breaking News & Trending Topics Today
             </h1>
             <p className="text-lg text-text-secondary max-w-2xl mx-auto">
-              AI-powered newsroom delivering comprehensive articles about trending topics within hours.
-              Stay ahead with the fastest, most reliable source for trending news and analysis.
+              Your trusted source for breaking news, trending stories, and in-depth analysis.
+              Get the latest updates on technology, business, entertainment, health, and world events as they happen.
             </p>
           </div>
 
@@ -91,15 +129,31 @@ export default function Home() {
                 <Badge variant="trending" className="mr-3">
                   🔥 TRENDING NOW
                 </Badge>
-                <span className="text-text font-medium">
-                  {Array.isArray(articles) && articles.filter(article => article.trending).length > 0
-                    ? articles.filter(article => article.trending)
-                        .slice(0, 4)
-                        .map(article => article.title.split(' ').slice(0, 3).join(' '))
-                        .join(' • ')
-                    : 'Stay tuned for trending topics!'
-                  }
-                </span>
+                <div className="text-text font-medium min-h-[24px] flex items-center">
+                  {trendingTopics.length > 0 ? (
+                    <div className="relative overflow-hidden">
+                      <div
+                        className="transition-transform duration-500 ease-in-out"
+                        style={{
+                          transform: `translateY(-${currentTrendIndex * 24}px)`,
+                          height: '24px'
+                        }}
+                      >
+                        {trendingTopics.map((topic, index) => (
+                          <div
+                            key={index}
+                            className="h-6 flex items-center capitalize"
+                            style={{ lineHeight: '24px' }}
+                          >
+                            {topic}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <span>Loading trending topics...</span>
+                  )}
+                </div>
               </div>
             </div>
           )}
