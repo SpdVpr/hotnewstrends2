@@ -43,10 +43,12 @@ export default function Home() {
   const fetchArticles = async () => {
     try {
       setLoading(true);
+
+      // Always fetch all published articles and filter client-side for better reliability
       const params = new URLSearchParams({
-        limit: '20',
-        status: 'published',
-        ...(selectedCategory !== 'all' && { category: selectedCategory })
+        limit: '50', // Fetch more articles for client-side filtering
+        status: 'published'
+        // Remove category from API call - we'll filter client-side
       });
 
       console.log('🌐 API call params:', { selectedCategory, params: params.toString() });
@@ -56,6 +58,7 @@ export default function Home() {
 
         // API returns { success: true, data: { articles: [], total: 0, ... } }
         const articles = data.data?.articles || data.data || [];
+        console.log('📦 API returned articles:', articles.length);
         setArticles(Array.isArray(articles) ? articles : []);
       } else {
         console.error('Failed to fetch articles:', response.statusText);

@@ -115,30 +115,60 @@ const nextConfig: NextConfig = {
       }
     ],
   },
-  // Disable caching in development
+  // Disable caching in development and add CSP for RSS feeds
   async headers() {
+    const headers = [];
+
     if (process.env.NODE_ENV === 'development') {
-      return [
-        {
-          source: '/(.*)',
-          headers: [
-            {
-              key: 'Cache-Control',
-              value: 'no-cache, no-store, must-revalidate',
-            },
-            {
-              key: 'Pragma',
-              value: 'no-cache',
-            },
-            {
-              key: 'Expires',
-              value: '0',
-            },
-          ],
-        },
-      ];
+      headers.push({
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-cache, no-store, must-revalidate',
+          },
+          {
+            key: 'Pragma',
+            value: 'no-cache',
+          },
+          {
+            key: 'Expires',
+            value: '0',
+          },
+        ],
+      });
     }
-    return [];
+
+    // Add CSP for RSS feeds and external APIs
+    headers.push({
+      source: '/(.*)',
+      headers: [
+        {
+          key: 'Content-Security-Policy',
+          value: `
+            default-src 'self';
+            script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.google-analytics.com;
+            style-src 'self' 'unsafe-inline';
+            img-src 'self' data: https: http:;
+            font-src 'self' data:;
+            connect-src 'self'
+              https://www.google-analytics.com
+              https://api.perplexity.ai
+              https://api.unsplash.com
+              https://api.pexels.com
+              https://rss.cnn.com
+              https://feeds.bbci.co.uk
+              https://www.reuters.com
+              https://serpapi.com;
+            frame-src 'self';
+            object-src 'none';
+            base-uri 'self';
+          `.replace(/\s+/g, ' ').trim()
+        }
+      ]
+    });
+
+    return headers;
   },
 };
 
