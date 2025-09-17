@@ -1,0 +1,101 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+:root {
+  /* HotNewsTrends Brand Colors */
+  --color-primary: #007AFF;
+  --color-primary-dark: #0056CC;
+  --color-text: #1D1D1F;
+  --color-text-secondary: #8E8E93;
+  --color-background: #FFFFFF;
+  --color-surface: #F2F2F7;
+  --color-orange: #FF6B35;
+  --color-green: #34C759;
+  --color-yellow: #FFD60A;
+  --color-red: #FF3B30;
+  --color-gray-light: #F2F2F7;
+  --color-gray-medium: #8E8E93;
+  --color-gray-dark: #48484A;
+
+  /* Typography */
+  --font-size-base: 16px;
+  --font-size-lg: 18px;
+  --font-size-xl: 24px;
+  --font-size-2xl: 32px;
+  --font-size-3xl: 48px;
+
+  /* Spacing */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+}
+
+@theme inline {
+  --color-primary: var(--color-primary);
+  --color-primary-dark: var(--color-primary-dark);
+  --color-background: var(--color-background);
+  --color-foreground: var(--color-text);
+  --color-surface: var(--color-surface);
+  --color-text-secondary: var(--color-text-secondary);
+  --color-orange: var(--color-orange);
+  --color-green: var(--color-green);
+  --color-yellow: var(--color-yellow);
+  --color-red: var(--color-red);
+  --color-gray-light: var(--color-gray-light);
+  --color-gray-medium: var(--color-gray-medium);
+  --color-gray-dark: var(--color-gray-dark);
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* Dark theme - only when explicitly set */
+[data-theme="dark"] {
+  --color-background: #000000;
+  --color-surface: #1C1C1E;
+  --color-text: #FFFFFF;
+  --color-text-secondary: #8E8E93;
+  --color-gray-dark: #2C2C2E;
+}
+
+body {
+  background: var(--color-background);
+  color: var(--color-text);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 200ms ease, color 200ms ease;
+}
+
+/* Custom utilities */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Line clamp utilities */
+.line-clamp-1 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
+.line-clamp-2 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.line-clamp-3 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}

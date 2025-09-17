@@ -1,0 +1,49 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/automation",
+      "schedule": "0 */2 * * *"
+    }
+  ],
+  "functions": {
+    "src/app/api/automation/generate/route.ts": {
+      "maxDuration": 300
+    },
+    "src/app/api/cron/automation/route.ts": {
+      "maxDuration": 300
+    }
+  },
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, POST, PUT, DELETE, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type, Authorization"
+        }
+      ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/sitemap.xml",
+      "destination": "/api/sitemap"
+    },
+    {
+      "source": "/robots.txt",
+      "destination": "/api/robots"
+    },
+    {
+      "source": "/feed.xml",
+      "destination": "/api/feed"
+    }
+  ]
+}
