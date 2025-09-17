@@ -229,8 +229,8 @@ class TrendsScheduler {
       console.log(`✅ Trends update completed: ${trendsData.topics.length} trends saved (batch: ${batchId})`);
       console.log(`📈 Daily progress: ${this.dailyUpdateCount}/${this.UPDATES_PER_DAY} updates completed`);
 
-      // Trigger article generation for new trends
-      await this.generateArticlesFromTrends();
+      // Note: Article generation is handled separately by Automation Service
+      console.log(`📝 Trends collection complete. Article generation is managed by Automation Service.`);
 
     } catch (error) {
       console.error('❌ Error during trends update:', error);
