@@ -35,12 +35,12 @@ class AutomationService {
 
   constructor() {
     this.config = {
-      enabled: process.env.NODE_ENV === 'production',
+      enabled: true, // Enable for both dev and production
       interval: 60, // Check every hour
-      maxArticlesPerDay: 15,
-      minConfidenceScore: 0.7,
-      minGrowthRate: 25,
-      categories: ['Technology', 'News', 'Business', 'Science', 'Health'],
+      maxArticlesPerDay: 20,
+      minConfidenceScore: 0.5, // Lowered from 0.7 to 0.5
+      minGrowthRate: 10, // Lowered from 25 to 10
+      categories: ['Technology', 'News', 'Business', 'Science', 'Health', 'Entertainment', 'Sports', 'general'], // Added more categories
       regions: ['US', 'GB', 'CA']
     };
   }
@@ -307,11 +307,30 @@ class AutomationService {
     minConfidence: number,
     minGrowthRate: number
   ): TrendingTopic[] {
-    return topics.filter(topic => {
-      return topic.confidence >= minConfidence &&
-             topic.growthRate >= minGrowthRate &&
-             this.config.categories.includes(topic.category);
+    console.log(`🔍 Filtering ${topics.length} topics with criteria:`);
+    console.log(`   - Min Confidence: ${minConfidence}`);
+    console.log(`   - Min Growth Rate: ${minGrowthRate}`);
+    console.log(`   - Allowed Categories: ${this.config.categories.join(', ')}`);
+
+    // Debug: Show first few topics
+    topics.slice(0, 3).forEach((topic, i) => {
+      console.log(`📊 Topic ${i + 1}: "${topic.keyword}" - Confidence: ${topic.confidence}, Growth: ${topic.growthRate}, Category: ${topic.category}`);
+    });
+
+    const filtered = topics.filter(topic => {
+      const passesConfidence = topic.confidence >= minConfidence;
+      const passesGrowthRate = topic.growthRate >= minGrowthRate;
+      const passesCategory = this.config.categories.includes(topic.category);
+
+      if (!passesConfidence || !passesGrowthRate || !passesCategory) {
+        console.log(`❌ Rejected "${topic.keyword}": confidence=${topic.confidence}(${passesConfidence}), growth=${topic.growthRate}(${passesGrowthRate}), category=${topic.category}(${passesCategory})`);
+      }
+
+      return passesConfidence && passesGrowthRate && passesCategory;
     }).slice(0, 5); // Limit to top 5 topics
+
+    console.log(`✅ Filtered result: ${filtered.length} high-potential topics`);
+    return filtered;
   }
 
   private async saveArticle(article: Article): Promise<void> {
