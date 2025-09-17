@@ -37,13 +37,40 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Error generating article:', error);
+    console.error('❌ Error generating article:', error);
+    console.error('❌ Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      topic,
+      category: finalCategory,
+      timestamp: new Date().toISOString()
+    });
+
+    // Check for specific error types
+    let errorMessage = 'Failed to generate article';
+    let statusCode = 500;
+
+    if (error instanceof Error) {
+      if (error.message.includes('timeout')) {
+        errorMessage = 'Article generation timed out - this may be due to Vercel limits';
+        statusCode = 408;
+      } else if (error.message.includes('API key')) {
+        errorMessage = 'API configuration error';
+        statusCode = 401;
+      } else if (error.message.includes('rate limit')) {
+        errorMessage = 'API rate limit exceeded';
+        statusCode = 429;
+      }
+    }
+
     return NextResponse.json(
-      { 
-        success: false, 
-        error: 'Failed to generate article' 
+      {
+        success: false,
+        error: errorMessage,
+        details: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date().toISOString()
       },
-      { status: 500 }
+      { status: statusCode }
     );
   }
 }

@@ -211,8 +211,10 @@ class AutomationService {
       console.log(`📝 Generating article for: ${topic.keyword}`);
       job.status = 'generating';
       
-      // Generate content
-      const content = await contentGenerator.generateArticle({
+      // Generate content with timeout protection
+      const GENERATION_TIMEOUT = 45000; // 45 seconds (safe for Vercel)
+
+      const contentPromise = contentGenerator.generateArticle({
         topic: topic.keyword,
         category: topic.category,
         targetLength: 1000,
@@ -220,6 +222,15 @@ class AutomationService {
         includeImages: true,
         seoKeywords: [topic.keyword, ...topic.relatedQueries.slice(0, 3)]
       });
+
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => {
+          reject(new Error(`Article generation timeout after ${GENERATION_TIMEOUT}ms for topic: ${topic.keyword}`));
+        }, GENERATION_TIMEOUT);
+      });
+
+      console.log(`⏱️ Starting article generation with ${GENERATION_TIMEOUT}ms timeout for: ${topic.keyword}`);
+      const content = await Promise.race([contentPromise, timeoutPromise]) as any;
 
       // 🚨 CRITICAL: Validate content for fictional elements
       const isFictional = this.validateContentForFiction(content, topic.keyword);
@@ -260,11 +271,32 @@ class AutomationService {
       
     } catch (error) {
       console.error(`❌ Error generating article for ${topic.keyword}:`, error);
+      console.error(`❌ Error details:`, {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        topic: topic.keyword,
+        category: topic.category,
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV,
+        platform: process.env.VERCEL ? 'Vercel' : 'Local'
+      });
+
       job.status = 'failed';
       job.error = error instanceof Error ? error.message : 'Unknown error';
       job.completedAt = new Date();
+
+      // Log specific error types for debugging
+      if (error instanceof Error) {
+        if (error.message.includes('timeout')) {
+          console.error(`⏰ TIMEOUT: Article generation exceeded time limit for "${topic.keyword}"`);
+        } else if (error.message.includes('API key')) {
+          console.error(`🔑 API KEY ERROR: Check environment variables for "${topic.keyword}"`);
+        } else if (error.message.includes('rate limit')) {
+          console.error(`🚫 RATE LIMIT: API calls exceeded for "${topic.keyword}"`);
+        }
+      }
     }
-    
+
     return job;
   }
 
