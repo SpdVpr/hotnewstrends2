@@ -87,7 +87,7 @@ export const googleTrendsService = {
 
           if (data.trending_searches) {
             const serpTopics = data.trending_searches
-              .slice(0, 10) // Limit to 10 SerpAPI topics
+              .slice(0, 20) // Limit to 20 SerpAPI topics for better variety
               .map((item: any) => ({
                 title: item.query || item.title || 'Unknown Topic',
                 keyword: item.query || item.title || 'unknown',
@@ -191,14 +191,14 @@ export const googleTrendsService = {
           const items = this.parseRSSItems(xmlText);
           topics.push(...items);
 
-          if (topics.length >= 20) break; // Limit to 20 topics
+          if (topics.length >= 40) break; // Limit to 40 topics for better variety
         } catch (feedError) {
           console.warn(`⚠️ RSS feed failed: ${feedUrl}`, feedError);
         }
       }
 
       console.log(`✅ RSS feeds returned ${topics.length} topics`);
-      return topics.slice(0, 10); // Limit to 10 topics
+      return topics.slice(0, 20); // Limit to 20 RSS topics for better variety
 
     } catch (error) {
       console.error('Error fetching RSS feeds:', error);
@@ -216,7 +216,7 @@ export const googleTrendsService = {
       const descRegex = /<description[^>]*><!\[CDATA\[(.*?)\]\]><\/description>|<description[^>]*>(.*?)<\/description>/;
 
       let match;
-      while ((match = itemRegex.exec(xmlText)) !== null && topics.length < 10) {
+      while ((match = itemRegex.exec(xmlText)) !== null && topics.length < 20) {
         const itemContent = match[1];
 
         const titleMatch = titleRegex.exec(itemContent);

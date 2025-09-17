@@ -112,7 +112,7 @@ class AutomationService {
       
       // Get trending topics from Firebase (not API)
       const trends = await this.getTrendingTopicsFromFirebase();
-      const highPotentialTopics = await this.filterHighPotentialTopicsWithDeduplication(
+      const highPotentialTopics = await this.filterHighPotentialTopicsWithBlacklist(
         trends,
         this.config.minConfidenceScore,
         this.config.minGrowthRate
@@ -329,11 +329,19 @@ class AutomationService {
       
       // In production, save to database
       await this.saveArticle(article);
-      
+
+      // Mark topic as processed (add to blacklist for 48h)
+      try {
+        const { firebaseProcessedTopicsService } = await import('./firebase-processed-topics');
+        await firebaseProcessedTopicsService.markTopicAsProcessed(topic.keyword);
+      } catch (error) {
+        console.warn(`⚠️ Failed to mark topic "${topic.keyword}" as processed:`, error);
+      }
+
       job.article = article;
       job.status = 'completed';
       job.completedAt = new Date();
-      
+
       console.log(`✅ Article generated successfully: ${article.title}`);
       
     } catch (error) {
@@ -482,55 +490,45 @@ class AutomationService {
   }
 
   /**
-   * Filter high potential topics with deduplication to prevent same articles
+   * Filter high potential topics with blacklist to prevent duplicate articles
+   * Simple and reliable: if topic was processed in last 48h, skip it
    */
-  private async filterHighPotentialTopicsWithDeduplication(
+  private async filterHighPotentialTopicsWithBlacklist(
     topics: TrendingTopic[],
     minConfidence: number,
     minGrowthRate: number
   ): Promise<TrendingTopic[]> {
-    console.log(`🔍 Filtering ${topics.length} topics with deduplication...`);
+    console.log(`🔍 Filtering ${topics.length} topics with blacklist check...`);
 
     // First apply basic filters
     const basicFiltered = this.filterHighPotentialTopics(topics, minConfidence, minGrowthRate);
     console.log(`📊 After basic filtering: ${basicFiltered.length} topics`);
 
-    // Then apply deduplication
-    const { firebaseTrendsService } = await import('./firebase-trends');
-    const deduplicatedTopics: TrendingTopic[] = [];
+    // Then check blacklist
+    const { firebaseProcessedTopicsService } = await import('./firebase-processed-topics');
+    const allowedTopics: TrendingTopic[] = [];
 
     for (const topic of basicFiltered) {
       try {
-        // Check if similar article already exists in articles collection (lowered threshold for better detection)
-        const hasSimilar = await this.checkForSimilarArticles(topic.keyword, 0.5);
+        const isProcessed = await firebaseProcessedTopicsService.isTopicProcessed(topic.keyword);
 
-        if (hasSimilar) {
-          console.log(`🚫 Skipping "${topic.keyword}" - similar article already exists`);
+        if (isProcessed) {
+          console.log(`🚫 Skipping "${topic.keyword}" - already processed in last 48h`);
           continue;
         }
 
-        // Also check against already selected topics in this batch
-        const isDuplicateInBatch = deduplicatedTopics.some(selected =>
-          this.calculateTopicSimilarity(topic.keyword, selected.keyword) > 0.7
-        );
-
-        if (isDuplicateInBatch) {
-          console.log(`🚫 Skipping "${topic.keyword}" - similar to already selected topic in batch`);
-          continue;
-        }
-
-        deduplicatedTopics.push(topic);
+        allowedTopics.push(topic);
         console.log(`✅ Added "${topic.keyword}" to generation queue`);
 
       } catch (error) {
-        console.warn(`⚠️ Error checking similarity for "${topic.keyword}":`, error);
+        console.warn(`⚠️ Error checking blacklist for "${topic.keyword}":`, error);
         // On error, include the topic (err on the side of generation)
-        deduplicatedTopics.push(topic);
+        allowedTopics.push(topic);
       }
     }
 
-    console.log(`🎯 Final deduplicated topics: ${deduplicatedTopics.length}/${basicFiltered.length}`);
-    return deduplicatedTopics;
+    console.log(`🎯 Final allowed topics: ${allowedTopics.length}/${basicFiltered.length}`);
+    return allowedTopics;
   }
 
   /**
