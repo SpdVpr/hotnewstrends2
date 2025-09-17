@@ -67,9 +67,10 @@ export default function AdminPage() {
 
   const fetchData = async () => {
     try {
-      const [statsRes, jobsRes] = await Promise.all([
+      const [statsRes, jobsRes, schedulerRes] = await Promise.all([
         fetch('/api/automation'),
-        fetch('/api/automation/jobs?limit=20')
+        fetch('/api/automation/jobs?limit=20'),
+        fetch('/api/trends/scheduler')
       ]);
 
       if (statsRes.ok) {
@@ -80,6 +81,11 @@ export default function AdminPage() {
       if (jobsRes.ok) {
         const jobsData = await jobsRes.json();
         setJobs(jobsData.data.jobs);
+      }
+
+      if (schedulerRes.ok) {
+        const schedulerData = await schedulerRes.json();
+        console.log('📊 Trends Scheduler Status:', schedulerData.data?.scheduler);
       }
     } catch (error) {
       console.error('Error fetching data:', error);

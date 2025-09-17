@@ -21,8 +21,17 @@ class StartupService {
 
     try {
       // Start trends scheduler (6x daily updates)
+      console.log('📊 Starting trends scheduler...');
       trendsScheduler.start();
-      console.log('✅ Trends scheduler started');
+
+      // Verify scheduler is running
+      const stats = trendsScheduler.getStats();
+      console.log('📈 Trends scheduler status:', {
+        isRunning: stats.isRunning,
+        lastUpdate: stats.lastUpdate,
+        nextUpdate: stats.nextUpdate,
+        updatesPerDay: stats.updatesPerDay
+      });
 
       this.initialized = true;
       console.log('🎉 Application startup complete');

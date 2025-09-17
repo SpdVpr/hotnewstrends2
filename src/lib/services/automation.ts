@@ -47,13 +47,24 @@ class AutomationService {
 
   async start(): Promise<void> {
     if (this.isRunning) return;
-    
+
     this.isRunning = true;
     console.log('🤖 Automation service started');
-    
+
+    // Ensure trends scheduler is running
+    try {
+      const { trendsScheduler } = await import('./trends-scheduler');
+      if (!trendsScheduler.getStats().isRunning) {
+        console.log('📊 Starting trends scheduler from automation service...');
+        trendsScheduler.start();
+      }
+    } catch (error) {
+      console.warn('⚠️ Could not start trends scheduler:', error);
+    }
+
     // Run immediately
     await this.runAutomationCycle();
-    
+
     // Schedule regular runs
     this.intervalId = setInterval(async () => {
       await this.runAutomationCycle();

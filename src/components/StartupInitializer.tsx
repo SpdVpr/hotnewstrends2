@@ -9,10 +9,16 @@ import { startupService } from '@/lib/startup';
  */
 export function StartupInitializer() {
   useEffect(() => {
+    console.log('🚀 StartupInitializer: Initializing services...');
+
     // Initialize startup services
-    startupService.initialize().catch(error => {
-      console.error('Startup initialization failed:', error);
-    });
+    startupService.initialize()
+      .then(() => {
+        console.log('✅ StartupInitializer: Services initialized successfully');
+      })
+      .catch(error => {
+        console.error('❌ StartupInitializer: Initialization failed:', error);
+      });
   }, []);
 
   // This component doesn't render anything
