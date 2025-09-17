@@ -1,14 +1,14 @@
-import { 
-  collection, 
-  doc, 
-  setDoc, 
-  getDocs, 
-  query, 
-  where, 
+import {
+  collection,
+  doc,
+  setDoc,
+  getDocs,
+  query,
+  where,
   deleteDoc,
-  Timestamp 
+  Timestamp
 } from 'firebase/firestore';
-import { db } from './firebase';
+import { db } from '@/lib/firebase';
 
 export interface ProcessedTopic {
   keyword: string;
