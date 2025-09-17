@@ -119,7 +119,13 @@ class AutomationService {
       );
       
       console.log(`📈 Found ${highPotentialTopics.length} high-potential topics`);
-      
+
+      if (highPotentialTopics.length === 0) {
+        console.log('⚠️ No high-potential topics found for article generation');
+        console.log('📅 No new articles will be added to the scheduled queue');
+        return;
+      }
+
       // Generate articles for top topics (4 articles per cycle, spaced 20 minutes apart)
       const articlesToGenerate = Math.min(
         highPotentialTopics.length,
@@ -130,6 +136,8 @@ class AutomationService {
       const selectedTopics = highPotentialTopics.slice(0, articlesToGenerate);
 
       if (selectedTopics.length > 0) {
+        console.log(`📅 Adding ${selectedTopics.length} new articles to scheduled queue...`);
+        console.log(`📋 Topics: ${selectedTopics.map(t => `"${t.keyword}"`).join(', ')}`);
         console.log(`📋 Scheduling ${selectedTopics.length} articles with 20-minute intervals...`);
         await this.scheduleArticleGeneration(selectedTopics);
       }
@@ -493,8 +501,8 @@ class AutomationService {
 
     for (const topic of basicFiltered) {
       try {
-        // Check if similar article already exists in articles collection
-        const hasSimilar = await this.checkForSimilarArticles(topic.keyword, 0.7);
+        // Check if similar article already exists in articles collection (lowered threshold for better detection)
+        const hasSimilar = await this.checkForSimilarArticles(topic.keyword, 0.5);
 
         if (hasSimilar) {
           console.log(`🚫 Skipping "${topic.keyword}" - similar article already exists`);
@@ -725,24 +733,41 @@ class AutomationService {
 
   /**
    * Check if similar articles already exist in Firebase articles collection
+   * Only checks articles from the last 48 hours to allow topic revisiting after time passes
    */
-  private async checkForSimilarArticles(keyword: string, threshold: number = 0.7): Promise<boolean> {
+  private async checkForSimilarArticles(keyword: string, threshold: number = 0.5): Promise<boolean> {
     try {
       const { firebaseArticlesService } = await import('./firebase-articles');
 
       // Get recent articles (last 50) to check for duplicates
-      const recentArticles = await firebaseArticlesService.getArticles({
+      const allRecentArticles = await firebaseArticlesService.getArticles({
         limit: 50,
         status: 'published'
       });
 
+      // Filter to only articles from last 48 hours
+      const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000);
+      const recentArticles = allRecentArticles.filter(article => {
+        const articleDate = article.createdAt instanceof Date ? article.createdAt : new Date(article.createdAt);
+        return articleDate >= fortyEightHoursAgo;
+      });
+
+      console.log(`⏰ Filtering to articles from last 48h: ${allRecentArticles.length} → ${recentArticles.length} articles`);
+
       const keywordLower = keyword.toLowerCase().trim();
-      console.log(`🔍 Checking "${keyword}" against ${recentArticles.length} existing articles...`);
+      console.log(`🔍 Checking "${keyword}" against ${recentArticles.length} articles from last 48h...`);
+
+      if (recentArticles.length === 0) {
+        console.log(`✅ No articles from last 48h - "${keyword}" is safe to generate`);
+        return false;
+      }
 
       // Debug: Show first few articles for transparency
-      console.log(`📋 First 5 existing articles:`);
+      console.log(`📋 Recent articles (last 48h):`);
       recentArticles.slice(0, 5).forEach((article, i) => {
-        console.log(`  ${i + 1}. "${article.title}" (created: ${article.createdAt})`);
+        const articleDate = article.createdAt instanceof Date ? article.createdAt : new Date(article.createdAt);
+        const hoursAgo = Math.round((Date.now() - articleDate.getTime()) / (1000 * 60 * 60));
+        console.log(`  ${i + 1}. "${article.title}" (${hoursAgo}h ago)`);
       });
 
       for (const article of recentArticles) {
@@ -765,7 +790,7 @@ class AutomationService {
         }
       }
 
-      console.log(`✅ No similar articles found for "${keyword}"`);
+      console.log(`✅ No similar articles found for "${keyword}" in last 48h - safe to generate`);
       return false;
 
     } catch (error) {
@@ -785,51 +810,58 @@ class AutomationService {
     // Exact match
     if (k1 === k2) return 1.0;
 
+    // Extract key words from both strings
+    const words1 = k1.split(/\s+/).filter(w => w.length > 1);
+    const words2 = k2.split(/\s+/).filter(w => w.length > 1);
+
+    // Special handling for person names (like "fani willis")
+    if (words1.length <= 3 && words2.length >= 2) {
+      // Check if all words from keyword1 appear in keyword2
+      const matchedWords = words1.filter(w1 =>
+        words2.some(w2 => w2.includes(w1) || w1.includes(w2))
+      );
+
+      if (matchedWords.length === words1.length) {
+        // All words from keyword1 found in keyword2 - high similarity
+        const similarity = 0.8; // Fixed high similarity for complete name matches
+        console.log(`🔍 Person name match: "${k1}" completely found in "${k2}" = ${similarity.toFixed(2)} (${matchedWords.length}/${words1.length} words)`);
+        return similarity;
+      } else if (matchedWords.length > 0) {
+        // Partial match
+        const similarity = (matchedWords.length / words1.length) * 0.6;
+        console.log(`🔍 Partial name match: "${k1}" partially in "${k2}" = ${similarity.toFixed(2)} (${matchedWords.length}/${words1.length} words)`);
+        return similarity;
+      }
+    }
+
     // Check if one contains the other (high similarity)
     if (k1.includes(k2) || k2.includes(k1)) {
       const longer = k1.length > k2.length ? k1 : k2;
       const shorter = k1.length > k2.length ? k2 : k1;
-      const containmentSimilarity = shorter.length / longer.length;
+      const containmentSimilarity = Math.min(0.8, shorter.length / longer.length);
       console.log(`🔍 Containment match: "${k1}" vs "${k2}" = ${containmentSimilarity.toFixed(2)}`);
       return containmentSimilarity;
     }
 
-    // Special case for person names - check individual name parts
-    const words1 = k1.split(/\s+/).filter(w => w.length > 1);
-    const words2 = k2.split(/\s+/).filter(w => w.length > 1);
+    // Word overlap similarity (use different variable names to avoid conflict)
+    const allWords1 = k1.split(/\s+/).filter(w => w.length > 2); // Ignore short words
+    const allWords2 = k2.split(/\s+/).filter(w => w.length > 2);
 
-    // If both are likely person names (2-3 words), check name matching
-    if (words1.length <= 3 && words2.length <= 3) {
-      const nameMatches = words1.filter(w1 =>
-        words2.some(w2 => w1 === w2 || w1.includes(w2) || w2.includes(w1))
-      );
-
-      if (nameMatches.length > 0) {
-        const nameSimilarity = (nameMatches.length * 2) / (words1.length + words2.length);
-        console.log(`🔍 Name matching: "${k1}" vs "${k2}" = ${nameSimilarity.toFixed(2)} (${nameMatches.length} matches)`);
-        return nameSimilarity;
-      }
-    }
-
-    // Word overlap similarity
-    const words1 = k1.split(/\s+/).filter(w => w.length > 2); // Ignore short words
-    const words2 = k2.split(/\s+/).filter(w => w.length > 2);
-
-    if (words1.length === 0 || words2.length === 0) return 0;
+    if (allWords1.length === 0 || allWords2.length === 0) return 0;
 
     // Count significant word matches
-    const commonWords = words1.filter(word =>
-      words2.some(w2 => {
+    const commonWords = allWords1.filter(word =>
+      allWords2.some(w2 => {
         // Exact match or one contains the other
         return word === w2 || word.includes(w2) || w2.includes(word);
       })
     );
 
-    const similarity = (commonWords.length * 2) / (words1.length + words2.length);
+    const similarity = (commonWords.length * 2) / (allWords1.length + allWords2.length);
 
     // Boost similarity for person names (common pattern)
-    const isPersonName1 = words1.length === 2 && words1.every(w => w[0] === w[0].toUpperCase());
-    const isPersonName2 = words2.length === 2 && words2.every(w => w[0] === w[0].toUpperCase());
+    const isPersonName1 = allWords1.length === 2 && allWords1.every(w => w[0] === w[0].toUpperCase());
+    const isPersonName2 = allWords2.length === 2 && allWords2.every(w => w[0] === w[0].toUpperCase());
 
     if (isPersonName1 && isPersonName2 && commonWords.length > 0) {
       return Math.min(1.0, similarity * 1.5); // Boost person name matches

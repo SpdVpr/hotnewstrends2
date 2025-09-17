@@ -229,8 +229,17 @@ class TrendsScheduler {
       console.log(`✅ Trends update completed: ${trendsData.topics.length} trends saved (batch: ${batchId})`);
       console.log(`📈 Daily progress: ${this.dailyUpdateCount}/${this.UPDATES_PER_DAY} updates completed`);
 
-      // Note: Article generation is handled separately by Automation Service
-      console.log(`📝 Trends collection complete. Article generation is managed by Automation Service.`);
+      console.log(`📝 Trends collection complete. Triggering automation cycle...`);
+
+      // Trigger automation cycle after trends update
+      try {
+        const { automationService } = await import('./automation');
+        console.log('🔄 Starting automation cycle after trends update...');
+        await automationService.runCycle();
+        console.log('✅ Automation cycle completed after trends update');
+      } catch (error) {
+        console.error('❌ Failed to run automation cycle after trends update:', error);
+      }
 
     } catch (error) {
       console.error('❌ Error during trends update:', error);
