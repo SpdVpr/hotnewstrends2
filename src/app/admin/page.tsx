@@ -107,6 +107,34 @@ export default function AdminPage() {
     }
   };
 
+  const handleForceUpdateTrends = async () => {
+    setActionLoading('force-trends');
+    try {
+      // First start the trends scheduler
+      await fetch('/api/trends/scheduler', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'start' })
+      });
+
+      // Then force update
+      const response = await fetch('/api/trends/scheduler', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'force-update' })
+      });
+
+      if (response.ok) {
+        console.log('✅ Trends force update initiated');
+        await fetchData();
+      }
+    } catch (error) {
+      console.error('Error forcing trends update:', error);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   const handleManualGeneration = async () => {
     if (!manualTopic.trim()) return;
 
@@ -255,12 +283,17 @@ export default function AdminPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <Button
+                    onClick={handleForceUpdateTrends}
+                    disabled={actionLoading === 'force-trends'}
                     variant="primary"
                     size="lg"
                     className="w-full"
-                    disabled
                   >
-                    🔄 Trend Tracking Active
+                    {actionLoading === 'force-trends' ? (
+                      <LoadingSpinner size="sm" />
+                    ) : (
+                      '🔄 Force Update Trends Now'
+                    )}
                   </Button>
 
                   {/* Trend Status */}
