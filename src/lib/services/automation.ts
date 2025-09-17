@@ -36,8 +36,8 @@ class AutomationService {
   constructor() {
     this.config = {
       enabled: true, // Enable for both dev and production
-      interval: 60, // Check every hour
-      maxArticlesPerDay: 20,
+      interval: 160, // Check every ~2.67 hours (matches trends scheduler)
+      maxArticlesPerDay: 24, // 6 updates × 4 articles = 24 max per day
       minConfidenceScore: 0.5, // Lowered from 0.7 to 0.5
       minGrowthRate: 10, // Lowered from 25 to 10
       categories: ['Technology', 'News', 'Business', 'Science', 'Health', 'Entertainment', 'Sports', 'general'], // Added more categories
@@ -104,23 +104,50 @@ class AutomationService {
       
       console.log(`📈 Found ${highPotentialTopics.length} high-potential topics`);
       
-      // Generate articles for top topics
+      // Generate articles for top topics (4 articles per cycle, spaced 20 minutes apart)
       const articlesToGenerate = Math.min(
         highPotentialTopics.length,
         this.config.maxArticlesPerDay - todayArticles,
-        3 // Max 3 articles per cycle
+        4 // Max 4 articles per cycle (changed from 3)
       );
-      
+
       const selectedTopics = highPotentialTopics.slice(0, articlesToGenerate);
-      
-      for (const topic of selectedTopics) {
-        await this.generateArticleFromTopic(topic);
+
+      if (selectedTopics.length > 0) {
+        console.log(`📋 Scheduling ${selectedTopics.length} articles with 20-minute intervals...`);
+        await this.scheduleArticleGeneration(selectedTopics);
       }
-      
-      console.log(`✅ Automation cycle completed. Generated ${articlesToGenerate} articles.`);
+
+      console.log(`✅ Automation cycle completed. Scheduled ${articlesToGenerate} articles.`);
       
     } catch (error) {
       console.error('❌ Error in automation cycle:', error);
+    }
+  }
+
+  /**
+   * Schedule article generation with 20-minute intervals
+   */
+  private async scheduleArticleGeneration(topics: TrendingTopic[]): Promise<void> {
+    for (let i = 0; i < topics.length; i++) {
+      const topic = topics[i];
+      const delayMinutes = i * 20; // 0, 20, 40, 60 minutes
+      const delayMs = delayMinutes * 60 * 1000;
+
+      if (i === 0) {
+        // Generate first article immediately
+        console.log(`🎯 Generating article 1/${topics.length} immediately: "${topic.keyword}"`);
+        await this.generateArticleFromTopic(topic);
+      } else {
+        // Schedule remaining articles
+        const scheduledTime = new Date(Date.now() + delayMs);
+        console.log(`⏰ Scheduled article ${i + 1}/${topics.length} for ${scheduledTime.toLocaleTimeString()}: "${topic.keyword}"`);
+
+        setTimeout(async () => {
+          console.log(`🎯 Generating scheduled article ${i + 1}/${topics.length}: "${topic.keyword}"`);
+          await this.generateArticleFromTopic(topic);
+        }, delayMs);
+      }
     }
   }
 
