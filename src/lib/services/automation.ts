@@ -739,6 +739,12 @@ class AutomationService {
       const keywordLower = keyword.toLowerCase().trim();
       console.log(`🔍 Checking "${keyword}" against ${recentArticles.length} existing articles...`);
 
+      // Debug: Show first few articles for transparency
+      console.log(`📋 First 5 existing articles:`);
+      recentArticles.slice(0, 5).forEach((article, i) => {
+        console.log(`  ${i + 1}. "${article.title}" (created: ${article.createdAt})`);
+      });
+
       for (const article of recentArticles) {
         // Check similarity with article title
         const titleSimilarity = this.calculateTopicSimilarity(keywordLower, article.title.toLowerCase());
@@ -749,6 +755,9 @@ class AutomationService {
           this.calculateTopicSimilarity(keywordLower, originalTopic.toLowerCase()) : 0;
 
         const maxSimilarity = Math.max(titleSimilarity, topicSimilarity);
+
+        // Debug: Show similarity calculation for all articles
+        console.log(`📊 "${keyword}" vs "${article.title}": title=${titleSimilarity.toFixed(2)}, topic=${topicSimilarity.toFixed(2)}, max=${maxSimilarity.toFixed(2)}`);
 
         if (maxSimilarity >= threshold) {
           console.log(`🚫 Found similar article: "${keyword}" vs "${article.title}" (similarity: ${maxSimilarity.toFixed(2)})`);
@@ -780,7 +789,26 @@ class AutomationService {
     if (k1.includes(k2) || k2.includes(k1)) {
       const longer = k1.length > k2.length ? k1 : k2;
       const shorter = k1.length > k2.length ? k2 : k1;
-      return shorter.length / longer.length;
+      const containmentSimilarity = shorter.length / longer.length;
+      console.log(`🔍 Containment match: "${k1}" vs "${k2}" = ${containmentSimilarity.toFixed(2)}`);
+      return containmentSimilarity;
+    }
+
+    // Special case for person names - check individual name parts
+    const words1 = k1.split(/\s+/).filter(w => w.length > 1);
+    const words2 = k2.split(/\s+/).filter(w => w.length > 1);
+
+    // If both are likely person names (2-3 words), check name matching
+    if (words1.length <= 3 && words2.length <= 3) {
+      const nameMatches = words1.filter(w1 =>
+        words2.some(w2 => w1 === w2 || w1.includes(w2) || w2.includes(w1))
+      );
+
+      if (nameMatches.length > 0) {
+        const nameSimilarity = (nameMatches.length * 2) / (words1.length + words2.length);
+        console.log(`🔍 Name matching: "${k1}" vs "${k2}" = ${nameSimilarity.toFixed(2)} (${nameMatches.length} matches)`);
+        return nameSimilarity;
+      }
     }
 
     // Word overlap similarity
