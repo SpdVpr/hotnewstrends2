@@ -280,10 +280,21 @@ Format:
 [Article content]
 CATEGORY: [Technology/Entertainment/News/Business/Sports/Health/Science]
 
-IMPORTANT: Choose the CORRECT category based on the topic:
-- Sports personalities, athletes, ESPN hosts → Sports
-- Celebrities, actors, musicians, TV shows → Entertainment
-- Tech companies, apps, AI, gadgets → Technology
+IMPORTANT: Choose the CORRECT category based on the topic content:
+
+🔧 TECHNOLOGY: AI, apps, software, tech companies (Apple, Google, Microsoft, Meta), crypto, blockchain, gaming, startups, innovation, digital trends, cybersecurity, data, cloud computing
+
+💼 BUSINESS: Stocks, markets, earnings, CEOs, companies, economy, finance, investments, mergers, IPOs, Wall Street, entrepreneurship, corporate news, funding, venture capital
+
+🎭 ENTERTAINMENT: Celebrities, actors, musicians, movies, TV shows, Netflix, Disney, streaming, concerts, awards (Oscars, Grammys), viral content, influencers, social media trends
+
+⚽ SPORTS: Athletes, teams, games, championships, NFL, NBA, MLB, NHL, Olympics, coaches, ESPN personalities, sports news, playoffs
+
+🏥 HEALTH: Medical news, diseases, vaccines, treatments, wellness, fitness, nutrition, mental health, pharmaceuticals, FDA, clinical research, health studies
+
+🔬 SCIENCE: Research discoveries, NASA, space exploration, climate change, environment, energy, physics, chemistry, biology, genetics, laboratory breakthroughs
+
+📰 NEWS: Politics, government, elections, international affairs, crime, disasters, social issues, breaking news that doesn't fit other categories
 - Business news, stocks, companies → Business
 - Political news, government → News
 - Medical, fitness, wellness → Health
@@ -387,46 +398,179 @@ SOURCES REQUIREMENT:
   private inferCategoryFromTopic(topic: string, fallbackCategory: string): string {
     const topicLower = topic.toLowerCase();
 
-    // Sports personalities and ESPN hosts
-    if (topicLower.includes('espn') ||
-        topicLower.includes('molly qerim') ||
-        topicLower.includes('stephen a smith') ||
-        topicLower.includes('skip bayless') ||
-        topicLower.includes('first take') ||
-        topicLower.includes('sportscenter')) {
-      return 'Sports';
-    }
+    console.log(`🔍 Inferring category for topic: "${topic}"`);
 
-    // Entertainment personalities
-    if (topicLower.includes('actor') ||
-        topicLower.includes('actress') ||
-        topicLower.includes('celebrity') ||
-        topicLower.includes('hollywood') ||
-        topicLower.includes('netflix') ||
-        topicLower.includes('disney')) {
-      return 'Entertainment';
-    }
-
-    // Technology topics
+    // Technology topics (expanded keywords)
     if (topicLower.includes('ai') ||
         topicLower.includes('tech') ||
         topicLower.includes('app') ||
         topicLower.includes('software') ||
         topicLower.includes('google') ||
         topicLower.includes('microsoft') ||
-        topicLower.includes('apple')) {
+        topicLower.includes('apple') ||
+        topicLower.includes('iphone') ||
+        topicLower.includes('android') ||
+        topicLower.includes('meta') ||
+        topicLower.includes('facebook') ||
+        topicLower.includes('twitter') ||
+        topicLower.includes('x.com') ||
+        topicLower.includes('tesla') ||
+        topicLower.includes('spacex') ||
+        topicLower.includes('crypto') ||
+        topicLower.includes('bitcoin') ||
+        topicLower.includes('blockchain') ||
+        topicLower.includes('startup') ||
+        topicLower.includes('innovation') ||
+        topicLower.includes('digital') ||
+        topicLower.includes('cyber') ||
+        topicLower.includes('data') ||
+        topicLower.includes('cloud') ||
+        topicLower.includes('gaming') ||
+        topicLower.includes('virtual') ||
+        topicLower.includes('augmented')) {
+      console.log(`🎯 Categorized as Technology`);
       return 'Technology';
     }
 
-    // Business topics
+    // Business topics (expanded keywords)
     if (topicLower.includes('stock') ||
         topicLower.includes('market') ||
         topicLower.includes('earnings') ||
         topicLower.includes('ceo') ||
-        topicLower.includes('company')) {
+        topicLower.includes('company') ||
+        topicLower.includes('business') ||
+        topicLower.includes('economy') ||
+        topicLower.includes('finance') ||
+        topicLower.includes('investment') ||
+        topicLower.includes('revenue') ||
+        topicLower.includes('profit') ||
+        topicLower.includes('merger') ||
+        topicLower.includes('acquisition') ||
+        topicLower.includes('ipo') ||
+        topicLower.includes('nasdaq') ||
+        topicLower.includes('dow jones') ||
+        topicLower.includes('s&p') ||
+        topicLower.includes('wall street') ||
+        topicLower.includes('entrepreneur') ||
+        topicLower.includes('startup') ||
+        topicLower.includes('funding') ||
+        topicLower.includes('venture') ||
+        topicLower.includes('corporate')) {
+      console.log(`🎯 Categorized as Business`);
       return 'Business';
     }
 
+    // Health topics (new category)
+    if (topicLower.includes('health') ||
+        topicLower.includes('medical') ||
+        topicLower.includes('doctor') ||
+        topicLower.includes('hospital') ||
+        topicLower.includes('disease') ||
+        topicLower.includes('vaccine') ||
+        topicLower.includes('covid') ||
+        topicLower.includes('virus') ||
+        topicLower.includes('medicine') ||
+        topicLower.includes('treatment') ||
+        topicLower.includes('wellness') ||
+        topicLower.includes('fitness') ||
+        topicLower.includes('nutrition') ||
+        topicLower.includes('mental health') ||
+        topicLower.includes('therapy') ||
+        topicLower.includes('pharmaceutical') ||
+        topicLower.includes('fda') ||
+        topicLower.includes('clinical') ||
+        topicLower.includes('research')) {
+      console.log(`🎯 Categorized as Health`);
+      return 'Health';
+    }
+
+    // Science topics (new category)
+    if (topicLower.includes('science') ||
+        topicLower.includes('research') ||
+        topicLower.includes('study') ||
+        topicLower.includes('discovery') ||
+        topicLower.includes('nasa') ||
+        topicLower.includes('space') ||
+        topicLower.includes('climate') ||
+        topicLower.includes('environment') ||
+        topicLower.includes('energy') ||
+        topicLower.includes('solar') ||
+        topicLower.includes('renewable') ||
+        topicLower.includes('physics') ||
+        topicLower.includes('chemistry') ||
+        topicLower.includes('biology') ||
+        topicLower.includes('genetics') ||
+        topicLower.includes('dna') ||
+        topicLower.includes('laboratory') ||
+        topicLower.includes('experiment') ||
+        topicLower.includes('breakthrough')) {
+      console.log(`🎯 Categorized as Science`);
+      return 'Science';
+    }
+
+    // Entertainment topics (expanded keywords)
+    if (topicLower.includes('actor') ||
+        topicLower.includes('actress') ||
+        topicLower.includes('celebrity') ||
+        topicLower.includes('hollywood') ||
+        topicLower.includes('netflix') ||
+        topicLower.includes('disney') ||
+        topicLower.includes('movie') ||
+        topicLower.includes('film') ||
+        topicLower.includes('tv show') ||
+        topicLower.includes('series') ||
+        topicLower.includes('music') ||
+        topicLower.includes('singer') ||
+        topicLower.includes('album') ||
+        topicLower.includes('concert') ||
+        topicLower.includes('festival') ||
+        topicLower.includes('award') ||
+        topicLower.includes('oscar') ||
+        topicLower.includes('grammy') ||
+        topicLower.includes('emmy') ||
+        topicLower.includes('streaming') ||
+        topicLower.includes('youtube') ||
+        topicLower.includes('tiktok') ||
+        topicLower.includes('instagram') ||
+        topicLower.includes('influencer') ||
+        topicLower.includes('viral') ||
+        topicLower.includes('meme')) {
+      console.log(`🎯 Categorized as Entertainment`);
+      return 'Entertainment';
+    }
+
+    // Sports topics (expanded keywords)
+    if (topicLower.includes('espn') ||
+        topicLower.includes('molly qerim') ||
+        topicLower.includes('stephen a smith') ||
+        topicLower.includes('skip bayless') ||
+        topicLower.includes('first take') ||
+        topicLower.includes('sportscenter') ||
+        topicLower.includes('nfl') ||
+        topicLower.includes('nba') ||
+        topicLower.includes('mlb') ||
+        topicLower.includes('nhl') ||
+        topicLower.includes('football') ||
+        topicLower.includes('basketball') ||
+        topicLower.includes('baseball') ||
+        topicLower.includes('hockey') ||
+        topicLower.includes('soccer') ||
+        topicLower.includes('tennis') ||
+        topicLower.includes('golf') ||
+        topicLower.includes('olympics') ||
+        topicLower.includes('championship') ||
+        topicLower.includes('playoff') ||
+        topicLower.includes('game') ||
+        topicLower.includes('team') ||
+        topicLower.includes('player') ||
+        topicLower.includes('coach') ||
+        topicLower.includes('athlete') ||
+        topicLower.includes('sport')) {
+      console.log(`🎯 Categorized as Sports`);
+      return 'Sports';
+    }
+
+    console.log(`🔄 No specific category match, using fallback: ${fallbackCategory}`);
     return fallbackCategory;
   }
 
