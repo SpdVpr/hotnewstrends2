@@ -45,6 +45,14 @@ class FirebaseArticlesService {
   // Create a new article
   async createArticle(articleData: Omit<FirebaseArticle, 'id' | 'createdAt' | 'updatedAt' | 'views' | 'likes' | 'shares' | 'comments'>): Promise<string> {
     try {
+      console.log('🔧 DEBUG: Firebase project ID:', process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID);
+      console.log('🔧 DEBUG: Firebase config check:', {
+        apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY ? 'SET' : 'MISSING',
+        authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN ? 'SET' : 'MISSING',
+        projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ? 'SET' : 'MISSING'
+      });
+      console.log('🔧 DEBUG: Attempting to create article:', articleData.title);
+
       const now = createTimestamp();
 
       // Filter out undefined values to prevent Firebase errors
