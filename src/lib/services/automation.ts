@@ -493,8 +493,8 @@ class AutomationService {
 
     for (const topic of basicFiltered) {
       try {
-        // Check if similar article already exists (70% similarity threshold)
-        const hasSimilar = await firebaseTrendsService.hasSimilarArticle(topic.keyword, 0.7);
+        // Check if similar article already exists in articles collection
+        const hasSimilar = await this.checkForSimilarArticles(topic.keyword, 0.7);
 
         if (hasSimilar) {
           console.log(`🚫 Skipping "${topic.keyword}" - similar article already exists`);
@@ -724,26 +724,89 @@ class AutomationService {
   }
 
   /**
+   * Check if similar articles already exist in Firebase articles collection
+   */
+  private async checkForSimilarArticles(keyword: string, threshold: number = 0.7): Promise<boolean> {
+    try {
+      const { firebaseArticlesService } = await import('./firebase-articles');
+
+      // Get recent articles (last 50) to check for duplicates
+      const recentArticles = await firebaseArticlesService.getArticles({
+        limit: 50,
+        status: 'published'
+      });
+
+      const keywordLower = keyword.toLowerCase().trim();
+      console.log(`🔍 Checking "${keyword}" against ${recentArticles.length} existing articles...`);
+
+      for (const article of recentArticles) {
+        // Check similarity with article title
+        const titleSimilarity = this.calculateTopicSimilarity(keywordLower, article.title.toLowerCase());
+
+        // Also check against metadata.originalTopic if available
+        const originalTopic = (article.metadata as any)?.originalTopic;
+        const topicSimilarity = originalTopic ?
+          this.calculateTopicSimilarity(keywordLower, originalTopic.toLowerCase()) : 0;
+
+        const maxSimilarity = Math.max(titleSimilarity, topicSimilarity);
+
+        if (maxSimilarity >= threshold) {
+          console.log(`🚫 Found similar article: "${keyword}" vs "${article.title}" (similarity: ${maxSimilarity.toFixed(2)})`);
+          return true;
+        }
+      }
+
+      console.log(`✅ No similar articles found for "${keyword}"`);
+      return false;
+
+    } catch (error) {
+      console.error(`❌ Error checking similar articles for "${keyword}":`, error);
+      // On error, allow generation (err on the side of creating content)
+      return false;
+    }
+  }
+
+  /**
    * Calculate similarity between two topic keywords (0-1 scale)
    */
   private calculateTopicSimilarity(keyword1: string, keyword2: string): number {
-    const k1 = keyword1.toLowerCase().trim();
-    const k2 = keyword2.toLowerCase().trim();
+    const k1 = keyword1.toLowerCase().trim().replace(/[^\w\s]/g, '');
+    const k2 = keyword2.toLowerCase().trim().replace(/[^\w\s]/g, '');
 
     // Exact match
     if (k1 === k2) return 1.0;
 
-    // Simple word overlap similarity
-    const words1 = k1.split(/\s+/);
-    const words2 = k2.split(/\s+/);
+    // Check if one contains the other (high similarity)
+    if (k1.includes(k2) || k2.includes(k1)) {
+      const longer = k1.length > k2.length ? k1 : k2;
+      const shorter = k1.length > k2.length ? k2 : k1;
+      return shorter.length / longer.length;
+    }
 
+    // Word overlap similarity
+    const words1 = k1.split(/\s+/).filter(w => w.length > 2); // Ignore short words
+    const words2 = k2.split(/\s+/).filter(w => w.length > 2);
+
+    if (words1.length === 0 || words2.length === 0) return 0;
+
+    // Count significant word matches
     const commonWords = words1.filter(word =>
-      words2.some(w2 => w2.includes(word) || word.includes(w2))
+      words2.some(w2 => {
+        // Exact match or one contains the other
+        return word === w2 || word.includes(w2) || w2.includes(word);
+      })
     );
 
     const similarity = (commonWords.length * 2) / (words1.length + words2.length);
 
-    console.log(`🔍 Similarity "${k1}" vs "${k2}": ${similarity.toFixed(2)}`);
+    // Boost similarity for person names (common pattern)
+    const isPersonName1 = words1.length === 2 && words1.every(w => w[0] === w[0].toUpperCase());
+    const isPersonName2 = words2.length === 2 && words2.every(w => w[0] === w[0].toUpperCase());
+
+    if (isPersonName1 && isPersonName2 && commonWords.length > 0) {
+      return Math.min(1.0, similarity * 1.5); // Boost person name matches
+    }
+
     return similarity;
   }
 
