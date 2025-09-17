@@ -78,6 +78,15 @@ export default function Home() {
         // API returns { success: true, data: { articles: [], total: 0, ... } }
         const articles = data.data?.articles || data.data || [];
         console.log('📦 API returned articles:', articles.length);
+
+        if (articles.length > 0) {
+          console.log('📄 Sample article categories:', articles.slice(0, 3).map(a => ({
+            title: a.title?.substring(0, 50) + '...',
+            category: a.category,
+            categoryType: typeof a.category
+          })));
+        }
+
         setArticles(Array.isArray(articles) ? articles : []);
       } else {
         console.error('Failed to fetch articles:', response.statusText);
@@ -133,13 +142,16 @@ export default function Home() {
         return matches;
       }) : []);
 
-  console.log('📊 Category filtering results:', {
-    selectedCategory,
-    totalArticles: Array.isArray(articles) ? articles.length : 0,
-    filteredArticles: filteredArticles.length,
-    availableCategories: Array.isArray(articles) ?
-      [...new Set(articles.map(a => typeof a.category === 'string' ? a.category : a.category?.slug || a.category?.id).filter(Boolean))] : []
-  });
+  // Debug effect to track articles and filtering changes
+  useEffect(() => {
+    console.log('📊 Category filtering results:', {
+      selectedCategory,
+      totalArticles: Array.isArray(articles) ? articles.length : 0,
+      filteredArticles: filteredArticles.length,
+      availableCategories: Array.isArray(articles) ?
+        [...new Set(articles.map(a => typeof a.category === 'string' ? a.category : a.category?.slug || a.category?.id || a.category?.name).filter(Boolean))] : []
+    });
+  }, [articles, selectedCategory, filteredArticles.length]);
 
   return (
     <div className="min-h-screen bg-background">
