@@ -1149,4 +1149,4 @@ SOURCES REQUIREMENT:
   }
 }
 
-export const contentGenerator = new ContentGeneratorService();
+export const contentGenerator = new ContentGeneratorService()

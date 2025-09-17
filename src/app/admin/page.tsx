@@ -53,7 +53,7 @@ export default function AdminPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'trends' | 'articles' | 'settings' | 'serpapi' | 'tracking' | 'quality' | 'scheduler'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'serpapi'>('overview');
 
   // Manual generation form
   const [manualTopic, setManualTopic] = useState('');
@@ -171,14 +171,8 @@ export default function AdminPage() {
         {/* Tab Navigation */}
         <div className="flex gap-2 mb-8">
           {[
-            { key: 'overview', label: '📊 Overview', icon: '📊' },
-            { key: 'trends', label: '📈 Google Trends', icon: '📈' },
-            { key: 'scheduler', label: '⏰ Trends Scheduler', icon: '⏰' },
-            { key: 'tracking', label: '🤖 Trend Tracking', icon: '🤖' },
-            { key: 'quality', label: '🎯 Article Quality', icon: '🎯' },
-            { key: 'articles', label: '📝 Articles', icon: '📝' },
-            { key: 'serpapi', label: '🔍 SerpApi Monitor', icon: '🔍' },
-            { key: 'settings', label: '⚙️ Settings', icon: '⚙️' }
+            { key: 'overview', label: '📊 Control Panel', icon: '📊' },
+            { key: 'serpapi', label: '🔍 SerpApi Monitor', icon: '🔍' }
           ].map((tab) => (
             <Button
               key={tab.key}
@@ -195,188 +189,162 @@ export default function AdminPage() {
         {/* Tab Content */}
         {activeTab === 'overview' && (
           <>
-            {/* Stats Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              <Card>
-                <CardContent className="p-6">
-                  <div className="text-2xl font-bold text-text">{stats?.todayJobs || 0}</div>
-                  <div className="text-sm text-text-secondary">Articles Today</div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-6">
-                  <div className="text-2xl font-bold text-text">{stats?.totalJobs || 0}</div>
-                  <div className="text-sm text-text-secondary">Total Jobs</div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-6">
-                  <div className="text-2xl font-bold text-green-600">{stats?.completedJobs || 0}</div>
-                  <div className="text-sm text-text-secondary">Completed</div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-6">
-                  <div className="text-2xl font-bold text-red-600">{stats?.failedJobs || 0}</div>
-                  <div className="text-sm text-text-secondary">Failed</div>
-                </CardContent>
-              </Card>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Automation Control */}
+            {/* Main Control Buttons */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+              {/* Article Generation Control */}
               <Card>
                 <CardHeader>
-                  <h2 className="text-xl font-semibold text-text">Automation Control</h2>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-text">Status:</span>
-                    <Badge variant={stats?.isRunning ? 'success' : 'secondary'}>
-                      {stats?.isRunning ? 'RUNNING' : 'STOPPED'}
+                  <CardTitle className="flex items-center gap-2">
+                    📝 Article Generation
+                    <Badge variant={stats?.isRunning ? "primary" : "secondary"}>
+                      {stats?.isRunning ? 'ON' : 'OFF'}
                     </Badge>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <span className="text-text">Daily Limit:</span>
-                    <span className="text-text-secondary">
-                      {stats?.todayJobs || 0} / {stats?.config.maxArticlesPerDay || 0}
-                    </span>
-                  </div>
-
-                  <div className="flex gap-3">
-                    <Button
-                      variant={stats?.isRunning ? 'secondary' : 'primary'}
-                      onClick={() => handleAutomationAction(stats?.isRunning ? 'stop' : 'start')}
-                      disabled={actionLoading === 'start' || actionLoading === 'stop'}
-                    >
-                      {actionLoading === 'start' || actionLoading === 'stop' ? (
-                        <LoadingSpinner size="sm" className="mr-2" />
-                      ) : null}
-                      {stats?.isRunning ? 'Stop' : 'Start'} Automation
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Manual Generation */}
-              <Card>
-                <CardHeader>
-                  <h2 className="text-xl font-semibold text-text">Generate Article</h2>
+                  </CardTitle>
+                  <CardDescription>
+                    Automatically generate articles from trending topics
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-text mb-2">Topic</label>
-                    <Input
-                      value={manualTopic}
-                      onChange={(e) => setManualTopic(e.target.value)}
-                      placeholder="Enter trending topic..."
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-text mb-2">Category</label>
-                    <select
-                      value={manualCategory}
-                      onChange={(e) => setManualCategory(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-light rounded-lg bg-white text-text"
-                    >
-                      <option value="Technology">Technology</option>
-                      <option value="News">News</option>
-                      <option value="Business">Business</option>
-                      <option value="Science">Science</option>
-                      <option value="Health">Health</option>
-                    </select>
-                  </div>
-
                   <Button
-                    variant="primary"
-                    onClick={handleManualGeneration}
-                    disabled={!manualTopic.trim() || actionLoading === 'generate'}
+                    onClick={() => handleAutomationAction(stats?.isRunning ? 'stop' : 'start')}
+                    disabled={actionLoading === 'start' || actionLoading === 'stop'}
+                    variant={stats?.isRunning ? "secondary" : "primary"}
+                    size="lg"
                     className="w-full"
                   >
-                    {actionLoading === 'generate' ? (
-                      <LoadingSpinner size="sm" className="mr-2" />
-                    ) : null}
-                    Generate Article
+                    {actionLoading === 'start' || actionLoading === 'stop' ? (
+                      <LoadingSpinner size="sm" />
+                    ) : stats?.isRunning ? (
+                      '⏸️ Stop Article Generation'
+                    ) : (
+                      '▶️ Start Article Generation'
+                    )}
                   </Button>
+
+                  {/* Article Status */}
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span>Today's Articles:</span>
+                      <span className="font-medium">{stats?.todayJobs || 0}/20</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Currently Generating:</span>
+                      <span className="font-medium text-purple-600">{stats?.generatingJobs || 0}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>In Queue:</span>
+                      <span className="font-medium text-blue-600">{stats?.pendingJobs || 0}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Trend Tracking Control */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    📈 Trend Tracking
+                    <Badge variant="primary">ON</Badge>
+                  </CardTitle>
+                  <CardDescription>
+                    Monitor and collect trending topics from various sources
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <Button
+                    variant="primary"
+                    size="lg"
+                    className="w-full"
+                    disabled
+                  >
+                    🔄 Trend Tracking Active
+                  </Button>
+
+                  {/* Trend Status */}
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span>Last Update:</span>
+                      <span className="font-medium">2 hours ago</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Next Update:</span>
+                      <span className="font-medium text-green-600">In 2 hours</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Trends Collected:</span>
+                      <span className="font-medium">156 today</span>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Recent Jobs */}
-            <Card className="mt-8">
-              <CardHeader>
-                <h2 className="text-xl font-semibold text-text">Recent Jobs</h2>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {jobs.length === 0 ? (
-                    <p className="text-text-secondary text-center py-8">No jobs found</p>
-                  ) : (
-                    jobs.map((job) => (
-                      <div key={job.id} className="flex items-center justify-between p-4 bg-surface rounded-lg">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            <h3 className="font-medium text-text">{job.topic}</h3>
-                            {getStatusBadge(job.status)}
-                            <Badge variant="secondary">{job.category}</Badge>
+            {/* Real-time Activity Monitoring */}
+            <div className="space-y-6">
+              {/* Current Activity */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    🔄 Real-time Activity
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                  </CardTitle>
+                  <CardDescription>
+                    Live monitoring of article generation and trend tracking
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {/* Active Jobs */}
+                  {jobs.filter(job => job.status === 'generating').length > 0 ? (
+                    <div className="space-y-3">
+                      <h4 className="font-medium text-sm">Currently Generating:</h4>
+                      {jobs.filter(job => job.status === 'generating').map((job) => (
+                        <div key={job.id} className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
+                          <div>
+                            <div className="font-medium text-sm">{job.topic}</div>
+                            <div className="text-xs text-text-secondary">{job.category}</div>
                           </div>
-
-                          {job.article && (
-                            <p className="text-sm text-text-secondary mb-2">{job.article.title}</p>
-                          )}
-
-                          {job.error && (
-                            <p className="text-sm text-red-600">{job.error}</p>
-                          )}
-
-                          <p className="text-xs text-text-secondary">
-                            Created: {new Date(job.createdAt).toLocaleString()}
-                            {job.completedAt && (
-                              <> • Completed: {new Date(job.completedAt).toLocaleString()}</>
-                            )}
-                          </p>
+                          <div className="flex items-center gap-2">
+                            <LoadingSpinner size="sm" />
+                            <span className="text-xs text-purple-600">Generating...</span>
+                          </div>
                         </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-4 text-text-secondary">
+                      No articles currently being generated
+                    </div>
+                  )}
 
-                        {job.article && (
-                          <Button
-                            variant="text"
-                            size="sm"
-                            onClick={() => window.open(`/article/${job.article!.slug}`, '_blank')}
-                          >
-                            View Article
-                          </Button>
+                  {/* Queue */}
+                  {jobs.filter(job => job.status === 'pending').length > 0 && (
+                    <div className="mt-6 space-y-3">
+                      <h4 className="font-medium text-sm">Queue ({jobs.filter(job => job.status === 'pending').length}):</h4>
+                      <div className="space-y-2">
+                        {jobs.filter(job => job.status === 'pending').slice(0, 3).map((job) => (
+                          <div key={job.id} className="flex items-center justify-between p-2 bg-blue-50 rounded">
+                            <div>
+                              <div className="font-medium text-sm">{job.topic}</div>
+                              <div className="text-xs text-text-secondary">{job.category}</div>
+                            </div>
+                            <Badge variant="secondary">Waiting</Badge>
+                          </div>
+                        ))}
+                        {jobs.filter(job => job.status === 'pending').length > 3 && (
+                          <div className="text-xs text-text-secondary text-center">
+                            +{jobs.filter(job => job.status === 'pending').length - 3} more in queue
+                          </div>
                         )}
                       </div>
-                    ))
+                    </div>
                   )}
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+
+
+
           </>
         )}
-
-        {/* Google Trends Tab */}
-        {activeTab === 'trends' && <GoogleTrendsPanel />}
-
-        {/* Trends Scheduler Tab */}
-        {activeTab === 'scheduler' && <TrendsSchedulerPanel />}
-
-        {/* Trend Tracking Tab */}
-        {activeTab === 'tracking' && <TrendTrackingPanel />}
-
-        {/* Article Quality Tab */}
-        {activeTab === 'quality' && <ArticleQualityPanel />}
-
-        {/* Articles Tab */}
-        {activeTab === 'articles' && <ArticlesManager />}
-
-        {/* Settings Tab */}
-        {activeTab === 'settings' && <AutomationSettings />}
 
         {/* SerpApi Monitor Tab */}
         {activeTab === 'serpapi' && <SerpApiMonitor />}

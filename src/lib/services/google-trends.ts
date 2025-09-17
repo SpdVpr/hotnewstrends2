@@ -75,7 +75,12 @@ export const googleTrendsService = {
           const data = await response.json();
 
           // Record successful SerpAPI call
-          serpApiMonitor.recordCall();
+          try {
+            await fetch('/api/serpapi-usage', { method: 'POST' });
+            console.log('📊 SerpAPI call recorded successfully');
+          } catch (recordError) {
+            console.warn('⚠️ Failed to record SerpAPI call:', recordError);
+          }
 
           if (data.trending_searches) {
             const serpTopics = data.trending_searches
