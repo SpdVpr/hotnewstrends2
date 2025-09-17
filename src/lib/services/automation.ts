@@ -69,12 +69,21 @@ class AutomationService {
       console.warn('⚠️ Could not start trends scheduler:', error);
     }
 
-    // Run immediately
-    await this.runAutomationCycle();
-
-    // Schedule regular runs
-    this.intervalId = setInterval(async () => {
+    // Run immediately with crash protection
+    try {
       await this.runAutomationCycle();
+    } catch (error) {
+      console.error('❌ CRITICAL: Initial automation cycle failed, but continuing:', error);
+    }
+
+    // Schedule regular runs with crash protection
+    this.intervalId = setInterval(async () => {
+      try {
+        await this.runAutomationCycle();
+      } catch (error) {
+        console.error('❌ CRITICAL: Automation cycle failed, but scheduler continues:', error);
+        console.error('❌ System will attempt next cycle in', this.config.interval, 'minutes');
+      }
     }, this.config.interval * 60 * 1000);
   }
 
@@ -128,7 +137,20 @@ class AutomationService {
       console.log(`✅ Automation cycle completed. Scheduled ${articlesToGenerate} articles.`);
       
     } catch (error) {
-      console.error('❌ Error in automation cycle:', error);
+      console.error('❌ CRITICAL ERROR in automation cycle:', error);
+      console.error('❌ Automation cycle error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        timestamp: new Date().toISOString(),
+        isRunning: this.isRunning,
+        config: this.config
+      });
+
+      // Don't let automation cycle errors stop the entire system
+      console.log('🔄 Automation system will continue and retry next cycle');
+
+      // Re-throw to let caller handle it
+      throw error;
     }
   }
 
@@ -155,16 +177,34 @@ class AutomationService {
       });
 
       if (i === 0) {
-        // Generate first article immediately
+        // Generate first article immediately with crash protection
         console.log(`🎯 Generating article 1/${topics.length} immediately: "${topic.keyword}"`);
-        await this.generateArticleFromTopicWithTracking(topic, i);
+        try {
+          await this.generateArticleFromTopicWithTracking(topic, i);
+          console.log(`✅ First article generation completed successfully`);
+        } catch (error) {
+          console.error(`❌ CRITICAL: First article generation failed, but continuing with scheduler:`, error);
+          // Don't let first article failure crash the entire system
+          if (this.scheduledArticles[i]) {
+            this.scheduledArticles[i].status = 'failed';
+          }
+        }
       } else {
-        // Schedule remaining articles
+        // Schedule remaining articles with crash protection
         console.log(`⏰ Scheduled article ${i + 1}/${topics.length} for ${scheduledTime.toLocaleTimeString()}: "${topic.keyword}"`);
 
         setTimeout(async () => {
           console.log(`🎯 Generating scheduled article ${i + 1}/${topics.length}: "${topic.keyword}"`);
-          await this.generateArticleFromTopicWithTracking(topic, i);
+          try {
+            await this.generateArticleFromTopicWithTracking(topic, i);
+            console.log(`✅ Scheduled article ${i + 1}/${topics.length} completed successfully`);
+          } catch (error) {
+            console.error(`❌ Scheduled article ${i + 1}/${topics.length} failed, but continuing:`, error);
+            // Don't let individual article failures crash the scheduler
+            if (this.scheduledArticles[i]) {
+              this.scheduledArticles[i].status = 'failed';
+            }
+          }
         }, delayMs);
       }
     }
@@ -175,24 +215,43 @@ class AutomationService {
    */
   private async generateArticleFromTopicWithTracking(topic: TrendingTopic, index: number): Promise<void> {
     try {
+      console.log(`🔄 Starting article generation tracking for: "${topic.keyword}" (index: ${index})`);
+
       // Update status to generating
       if (this.scheduledArticles[index]) {
         this.scheduledArticles[index].status = 'generating';
+        console.log(`📝 Status updated to 'generating' for article ${index + 1}`);
       }
 
-      // Generate the article
-      await this.generateArticleFromTopic(topic);
+      // Generate the article with additional error handling
+      console.log(`🤖 Calling generateArticleFromTopic for: "${topic.keyword}"`);
+      const result = await this.generateArticleFromTopic(topic);
+      console.log(`✅ Article generation completed for: "${topic.keyword}", job ID: ${result.id}`);
 
       // Update status to completed
       if (this.scheduledArticles[index]) {
         this.scheduledArticles[index].status = 'completed';
+        console.log(`✅ Status updated to 'completed' for article ${index + 1}`);
       }
+
     } catch (error) {
+      console.error(`❌ ARTICLE GENERATION FAILED for "${topic.keyword}":`, error);
+      console.error(`❌ Error details:`, {
+        topic: topic.keyword,
+        index,
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        timestamp: new Date().toISOString()
+      });
+
       // Update status to failed
       if (this.scheduledArticles[index]) {
         this.scheduledArticles[index].status = 'failed';
+        console.log(`❌ Status updated to 'failed' for article ${index + 1}`);
       }
-      console.error(`❌ Failed to generate article for "${topic.keyword}":`, error);
+
+      // Re-throw error so caller can handle it
+      throw error;
     }
   }
 
