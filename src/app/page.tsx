@@ -49,6 +49,7 @@ export default function Home() {
         ...(selectedCategory !== 'all' && { category: selectedCategory })
       });
 
+      console.log('🌐 API call params:', { selectedCategory, params: params.toString() });
       const response = await fetch(`/api/articles?${params}`);
       if (response.ok) {
         const data = await response.json();
@@ -95,13 +96,31 @@ export default function Home() {
   const filteredArticles = selectedCategory === 'all'
     ? (Array.isArray(articles) ? articles : [])
     : (Array.isArray(articles) ? articles.filter(article => {
-        console.log('Filtering article:', article.title, 'Category:', article.category, 'Selected:', selectedCategory);
-        return typeof article.category === 'string'
-          ? article.category === selectedCategory
-          : article.category?.slug === selectedCategory || article.category?.id === selectedCategory;
+        console.log('🔍 Filtering article:', {
+          title: article.title,
+          category: article.category,
+          categoryType: typeof article.category,
+          categorySlug: article.category?.slug,
+          categoryId: article.category?.id,
+          selectedCategory: selectedCategory
+        });
+
+        const matches = typeof article.category === 'string'
+          ? article.category.toLowerCase() === selectedCategory.toLowerCase()
+          : (article.category?.slug?.toLowerCase() === selectedCategory.toLowerCase() ||
+             article.category?.id?.toLowerCase() === selectedCategory.toLowerCase());
+
+        console.log('🎯 Match result:', matches);
+        return matches;
       }) : []);
 
-  console.log('Selected category:', selectedCategory, 'Filtered articles:', filteredArticles.length);
+  console.log('📊 Category filtering results:', {
+    selectedCategory,
+    totalArticles: Array.isArray(articles) ? articles.length : 0,
+    filteredArticles: filteredArticles.length,
+    availableCategories: Array.isArray(articles) ?
+      [...new Set(articles.map(a => typeof a.category === 'string' ? a.category : a.category?.slug || a.category?.id).filter(Boolean))] : []
+  });
 
   return (
     <div className="min-h-screen bg-background">
