@@ -26,8 +26,8 @@ AI-powered news automation system that delivers comprehensive articles about tre
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/SpdVpr/hotnewstrends.git
-   cd hotnewstrends
+   git clone https://github.com/SpdVpr/hotnewstrends2.git
+   cd hotnewstrends2
    ```
 
 2. **Install dependencies**
@@ -162,6 +162,37 @@ node test-generate-article.js # Test article generation
 ## 📝 License
 
 This project is private and proprietary.
+
+## 📦 Deployment na Vercel
+
+### 1. Připojení k Vercel
+```bash
+vercel
+```
+
+### 2. Nastavení environment variables ve Vercel
+V Vercel dashboard přidejte všechny environment variables z `.env.local`:
+
+- Jděte do Project Settings → Environment Variables
+- Přidejte každou proměnnou jednotlivě
+- Nezapomeňte nastavit správné prostředí (Production, Preview, Development)
+
+**Důležité environment variables pro Vercel:**
+- `PERPLEXITY_API_KEY`
+- `SERPAPI_KEY`
+- `NEXT_PUBLIC_FIREBASE_API_KEY`
+- `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`
+- `NEXT_PUBLIC_FIREBASE_PROJECT_ID`
+- `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`
+- `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`
+- `NEXT_PUBLIC_FIREBASE_APP_ID`
+- `NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID`
+- `NEXT_PUBLIC_SITE_URL` (nastavte na vaši produkční doménu)
+
+### 3. Deploy
+```bash
+vercel --prod
+```
 
 ## 🤝 Contributing
 

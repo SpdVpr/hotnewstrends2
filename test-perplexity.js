@@ -6,8 +6,12 @@ async function testPerplexityAPI() {
   const baseUrl = 'https://api.perplexity.ai/chat/completions';
 
   try {
-    console.log('🔑 Testing Perplexity API with key:', apiKey.substring(0, 10) + '...');
-    
+    console.log('🔑 Testing Perplexity API with key:', apiKey ? `${apiKey.substring(0, 10)}...` : 'NO API KEY');
+
+    if (!apiKey) {
+      console.error('❌ No API key provided. Set PERPLEXITY_API_KEY environment variable.');
+      return;
+    }
     const response = await fetch(baseUrl, {
       method: 'POST',
       headers: {
@@ -15,6 +19,7 @@ async function testPerplexityAPI() {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
+<<<<<<< HEAD
         model: 'sonar-pro',
         messages: [
           {
@@ -43,6 +48,34 @@ async function testPerplexityAPI() {
 
   } catch (error) {
     console.error('❌ Network error:', error);
+=======
+        model: 'llama-3.1-sonar-small-128k-online',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a helpful assistant.'
+          },
+          {
+            role: 'user',
+            content: 'What are the latest developments in AI technology?'
+          }
+        ],
+        max_tokens: 500,
+        temperature: 0.3
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    console.log('✅ API Response received');
+    console.log('📝 Content:', data.choices[0]?.message?.content || 'No content');
+    
+  } catch (error) {
+    console.error('❌ Error:', error.message);
+>>>>>>> hotnewstrends2/main
   }
 }
 

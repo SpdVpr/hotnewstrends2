@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, Suspense } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { analytics, performanceMonitor } from '@/lib/analytics';
 
@@ -8,7 +8,7 @@ interface AnalyticsProviderProps {
   children: React.ReactNode;
 }
 
-export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({ children }) => {
+function AnalyticsContent({ children }: AnalyticsProviderProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
@@ -58,3 +58,11 @@ function getContentGroup3(pathname: string): string {
   if (pathname.startsWith('/search')) return 'Search Results';
   return 'Static Page';
 }
+
+export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({ children }) => {
+  return (
+    <Suspense fallback={<>{children}</>}>
+      <AnalyticsContent>{children}</AnalyticsContent>
+    </Suspense>
+  );
+};
