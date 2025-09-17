@@ -54,14 +54,53 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'trends' | 'articles' | 'settings' | 'serpapi'>('overview');
+  const [nextUpdateCountdown, setNextUpdateCountdown] = useState<string>('Calculating...');
 
   // Manual generation form
   const [manualTopic, setManualTopic] = useState('');
   const [manualCategory, setManualCategory] = useState('Entertainment'); // Changed from Technology to Entertainment as default
 
+  // Function to calculate next update countdown
+  const calculateNextUpdateCountdown = () => {
+    const now = new Date();
+    const currentHour = now.getHours();
+
+    // Trends scheduler runs 6x daily: 6:00, 10:40, 13:20, 16:00, 18:40, 21:20
+    const scheduleTimes = [6, 10.67, 13.33, 16, 18.67, 21.33]; // Convert minutes to decimal hours
+    const currentTime = currentHour + now.getMinutes() / 60;
+
+    // Find next scheduled time
+    let nextTime = scheduleTimes.find(time => time > currentTime);
+    if (!nextTime) {
+      // If no more times today, next is 6:00 tomorrow
+      nextTime = 6 + 24;
+    }
+
+    const hoursUntilNext = nextTime - currentTime;
+    const hours = Math.floor(hoursUntilNext);
+    const minutes = Math.round((hoursUntilNext - hours) * 60);
+
+    if (hours > 0) {
+      return `${hours}h ${minutes}m`;
+    } else {
+      return `${minutes}m`;
+    }
+  };
+
   useEffect(() => {
     fetchData();
     const interval = setInterval(fetchData, 30000); // Refresh every 30 seconds
+    return () => clearInterval(interval);
+  }, []);
+
+  // Update countdown every minute
+  useEffect(() => {
+    const updateCountdown = () => {
+      setNextUpdateCountdown(calculateNextUpdateCountdown());
+    };
+
+    updateCountdown(); // Initial calculation
+    const interval = setInterval(updateCountdown, 60000); // Update every minute
     return () => clearInterval(interval);
   }, []);
 
@@ -427,7 +466,7 @@ export default function AdminPage() {
                         <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                         <div className="flex-1">
                           <div className="font-medium text-sm">SerpAPI + RSS Monitoring</div>
-                          <div className="text-xs text-text-secondary">Active • Next update in 1h 45m</div>
+                          <div className="text-xs text-text-secondary">Active • Next update in {nextUpdateCountdown}</div>
                         </div>
                         <Badge variant="primary" className="text-xs">Active</Badge>
                       </div>
