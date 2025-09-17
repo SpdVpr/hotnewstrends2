@@ -46,6 +46,28 @@ export async function GET(request: NextRequest) {
 
     if (source === 'google') {
       try {
+        // Check SerpAPI rate limits before making calls
+        const { serpApiMonitor } = await import('@/lib/utils/serpapi-monitor');
+
+        if (!serpApiMonitor.canMakeCall()) {
+          console.warn('🚫 SerpAPI rate limit reached, using Firebase cache instead');
+          // Fall back to Firebase cached data
+          const { firebaseTrendsService } = await import('@/lib/services/firebase-trends');
+          const cachedTrends = await firebaseTrendsService.getLatestTrends(limit);
+
+          return NextResponse.json({
+            success: true,
+            data: {
+              topics: cachedTrends,
+              lastUpdated: new Date(),
+              region,
+              timeframe,
+              source: 'firebase_cache',
+              message: 'Using cached data due to API rate limits'
+            }
+          });
+        }
+
         // Try Google Trends API first
         console.log('🔍 Fetching from Google Trends API...');
 

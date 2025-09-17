@@ -112,7 +112,7 @@ class AutomationService {
       
       // Get trending topics from Firebase (not API)
       const trends = await this.getTrendingTopicsFromFirebase();
-      const highPotentialTopics = this.filterHighPotentialTopics(
+      const highPotentialTopics = await this.filterHighPotentialTopicsWithDeduplication(
         trends,
         this.config.minConfidenceScore,
         this.config.minGrowthRate
@@ -474,7 +474,59 @@ class AutomationService {
   }
 
   /**
-   * Filter high potential topics for content generation
+   * Filter high potential topics with deduplication to prevent same articles
+   */
+  private async filterHighPotentialTopicsWithDeduplication(
+    topics: TrendingTopic[],
+    minConfidence: number,
+    minGrowthRate: number
+  ): Promise<TrendingTopic[]> {
+    console.log(`🔍 Filtering ${topics.length} topics with deduplication...`);
+
+    // First apply basic filters
+    const basicFiltered = this.filterHighPotentialTopics(topics, minConfidence, minGrowthRate);
+    console.log(`📊 After basic filtering: ${basicFiltered.length} topics`);
+
+    // Then apply deduplication
+    const { firebaseTrendsService } = await import('./firebase-trends');
+    const deduplicatedTopics: TrendingTopic[] = [];
+
+    for (const topic of basicFiltered) {
+      try {
+        // Check if similar article already exists (70% similarity threshold)
+        const hasSimilar = await firebaseTrendsService.hasSimilarArticle(topic.keyword, 0.7);
+
+        if (hasSimilar) {
+          console.log(`🚫 Skipping "${topic.keyword}" - similar article already exists`);
+          continue;
+        }
+
+        // Also check against already selected topics in this batch
+        const isDuplicateInBatch = deduplicatedTopics.some(selected =>
+          this.calculateTopicSimilarity(topic.keyword, selected.keyword) > 0.7
+        );
+
+        if (isDuplicateInBatch) {
+          console.log(`🚫 Skipping "${topic.keyword}" - similar to already selected topic in batch`);
+          continue;
+        }
+
+        deduplicatedTopics.push(topic);
+        console.log(`✅ Added "${topic.keyword}" to generation queue`);
+
+      } catch (error) {
+        console.warn(`⚠️ Error checking similarity for "${topic.keyword}":`, error);
+        // On error, include the topic (err on the side of generation)
+        deduplicatedTopics.push(topic);
+      }
+    }
+
+    console.log(`🎯 Final deduplicated topics: ${deduplicatedTopics.length}/${basicFiltered.length}`);
+    return deduplicatedTopics;
+  }
+
+  /**
+   * Filter high potential topics for content generation (basic filtering)
    */
   private filterHighPotentialTopics(
     topics: TrendingTopic[],
@@ -669,6 +721,30 @@ class AutomationService {
     };
 
     return categories[categoryName] || categories['News'];
+  }
+
+  /**
+   * Calculate similarity between two topic keywords (0-1 scale)
+   */
+  private calculateTopicSimilarity(keyword1: string, keyword2: string): number {
+    const k1 = keyword1.toLowerCase().trim();
+    const k2 = keyword2.toLowerCase().trim();
+
+    // Exact match
+    if (k1 === k2) return 1.0;
+
+    // Simple word overlap similarity
+    const words1 = k1.split(/\s+/);
+    const words2 = k2.split(/\s+/);
+
+    const commonWords = words1.filter(word =>
+      words2.some(w2 => w2.includes(word) || word.includes(w2))
+    );
+
+    const similarity = (commonWords.length * 2) / (words1.length + words2.length);
+
+    console.log(`🔍 Similarity "${k1}" vs "${k2}": ${similarity.toFixed(2)}`);
+    return similarity;
   }
 
   // Public methods for manual control
