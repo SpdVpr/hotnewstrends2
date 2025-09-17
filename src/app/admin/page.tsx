@@ -262,7 +262,7 @@ export default function AdminPage() {
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span>Today's Articles:</span>
-                      <span className="font-medium">{stats?.todayJobs || 0}/20</span>
+                      <span className="font-medium">{stats?.todayJobs || 0}/24</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Currently Generating:</span>
@@ -273,6 +273,45 @@ export default function AdminPage() {
                       <span className="font-medium text-blue-600">{stats?.pendingJobs || 0}</span>
                     </div>
                   </div>
+
+                  {/* Scheduled Articles Timeline */}
+                  {stats?.scheduledArticles && stats.scheduledArticles.length > 0 && (
+                    <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                      <h4 className="font-medium text-sm mb-2 flex items-center gap-2">
+                        📅 Scheduled Articles
+                        <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                      </h4>
+                      <div className="space-y-2">
+                        {stats.scheduledArticles.map((article, index) => (
+                          <div key={index} className="flex items-center justify-between text-xs">
+                            <div className="flex items-center gap-2">
+                              <span className={`w-2 h-2 rounded-full ${
+                                article.status === 'completed' ? 'bg-green-500' :
+                                article.status === 'generating' ? 'bg-purple-500 animate-pulse' :
+                                article.status === 'failed' ? 'bg-red-500' :
+                                'bg-gray-400'
+                              }`}></span>
+                              <span className="font-medium">#{article.position}</span>
+                              <span className="truncate max-w-[120px]">"{article.topic.keyword}"</span>
+                            </div>
+                            <div className="text-right">
+                              {article.status === 'completed' ? (
+                                <span className="text-green-600">✅ Done</span>
+                              ) : article.status === 'generating' ? (
+                                <span className="text-purple-600">🔄 Generating...</span>
+                              ) : article.status === 'failed' ? (
+                                <span className="text-red-600">❌ Failed</span>
+                              ) : (
+                                <span className="text-gray-600">
+                                  {new Date(article.scheduledFor).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 

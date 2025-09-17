@@ -32,6 +32,13 @@ class AutomationService {
   private jobs: Map<string, ArticleGenerationJob> = new Map();
   private isRunning: boolean = false;
   private intervalId?: NodeJS.Timeout;
+  private scheduledArticles: Array<{
+    topic: TrendingTopic;
+    scheduledFor: Date;
+    status: 'scheduled' | 'generating' | 'completed' | 'failed';
+    position: number;
+    estimatedDuration: number; // in minutes
+  }> = [];
 
   constructor() {
     this.config = {
@@ -129,25 +136,63 @@ class AutomationService {
    * Schedule article generation with 20-minute intervals
    */
   private async scheduleArticleGeneration(topics: TrendingTopic[]): Promise<void> {
+    // Clear previous scheduled articles
+    this.scheduledArticles = [];
+
     for (let i = 0; i < topics.length; i++) {
       const topic = topics[i];
       const delayMinutes = i * 20; // 0, 20, 40, 60 minutes
       const delayMs = delayMinutes * 60 * 1000;
+      const scheduledTime = new Date(Date.now() + delayMs);
+
+      // Add to tracking
+      this.scheduledArticles.push({
+        topic,
+        scheduledFor: scheduledTime,
+        status: i === 0 ? 'generating' : 'scheduled',
+        position: i + 1,
+        estimatedDuration: 5 // Estimated 5 minutes per article
+      });
 
       if (i === 0) {
         // Generate first article immediately
         console.log(`🎯 Generating article 1/${topics.length} immediately: "${topic.keyword}"`);
-        await this.generateArticleFromTopic(topic);
+        await this.generateArticleFromTopicWithTracking(topic, i);
       } else {
         // Schedule remaining articles
-        const scheduledTime = new Date(Date.now() + delayMs);
         console.log(`⏰ Scheduled article ${i + 1}/${topics.length} for ${scheduledTime.toLocaleTimeString()}: "${topic.keyword}"`);
 
         setTimeout(async () => {
           console.log(`🎯 Generating scheduled article ${i + 1}/${topics.length}: "${topic.keyword}"`);
-          await this.generateArticleFromTopic(topic);
+          await this.generateArticleFromTopicWithTracking(topic, i);
         }, delayMs);
       }
+    }
+  }
+
+  /**
+   * Generate article with tracking updates
+   */
+  private async generateArticleFromTopicWithTracking(topic: TrendingTopic, index: number): Promise<void> {
+    try {
+      // Update status to generating
+      if (this.scheduledArticles[index]) {
+        this.scheduledArticles[index].status = 'generating';
+      }
+
+      // Generate the article
+      await this.generateArticleFromTopic(topic);
+
+      // Update status to completed
+      if (this.scheduledArticles[index]) {
+        this.scheduledArticles[index].status = 'completed';
+      }
+    } catch (error) {
+      // Update status to failed
+      if (this.scheduledArticles[index]) {
+        this.scheduledArticles[index].status = 'failed';
+      }
+      console.error(`❌ Failed to generate article for "${topic.keyword}":`, error);
     }
   }
 
@@ -580,7 +625,7 @@ class AutomationService {
   getStats() {
     const jobs = this.getAllJobs();
     const today = new Date().toDateString();
-    
+
     return {
       totalJobs: jobs.length,
       todayJobs: jobs.filter(j => j.createdAt.toDateString() === today).length,
@@ -589,7 +634,8 @@ class AutomationService {
       pendingJobs: jobs.filter(j => j.status === 'pending').length,
       generatingJobs: jobs.filter(j => j.status === 'generating').length,
       isRunning: this.isRunning,
-      config: this.config
+      config: this.config,
+      scheduledArticles: this.scheduledArticles
     };
   }
 }
