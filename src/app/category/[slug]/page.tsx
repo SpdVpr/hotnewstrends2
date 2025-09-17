@@ -90,37 +90,55 @@ const mockArticles: Article[] = [
 
 async function getCategory(slug: string): Promise<Category | null> {
   try {
-    // First try to get from API
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3002'}/api/categories`);
+    // First try to get from API - use correct URL
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3001';
+    const response = await fetch(`${baseUrl}/api/categories`, {
+      next: { revalidate: 3600 } // Cache for 1 hour
+    });
+
     if (response.ok) {
       const data = await response.json();
       const categories = data.data || [];
       const category = categories.find((c: Category) => c.slug === slug);
-      if (category) return category;
+      if (category) {
+        console.log(`✅ Found category from API: ${category.name}`);
+        return category;
+      }
+    } else {
+      console.error(`❌ Categories API error:`, response.status, response.statusText);
     }
   } catch (error) {
     console.error('Error fetching categories from API:', error);
   }
 
   // Fallback to mock data
+  console.log(`🔄 Using mock category for: ${slug}`);
   const category = mockCategories.find(c => c.slug === slug);
   return category || null;
 }
 
 async function getCategoryArticles(categorySlug: string): Promise<Article[]> {
   try {
-    // Try to get from API first
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3002'}/api/articles?category=${categorySlug}&limit=50`);
+    // Try to get from API first - use correct port and URL
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3001';
+    const response = await fetch(`${baseUrl}/api/articles?category=${categorySlug}&limit=50`, {
+      next: { revalidate: 300 } // Cache for 5 minutes
+    });
+
     if (response.ok) {
       const data = await response.json();
       const articles = data.data?.articles || data.data || [];
+      console.log(`📊 Found ${articles.length} articles for category: ${categorySlug}`);
       return articles;
+    } else {
+      console.error(`❌ API error for category ${categorySlug}:`, response.status, response.statusText);
     }
   } catch (error) {
     console.error('Error fetching articles from API:', error);
   }
 
   // Fallback to mock data
+  console.log(`🔄 Using mock data for category: ${categorySlug}`);
   return mockArticles.filter(a => a.category.slug === categorySlug);
 }
 

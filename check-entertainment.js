@@ -4,7 +4,7 @@ async function checkEntertainmentArticles() {
   try {
     console.log('🔍 Checking for Entertainment articles...');
     
-    const response = await fetch('http://localhost:3002/api/articles?category=entertainment&limit=50');
+    const response = await fetch('http://localhost:3001/api/articles?category=entertainment&limit=50');
     
     if (response.ok) {
       const data = await response.json();

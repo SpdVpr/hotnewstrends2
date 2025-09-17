@@ -630,7 +630,7 @@
       },
       "status": "pending",
       "position": 20,
-      "createdAt": "2025-09-17T20:01:55.915Z",
+      "createdAt": "2025-09-17T20:08:46.579Z",
       "scheduledAt": "2025-09-17T18:40:00.000Z"
     },
     {
@@ -645,13 +645,13 @@
         "traffic": 65114,
         "source": "SerpAPI + RSS",
         "firstSeen": "2025-09-17T18:52:47.227Z",
-        "lastSeen": "2025-09-17T20:01:55.911Z",
+        "lastSeen": "2025-09-17T20:08:46.575Z",
         "articleGenerated": false,
         "hash": "YWxuYXNzciAgZmMg"
       },
       "status": "pending",
       "position": 21,
-      "createdAt": "2025-09-17T20:01:55.915Z",
+      "createdAt": "2025-09-17T20:08:46.579Z",
       "scheduledAt": "2025-09-17T19:20:00.000Z"
     },
     {
@@ -672,7 +672,7 @@
       },
       "status": "pending",
       "position": 22,
-      "createdAt": "2025-09-17T20:01:55.915Z",
+      "createdAt": "2025-09-17T20:08:46.579Z",
       "scheduledAt": "2025-09-17T20:00:00.000Z"
     },
     {
@@ -687,13 +687,13 @@
         "traffic": 59284,
         "source": "SerpAPI + RSS",
         "firstSeen": "2025-09-17T18:52:47.227Z",
-        "lastSeen": "2025-09-17T20:01:55.911Z",
+        "lastSeen": "2025-09-17T20:08:46.575Z",
         "articleGenerated": false,
         "hash": "bGl2ZXJwb29sIHZz"
       },
       "status": "pending",
       "position": 23,
-      "createdAt": "2025-09-17T20:01:55.915Z",
+      "createdAt": "2025-09-17T20:08:46.579Z",
       "scheduledAt": "2025-09-17T20:40:00.000Z"
     },
     {
@@ -708,16 +708,16 @@
         "traffic": 58019,
         "source": "SerpAPI + RSS",
         "firstSeen": "2025-09-17T16:32:21.473Z",
-        "lastSeen": "2025-09-17T20:01:55.912Z",
+        "lastSeen": "2025-09-17T20:08:46.576Z",
         "articleGenerated": false,
         "hash": "YnJhZGxleSBzdGV2"
       },
       "status": "pending",
       "position": 24,
-      "createdAt": "2025-09-17T20:01:55.915Z",
+      "createdAt": "2025-09-17T20:08:46.579Z",
       "scheduledAt": "2025-09-17T21:20:00.000Z"
     }
   ],
   "createdAt": "2025-09-17T16:29:54.155Z",
-  "updatedAt": "2025-09-17T20:01:55.915Z"
+  "updatedAt": "2025-09-17T20:08:46.579Z"
 }
