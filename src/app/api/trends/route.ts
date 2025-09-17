@@ -85,11 +85,12 @@ export async function GET(request: NextRequest) {
             const { newTrends, stats } = await trendTracker.processNewTrends(trends.topics, (trends as any).source || 'google');
             console.log(`📊 Trend tracking: ${newTrends.length} new trends, ${stats.duplicatesFiltered} duplicates filtered`);
 
-            // Start automated article generation if there are new trends
-            if (newTrends.length > 0 && !automatedArticleGenerator.getStats().isRunning) {
-              console.log('🚀 Starting automated article generation for new trends...');
-              automatedArticleGenerator.start();
-            }
+            // Refresh daily plan with new trends
+            console.log('🔄 Refreshing daily plan with updated trends...');
+            await automatedArticleGenerator.refreshDailyPlan();
+
+            // Note: Automated article generation must be started manually from admin panel
+            console.log('ℹ️ Daily plan refreshed. Use admin panel to start/stop article generation.');
           } catch (trackingError) {
             console.warn('⚠️ Trend tracking failed:', trackingError);
           }

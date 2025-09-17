@@ -58,33 +58,14 @@ class AutomationService {
     this.isRunning = true;
     console.log('🤖 Automation service started');
 
-    // Ensure trends scheduler is running
-    try {
-      const { trendsScheduler } = await import('./trends-scheduler');
-      if (!trendsScheduler.getStats().isRunning) {
-        console.log('📊 Starting trends scheduler from automation service...');
-        trendsScheduler.start();
-      }
-    } catch (error) {
-      console.warn('⚠️ Could not start trends scheduler:', error);
-    }
+    // Trends scheduler disabled - only daily plan system runs article generation
+    console.log('⚠️ Trends scheduler disabled - only daily plan system generates articles');
 
-    // Run immediately with crash protection
-    try {
-      await this.runAutomationCycle();
-    } catch (error) {
-      console.error('❌ CRITICAL: Initial automation cycle failed, but continuing:', error);
-    }
+    // Note: Automated article generator must be started manually from admin panel
+    console.log('ℹ️ Automated article generator must be started manually from admin panel');
 
-    // Schedule regular runs with crash protection
-    this.intervalId = setInterval(async () => {
-      try {
-        await this.runAutomationCycle();
-      } catch (error) {
-        console.error('❌ CRITICAL: Automation cycle failed, but scheduler continues:', error);
-        console.error('❌ System will attempt next cycle in', this.config.interval, 'minutes');
-      }
-    }, this.config.interval * 60 * 1000);
+    // Note: Old automation cycle is disabled - now using daily plan system
+    console.log('✅ Automation service started with daily plan system');
   }
 
   stop(): void {
@@ -100,9 +81,14 @@ class AutomationService {
   }
 
   private async runAutomationCycle(): Promise<void> {
+    console.log('⚠️ Old automation cycle disabled - using daily plan system instead');
+    return;
+
+    // OLD CODE DISABLED - Daily plan system handles article generation now
+    /*
     try {
       console.log('🔄 Running automation cycle...');
-      
+
       // Check if we've reached daily limit
       const todayArticles = await this.getTodayArticleCount();
       if (todayArticles >= this.config.maxArticlesPerDay) {
@@ -160,6 +146,7 @@ class AutomationService {
       // Re-throw to let caller handle it
       throw error;
     }
+    */
   }
 
   /**
@@ -509,7 +496,10 @@ class AutomationService {
     const allowedTopics: TrendingTopic[] = [];
 
     // Get current queue topics to avoid duplicates
-    const currentQueueTopics = this.scheduledArticles.map(article => article.topic.toLowerCase().trim());
+    const currentQueueTopics = this.scheduledArticles.map(article =>
+      typeof article.topic === 'string' ? article.topic.toLowerCase().trim() :
+      (article.topic?.keyword || article.topic?.title || '').toLowerCase().trim()
+    );
     console.log(`📋 Current queue topics: [${currentQueueTopics.map(t => `"${t}"`).join(', ')}]`);
 
     for (const topic of basicFiltered) {

@@ -65,8 +65,10 @@ function generateRSSFeed() {
     <category>News</category>
     <category>Technology</category>
     <category>Business</category>
+    <category>Entertainment</category>
     <category>Science</category>
     <category>Health</category>
+    <category>Sports</category>
     <image>
       <url>${baseUrl}/logo.png</url>
       <title>HotNewsTrends</title>

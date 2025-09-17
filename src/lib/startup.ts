@@ -20,21 +20,12 @@ class StartupService {
     console.log('🚀 Initializing application services...');
 
     try {
-      // Start trends scheduler (6x daily updates)
-      console.log('📊 Starting trends scheduler...');
-      trendsScheduler.start();
-
-      // Verify scheduler is running
-      const stats = trendsScheduler.getStats();
-      console.log('📈 Trends scheduler status:', {
-        isRunning: stats.isRunning,
-        lastUpdate: stats.lastUpdate,
-        nextUpdate: stats.nextUpdate,
-        updatesPerDay: stats.updatesPerDay
-      });
+      // Trends scheduler disabled - only daily plan system generates articles
+      console.log('⚠️ Trends scheduler startup disabled - only daily plan system generates articles');
+      console.log('📊 Use admin panel to manually control trends updates if needed');
 
       this.initialized = true;
-      console.log('🎉 Application startup complete');
+      console.log('🎉 Application startup complete (trends scheduler disabled)');
     } catch (error) {
       console.error('❌ Error during application startup:', error);
     }

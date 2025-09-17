@@ -23,8 +23,10 @@ const mockCategories = [
   { slug: 'technology' },
   { slug: 'news' },
   { slug: 'business' },
+  { slug: 'entertainment' },
   { slug: 'science' },
   { slug: 'health' },
+  { slug: 'sports' },
 ];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {

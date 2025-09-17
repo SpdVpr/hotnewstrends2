@@ -198,11 +198,21 @@ class TrendTracker {
   private getStoredTrends(): TrackedTrend[] {
     try {
       if (typeof window !== 'undefined') {
+        // Client-side: use localStorage
         const stored = localStorage.getItem(this.STORAGE_KEY);
         return stored ? JSON.parse(stored) : [];
+      } else {
+        // Server-side: use file system
+        const fs = require('fs');
+        const path = require('path');
+        const filePath = path.join(process.cwd(), 'data', 'tracked-trends.json');
+
+        if (fs.existsSync(filePath)) {
+          const stored = fs.readFileSync(filePath, 'utf8');
+          return JSON.parse(stored);
+        }
+        return [];
       }
-      // Server-side fallback - in production use Redis/Database
-      return [];
     } catch (error) {
       console.error('Error loading stored trends:', error);
       return [];
@@ -215,9 +225,22 @@ class TrendTracker {
   private storeTrackedTrends(trends: TrackedTrend[]): void {
     try {
       if (typeof window !== 'undefined') {
+        // Client-side: use localStorage
         localStorage.setItem(this.STORAGE_KEY, JSON.stringify(trends));
+      } else {
+        // Server-side: use file system
+        const fs = require('fs');
+        const path = require('path');
+        const dataDir = path.join(process.cwd(), 'data');
+
+        // Ensure data directory exists
+        if (!fs.existsSync(dataDir)) {
+          fs.mkdirSync(dataDir, { recursive: true });
+        }
+
+        const filePath = path.join(dataDir, 'tracked-trends.json');
+        fs.writeFileSync(filePath, JSON.stringify(trends, null, 2));
       }
-      // Server-side fallback - in production use Redis/Database
     } catch (error) {
       console.error('Error storing trends:', error);
     }
@@ -245,6 +268,13 @@ class TrendTracker {
     return trends
       .sort((a, b) => new Date(b.lastSeen).getTime() - new Date(a.lastSeen).getTime())
       .slice(0, limit);
+  }
+
+  /**
+   * Get all stored trends
+   */
+  getAllTrends(): TrackedTrend[] {
+    return this.getStoredTrends();
   }
 }
 

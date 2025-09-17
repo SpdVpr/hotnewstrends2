@@ -38,9 +38,36 @@ export async function POST(request: NextRequest) {
 
       case 'stop':
         automationService.stop();
+
+        // Also stop automated article generator
+        try {
+          const { automatedArticleGenerator } = await import('@/lib/services/automated-article-generator');
+          automatedArticleGenerator.stop();
+          console.log('🛑 Automated article generator stopped');
+        } catch (error) {
+          console.warn('⚠️ Could not stop automated article generator:', error);
+        }
+
         return NextResponse.json({
           success: true,
-          message: 'Automation service stopped'
+          message: 'Automation service and article generator stopped'
+        });
+
+      case 'force_stop':
+        // Force stop everything - automation service and article generator
+        automationService.stop();
+
+        try {
+          const { automatedArticleGenerator } = await import('@/lib/services/automated-article-generator');
+          automatedArticleGenerator.stop();
+          console.log('🛑 FORCE STOP: Automated article generator stopped');
+        } catch (error) {
+          console.warn('⚠️ Could not force stop automated article generator:', error);
+        }
+
+        return NextResponse.json({
+          success: true,
+          message: 'FORCE STOP: All automation stopped'
         });
 
       case 'updateConfig':

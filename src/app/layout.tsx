@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { StructuredData } from "@/components/StructuredData";
+import { AIMetaTags } from "@/components/AIMetaTags";
 import { AnalyticsProvider } from "@/components/AnalyticsProvider";
 import { StartupInitializer } from "@/components/StartupInitializer";
 import "./globals.css";
@@ -19,6 +20,9 @@ export const metadata: Metadata = {
   creator: "HotNewsTrends",
   publisher: "HotNewsTrends",
   robots: "index, follow",
+  viewport: "width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes",
+  themeColor: "#007AFF",
+  colorScheme: "light",
   openGraph: {
     type: "website",
     locale: "en_US",
@@ -26,13 +30,35 @@ export const metadata: Metadata = {
     siteName: "HotNewsTrends.com",
     title: "HotNewsTrends.com - Where Speed Meets Style",
     description: "AI-powered newsroom delivering comprehensive articles about trending topics within hours.",
+    images: [
+      {
+        url: "https://hotnewstrends.com/og-image.jpg",
+        width: 1200,
+        height: 630,
+        alt: "HotNewsTrends - AI-powered newsroom",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "HotNewsTrends.com - Where Speed Meets Style",
     description: "AI-powered newsroom delivering comprehensive articles about trending topics within hours.",
     creator: "@hotnewstrends",
+    images: ["https://hotnewstrends.com/og-image.jpg"],
   },
+  icons: {
+    icon: [
+      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+    ],
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+    other: [
+      { rel: "mask-icon", url: "/safari-pinned-tab.svg", color: "#007AFF" },
+    ],
+  },
+  manifest: "/site.webmanifest",
 };
 
 export default function RootLayout({
@@ -43,6 +69,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={inter.variable}>
       <head>
+        <meta name="theme-color" content="#007AFF" />
+        <meta name="msapplication-TileColor" content="#007AFF" />
+        <AIMetaTags type="website" />
         <StructuredData type="website" />
         <script
           dangerouslySetInnerHTML={{

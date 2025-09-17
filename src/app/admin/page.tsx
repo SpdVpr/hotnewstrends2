@@ -48,9 +48,36 @@ interface Job {
   };
 }
 
+interface DailyPlan {
+  date: string;
+  jobs: DailyPlanJob[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface DailyPlanJob {
+  id: string;
+  trendId: string;
+  trend: {
+    title: string;
+    formattedTraffic: string;
+    traffic: number;
+    category: string;
+  };
+  status: 'pending' | 'generating' | 'completed' | 'failed' | 'quality_check' | 'rejected';
+  position: number;
+  scheduledAt?: string;
+  createdAt: string;
+  startedAt?: string;
+  completedAt?: string;
+  articleId?: string;
+  error?: string;
+}
+
 export default function AdminPage() {
   const [stats, setStats] = useState<AutomationStats | null>(null);
   const [jobs, setJobs] = useState<Job[]>([]);
+  const [dailyPlan, setDailyPlan] = useState<DailyPlan | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'trends' | 'articles' | 'settings' | 'serpapi'>('overview');
@@ -106,10 +133,11 @@ export default function AdminPage() {
 
   const fetchData = async () => {
     try {
-      const [statsRes, jobsRes, schedulerRes] = await Promise.all([
+      const [statsRes, jobsRes, schedulerRes, dailyPlanRes] = await Promise.all([
         fetch('/api/automation'),
         fetch('/api/automation/jobs?limit=20'),
-        fetch('/api/trends/scheduler')
+        fetch('/api/trends/scheduler'),
+        fetch('/api/daily-plan')
       ]);
 
       if (statsRes.ok) {
@@ -125,6 +153,12 @@ export default function AdminPage() {
       if (schedulerRes.ok) {
         const schedulerData = await schedulerRes.json();
         console.log('📊 Trends Scheduler Status:', schedulerData.data?.scheduler);
+      }
+
+      if (dailyPlanRes.ok) {
+        const dailyPlanData = await dailyPlanRes.json();
+        setDailyPlan(dailyPlanData.data.dailyPlan);
+        console.log('📅 Daily Plan:', dailyPlanData.data.dailyPlan);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -147,6 +181,25 @@ export default function AdminPage() {
       }
     } catch (error) {
       console.error(`Error ${action}ing automation:`, error);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleForceStop = async () => {
+    setActionLoading('force-stop');
+    try {
+      const response = await fetch('/api/debug/automation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (response.ok) {
+        await fetchData(); // Refresh data
+        console.log('🛑 FORCE STOP executed successfully');
+      }
+    } catch (error) {
+      console.error('Error with force stop:', error);
     } finally {
       setActionLoading(null);
     }
@@ -281,21 +334,37 @@ export default function AdminPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <Button
-                    onClick={() => handleAutomationAction(stats?.isRunning ? 'stop' : 'start')}
-                    disabled={actionLoading === 'start' || actionLoading === 'stop'}
-                    variant={stats?.isRunning ? "secondary" : "primary"}
-                    size="lg"
-                    className="w-full"
-                  >
-                    {actionLoading === 'start' || actionLoading === 'stop' ? (
-                      <LoadingSpinner size="sm" />
-                    ) : stats?.isRunning ? (
-                      '⏸️ Stop Article Generation'
-                    ) : (
-                      '▶️ Start Article Generation'
-                    )}
-                  </Button>
+                  <div className="space-y-2">
+                    <Button
+                      onClick={() => handleAutomationAction(stats?.isRunning ? 'stop' : 'start')}
+                      disabled={actionLoading === 'start' || actionLoading === 'stop'}
+                      variant={stats?.isRunning ? "secondary" : "primary"}
+                      size="lg"
+                      className="w-full"
+                    >
+                      {actionLoading === 'start' || actionLoading === 'stop' ? (
+                        <LoadingSpinner size="sm" />
+                      ) : stats?.isRunning ? (
+                        '⏸️ Stop Article Generation'
+                      ) : (
+                        '▶️ Start Article Generation'
+                      )}
+                    </Button>
+
+                    <Button
+                      onClick={handleForceStop}
+                      disabled={actionLoading === 'force-stop'}
+                      variant="destructive"
+                      size="sm"
+                      className="w-full"
+                    >
+                      {actionLoading === 'force-stop' ? (
+                        <LoadingSpinner size="sm" />
+                      ) : (
+                        '🛑 FORCE STOP ALL'
+                      )}
+                    </Button>
+                  </div>
 
                   {/* Article Status */}
                   <div className="space-y-2 text-sm">
@@ -313,41 +382,96 @@ export default function AdminPage() {
                     </div>
                   </div>
 
-                  {/* Scheduled Articles Timeline */}
-                  {stats?.scheduledArticles && stats.scheduledArticles.length > 0 && (
+                  {/* Daily Plan Timeline */}
+                  {dailyPlan && dailyPlan.jobs && dailyPlan.jobs.length > 0 && (
                     <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                      <h4 className="font-medium text-sm mb-2 flex items-center gap-2">
-                        📅 Scheduled Articles
-                        <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                      </h4>
-                      <div className="space-y-2">
-                        {stats.scheduledArticles.map((article, index) => (
-                          <div key={index} className="flex items-center justify-between text-xs">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-medium text-sm flex items-center gap-2">
+                          📅 Daily Plan (24 Articles)
+                          <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                        </h4>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-xs px-2 py-1 h-6"
+                            onClick={async () => {
+                              try {
+                                const response = await fetch('/api/daily-plan', {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ action: 'reset-failed' })
+                                });
+                                if (response.ok) {
+                                  fetchData();
+                                }
+                              } catch (error) {
+                                console.error('Reset failed:', error);
+                              }
+                            }}
+                          >
+                            🔄 Reset
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            className="text-xs px-2 py-1 h-6"
+                            onClick={async () => {
+                              try {
+                                const response = await fetch('/api/daily-plan', {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ action: 'test-mode' })
+                                });
+                                if (response.ok) {
+                                  fetchData();
+                                }
+                              } catch (error) {
+                                console.error('Test mode failed:', error);
+                              }
+                            }}
+                          >
+                            🧪 Test (5min)
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="space-y-2 max-h-48 overflow-y-auto">
+                        {dailyPlan.jobs.map((job) => (
+                          <div key={job.id} className="flex items-center justify-between text-xs">
                             <div className="flex items-center gap-2">
                               <span className={`w-2 h-2 rounded-full ${
-                                article.status === 'completed' ? 'bg-green-500' :
-                                article.status === 'generating' ? 'bg-purple-500 animate-pulse' :
-                                article.status === 'failed' ? 'bg-red-500' :
+                                job.status === 'completed' ? 'bg-green-500' :
+                                job.status === 'generating' ? 'bg-purple-500 animate-pulse' :
+                                job.status === 'failed' ? 'bg-red-500' :
+                                job.status === 'rejected' ? 'bg-orange-500' :
                                 'bg-gray-400'
                               }`}></span>
-                              <span className="font-medium">#{article.position}</span>
-                              <span className="truncate max-w-[120px]">"{article.topic.keyword}"</span>
+                              <span className="font-medium">#{job.position}</span>
+                              <span className="truncate max-w-[120px]">"{job.trend.title}"</span>
+                              <Badge variant="secondary" className="text-xs px-1 py-0">
+                                {job.trend.formattedTraffic}
+                              </Badge>
                             </div>
                             <div className="text-right">
-                              {article.status === 'completed' ? (
+                              {job.status === 'completed' ? (
                                 <span className="text-green-600">✅ Done</span>
-                              ) : article.status === 'generating' ? (
+                              ) : job.status === 'generating' ? (
                                 <span className="text-purple-600">🔄 Generating...</span>
-                              ) : article.status === 'failed' ? (
+                              ) : job.status === 'failed' ? (
                                 <span className="text-red-600">❌ Failed</span>
-                              ) : (
+                              ) : job.status === 'rejected' ? (
+                                <span className="text-orange-600">⚠️ Rejected</span>
+                              ) : job.scheduledAt ? (
                                 <span className="text-gray-600">
-                                  {new Date(article.scheduledFor).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                  {new Date(job.scheduledAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                                 </span>
+                              ) : (
+                                <span className="text-gray-600">Pending</span>
                               )}
                             </div>
                           </div>
                         ))}
+
                       </div>
                     </div>
                   )}

@@ -1,11 +1,12 @@
 import { Article } from '@/types';
 
 interface StructuredDataProps {
-  type: 'website' | 'article' | 'newsarticle';
+  type: 'website' | 'article' | 'newsarticle' | 'category';
   data?: Article;
+  category?: string;
 }
 
-export function StructuredData({ type, data }: StructuredDataProps) {
+export function StructuredData({ type, data, category }: StructuredDataProps) {
   const getWebsiteStructuredData = () => ({
     "@context": "https://schema.org",
     "@type": "WebSite",
@@ -36,12 +37,19 @@ export function StructuredData({ type, data }: StructuredDataProps) {
     "@type": "NewsArticle",
     "headline": article.title,
     "description": article.excerpt,
-    "image": article.image || "https://hotnewstrends.com/default-article-image.jpg",
+    "image": {
+      "@type": "ImageObject",
+      "url": article.image || "https://hotnewstrends.com/default-article-image.jpg",
+      "width": 1200,
+      "height": 630,
+      "caption": article.title
+    },
     "datePublished": article.publishedAt.toISOString(),
     "dateModified": article.updatedAt?.toISOString() || article.publishedAt.toISOString(),
     "author": {
       "@type": "Person",
-      "name": article.author || "HotNewsTrends Editorial Team"
+      "name": article.author || "HotNewsTrends Editorial Team",
+      "url": "https://hotnewstrends.com/about"
     },
     "publisher": {
       "@type": "Organization",
@@ -49,7 +57,9 @@ export function StructuredData({ type, data }: StructuredDataProps) {
       "url": "https://hotnewstrends.com",
       "logo": {
         "@type": "ImageObject",
-        "url": "https://hotnewstrends.com/logo.png"
+        "url": "https://hotnewstrends.com/logo.png",
+        "width": 200,
+        "height": 60
       }
     },
     "mainEntityOfPage": {
@@ -63,7 +73,25 @@ export function StructuredData({ type, data }: StructuredDataProps) {
     "url": `https://hotnewstrends.com/article/${article.slug}`,
     "isAccessibleForFree": true,
     "genre": "news",
-    "inLanguage": "en-US"
+    "inLanguage": "en-US",
+    // AI-specific enhancements
+    "about": article.tags.map(tag => ({
+      "@type": "Thing",
+      "name": tag
+    })),
+    "mentions": article.tags.slice(0, 3).map(tag => ({
+      "@type": "Thing",
+      "name": tag,
+      "sameAs": `https://hotnewstrends.com/search?q=${encodeURIComponent(tag)}`
+    })),
+    "speakable": {
+      "@type": "SpeakableSpecification",
+      "cssSelector": ["h1", ".article-excerpt", ".article-content p:first-of-type"]
+    },
+    "citation": article.sources?.slice(0, 3).map(source => ({
+      "@type": "WebPage",
+      "url": source
+    })) || []
   });
 
   const getBreadcrumbStructuredData = (article?: Article) => {
@@ -103,8 +131,14 @@ export function StructuredData({ type, data }: StructuredDataProps) {
     "@context": "https://schema.org",
     "@type": "Organization",
     "name": "HotNewsTrends",
+    "alternateName": "Hot News Trends",
     "url": "https://hotnewstrends.com",
-    "logo": "https://hotnewstrends.com/logo.png",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://hotnewstrends.com/logo.png",
+      "width": 200,
+      "height": 60
+    },
     "description": "AI-powered newsroom delivering comprehensive articles about trending topics within hours",
     "foundingDate": "2025",
     "sameAs": [
@@ -115,8 +149,51 @@ export function StructuredData({ type, data }: StructuredDataProps) {
     "contactPoint": {
       "@type": "ContactPoint",
       "contactType": "customer service",
-      "email": "contact@hotnewstrends.com"
-    }
+      "email": "contact@hotnewstrends.com",
+      "availableLanguage": "English"
+    },
+    "knowsAbout": [
+      "Technology News",
+      "Entertainment News",
+      "Business News",
+      "Science News",
+      "Trending Topics",
+      "AI Journalism"
+    ],
+    "publishingPrinciples": "https://hotnewstrends.com/editorial-guidelines"
+  });
+
+  const getFAQStructuredData = (category?: string) => ({
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "What is HotNewsTrends?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "HotNewsTrends is an AI-powered newsroom that delivers comprehensive articles about trending topics within hours. We cover technology, entertainment, business, science, and more."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How often is content updated?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Our content is updated continuously throughout the day. We use AI to identify trending topics and generate high-quality articles within hours of topics becoming popular."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": category ? `What ${category.toLowerCase()} topics do you cover?` : "What topics do you cover?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": category
+            ? `We cover all major ${category.toLowerCase()} news including breaking stories, analysis, and trending topics in the ${category.toLowerCase()} space.`
+            : "We cover technology, entertainment, business, science, health, sports, and general news topics that are trending worldwide."
+        }
+      }
+    ]
   });
 
   let structuredData;
@@ -125,7 +202,8 @@ export function StructuredData({ type, data }: StructuredDataProps) {
     case 'website':
       structuredData = [
         getWebsiteStructuredData(),
-        getOrganizationStructuredData()
+        getOrganizationStructuredData(),
+        getFAQStructuredData()
       ];
       break;
     case 'article':
@@ -135,6 +213,12 @@ export function StructuredData({ type, data }: StructuredDataProps) {
         getArticleStructuredData(data),
         getBreadcrumbStructuredData(data),
         getOrganizationStructuredData()
+      ];
+      break;
+    case 'category':
+      structuredData = [
+        getOrganizationStructuredData(),
+        getFAQStructuredData(category)
       ];
       break;
     default:

@@ -229,16 +229,16 @@ class TrendsScheduler {
       console.log(`✅ Trends update completed: ${trendsData.topics.length} trends saved (batch: ${batchId})`);
       console.log(`📈 Daily progress: ${this.dailyUpdateCount}/${this.UPDATES_PER_DAY} updates completed`);
 
-      console.log(`📝 Trends collection complete. Triggering automation cycle...`);
+      console.log(`📝 Trends collection complete. Refreshing daily plan...`);
 
-      // Trigger automation cycle after trends update
+      // Refresh daily plan with new trends
       try {
-        const { automationService } = await import('./automation');
-        console.log('🔄 Starting automation cycle after trends update...');
-        await automationService.runCycle();
-        console.log('✅ Automation cycle completed after trends update');
+        const { automatedArticleGenerator } = await import('./automated-article-generator');
+        console.log('🔄 Refreshing daily plan after trends update...');
+        await automatedArticleGenerator.refreshDailyPlan();
+        console.log('✅ Daily plan refreshed after trends update');
       } catch (error) {
-        console.error('❌ Failed to run automation cycle after trends update:', error);
+        console.error('❌ Failed to refresh daily plan after trends update:', error);
       }
 
     } catch (error) {
@@ -318,35 +318,10 @@ class TrendsScheduler {
         item => item.trend.id !== trend.id
       );
 
-      console.log(`🎯 Generating article ${position + 1}/${this.articleGenerationQueue.totalInBatch}: "${trend.keyword}"`);
+      console.log(`⚠️ Article generation disabled in trends scheduler for "${trend.keyword}"`);
+      console.log(`🔄 Only daily plan system generates articles now. Trends scheduler article generation is DISABLED.`);
 
-      // Check if this exact trend already has an article generated
-      if (trend.articleGenerated) {
-        console.log(`⏭️ Skipping "${trend.keyword}" - already has article generated`);
-        this.completeArticleGeneration();
-        return;
-      }
-
-      const articleJob = await automatedArticleGenerator.generateArticleFromTrend({
-        topic: trend.title,
-        keyword: trend.keyword,
-        category: trend.category,
-        traffic: trend.traffic,
-        searchVolume: trend.searchVolume,
-        confidence: trend.confidence,
-        sources: trend.sources || []
-      });
-
-      if (articleJob && articleJob.articleId && articleJob.status === 'completed' && trend.id) {
-        // Mark trend as having article generated
-        await firebaseTrendsService.markTrendAsGenerated(trend.id, articleJob.articleId);
-        this.stats.articlesGenerated++;
-
-        console.log(`✅ Article ${position + 1}/${this.articleGenerationQueue.totalInBatch} generated: "${trend.keyword}" → ${articleJob.articleId}`);
-      } else {
-        console.log(`❌ Failed to generate article for "${trend.keyword}" - Status: ${articleJob?.status || 'unknown'}`);
-      }
-
+      // Skip article generation and complete immediately
       this.completeArticleGeneration();
 
     } catch (error) {

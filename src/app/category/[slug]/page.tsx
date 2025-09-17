@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Navigation } from '@/components/Navigation';
 import { ArticleCard } from '@/components/ArticleCard';
 import { CategoryBadge } from '@/components/ui/Badge';
+import { StructuredData } from '@/components/StructuredData';
 import { Button } from '@/components/ui/Button';
 import { Article, Category } from '@/types';
 
@@ -43,12 +44,19 @@ const mockCategories: Category[] = [
     color: '#5856D6',
     description: 'Scientific discoveries, research breakthroughs, and space exploration.'
   },
-  { 
-    id: 'health', 
-    name: 'Health', 
-    slug: 'health', 
+  {
+    id: 'health',
+    name: 'Health',
+    slug: 'health',
     color: '#FF9500',
     description: 'Health and wellness news, medical breakthroughs, and lifestyle tips.'
+  },
+  {
+    id: 'entertainment',
+    name: 'Entertainment',
+    slug: 'entertainment',
+    color: '#FF2D92',
+    description: 'Movies, TV shows, celebrities, and pop culture news.'
   },
 ];
 
@@ -81,12 +89,38 @@ const mockArticles: Article[] = [
 ];
 
 async function getCategory(slug: string): Promise<Category | null> {
+  try {
+    // First try to get from API
+    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3002'}/api/categories`);
+    if (response.ok) {
+      const data = await response.json();
+      const categories = data.data || [];
+      const category = categories.find((c: Category) => c.slug === slug);
+      if (category) return category;
+    }
+  } catch (error) {
+    console.error('Error fetching categories from API:', error);
+  }
+
+  // Fallback to mock data
   const category = mockCategories.find(c => c.slug === slug);
   return category || null;
 }
 
 async function getCategoryArticles(categorySlug: string): Promise<Article[]> {
-  // Mock data - in real app would query database
+  try {
+    // Try to get from API first
+    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3002'}/api/articles?category=${categorySlug}&limit=50`);
+    if (response.ok) {
+      const data = await response.json();
+      const articles = data.data?.articles || data.data || [];
+      return articles;
+    }
+  } catch (error) {
+    console.error('Error fetching articles from API:', error);
+  }
+
+  // Fallback to mock data
   return mockArticles.filter(a => a.category.slug === categorySlug);
 }
 
@@ -101,15 +135,28 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
     };
   }
 
+  const canonicalUrl = `https://hotnewstrends.com/category/${category.slug}`;
+
   return {
-    title: `${category.name} Articles | TrendyBlogger`,
-    description: category.description || `Latest ${category.name.toLowerCase()} articles and trending topics.`,
-    keywords: `${category.name.toLowerCase()}, trending ${category.name.toLowerCase()}, ${category.name.toLowerCase()} news`,
-    openGraph: {
-      title: `${category.name} | TrendyBlogger`,
-      description: category.description,
-      type: 'website',
+    title: `${category.name} Articles | HotNewsTrends`,
+    description: category.description || `Latest ${category.name.toLowerCase()} articles and trending topics from HotNewsTrends.`,
+    keywords: `${category.name.toLowerCase()}, trending ${category.name.toLowerCase()}, ${category.name.toLowerCase()} news, hotnewstrends`,
+    alternates: {
+      canonical: canonicalUrl,
     },
+    openGraph: {
+      title: `${category.name} | HotNewsTrends`,
+      description: category.description || `Latest ${category.name.toLowerCase()} articles and trending topics.`,
+      type: 'website',
+      url: canonicalUrl,
+      siteName: 'HotNewsTrends',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${category.name} | HotNewsTrends`,
+      description: category.description || `Latest ${category.name.toLowerCase()} articles and trending topics.`,
+    },
+    robots: 'index, follow',
   };
 }
 
@@ -125,6 +172,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
 
   return (
     <div className="min-h-screen bg-background">
+      <StructuredData type="category" category={category.name} />
       <Navigation />
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
