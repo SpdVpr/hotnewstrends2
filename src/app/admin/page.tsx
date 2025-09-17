@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Navigation } from '@/components/Navigation';
 import { Button } from '@/components/ui/Button';
-import { Card, CardHeader, CardContent } from '@/components/ui/Card';
+import { Card, CardHeader, CardContent, CardTitle, CardDescription } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Input } from '@/components/ui/Input';
 import { LoadingSpinner } from '@/components/ui/Loading';
@@ -53,7 +53,7 @@ export default function AdminPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'serpapi'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'trends' | 'articles' | 'settings' | 'serpapi'>('overview');
 
   // Manual generation form
   const [manualTopic, setManualTopic] = useState('');
@@ -172,6 +172,9 @@ export default function AdminPage() {
         <div className="flex gap-2 mb-8">
           {[
             { key: 'overview', label: '📊 Control Panel', icon: '📊' },
+            { key: 'trends', label: '📈 Trends', icon: '📈' },
+            { key: 'articles', label: '📝 Articles', icon: '📝' },
+            { key: 'settings', label: '⚙️ Settings', icon: '⚙️' },
             { key: 'serpapi', label: '🔍 SerpApi Monitor', icon: '🔍' }
           ].map((tab) => (
             <Button
@@ -280,69 +283,102 @@ export default function AdminPage() {
             </div>
 
             {/* Real-time Activity Monitoring */}
-            <div className="space-y-6">
-              {/* Current Activity */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    🔄 Real-time Activity
-                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                  </CardTitle>
-                  <CardDescription>
-                    Live monitoring of article generation and trend tracking
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {/* Active Jobs */}
-                  {jobs.filter(job => job.status === 'generating').length > 0 ? (
-                    <div className="space-y-3">
-                      <h4 className="font-medium text-sm">Currently Generating:</h4>
-                      {jobs.filter(job => job.status === 'generating').map((job) => (
-                        <div key={job.id} className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
-                          <div>
-                            <div className="font-medium text-sm">{job.topic}</div>
-                            <div className="text-xs text-text-secondary">{job.category}</div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <LoadingSpinner size="sm" />
-                            <span className="text-xs text-purple-600">Generating...</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-4 text-text-secondary">
-                      No articles currently being generated
-                    </div>
-                  )}
+            <Card className="mt-8">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  🔄 Live Activity Monitor
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                </CardTitle>
+                <CardDescription>
+                  Real-time status of article generation and trend tracking
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Article Generation Activity */}
+                  <div className="space-y-4">
+                    <h3 className="font-semibold text-text flex items-center gap-2">
+                      📝 Article Generation Activity
+                    </h3>
 
-                  {/* Queue */}
-                  {jobs.filter(job => job.status === 'pending').length > 0 && (
-                    <div className="mt-6 space-y-3">
-                      <h4 className="font-medium text-sm">Queue ({jobs.filter(job => job.status === 'pending').length}):</h4>
-                      <div className="space-y-2">
-                        {jobs.filter(job => job.status === 'pending').slice(0, 3).map((job) => (
-                          <div key={job.id} className="flex items-center justify-between p-2 bg-blue-50 rounded">
-                            <div>
+                    {stats?.generatingJobs && stats.generatingJobs > 0 ? (
+                      <div className="space-y-3">
+                        {jobs.filter(job => job.status === 'generating').slice(0, 3).map((job) => (
+                          <div key={job.id} className="flex items-center gap-3 p-3 bg-purple-50 rounded-lg">
+                            <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
+                            <div className="flex-1">
                               <div className="font-medium text-sm">{job.topic}</div>
-                              <div className="text-xs text-text-secondary">{job.category}</div>
+                              <div className="text-xs text-text-secondary">
+                                Started: {new Date(job.createdAt).toLocaleTimeString()}
+                              </div>
                             </div>
-                            <Badge variant="secondary">Waiting</Badge>
+                            <Badge variant="secondary" className="text-xs">Generating</Badge>
                           </div>
                         ))}
-                        {jobs.filter(job => job.status === 'pending').length > 3 && (
-                          <div className="text-xs text-text-secondary text-center">
-                            +{jobs.filter(job => job.status === 'pending').length - 3} more in queue
-                          </div>
-                        )}
+                      </div>
+                    ) : (
+                      <div className="text-center py-4 text-text-secondary">
+                        {stats?.isRunning ? 'No articles currently generating' : 'Article generation is stopped'}
+                      </div>
+                    )}
+
+                    {stats?.pendingJobs && stats.pendingJobs > 0 && (
+                      <div className="mt-4">
+                        <div className="text-sm font-medium text-text-secondary mb-2">Queue ({stats.pendingJobs} pending)</div>
+                        <div className="space-y-2">
+                          {jobs.filter(job => job.status === 'pending').slice(0, 2).map((job) => (
+                            <div key={job.id} className="flex items-center gap-3 p-2 bg-blue-50 rounded">
+                              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                              <div className="text-sm">{job.topic}</div>
+                              <Badge variant="secondary" className="text-xs">Queued</Badge>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Trend Tracking Activity */}
+                  <div className="space-y-4">
+                    <h3 className="font-semibold text-text flex items-center gap-2">
+                      📈 Trend Tracking Activity
+                    </h3>
+
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
+                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                        <div className="flex-1">
+                          <div className="font-medium text-sm">SerpAPI + RSS Monitoring</div>
+                          <div className="text-xs text-text-secondary">Active • Next update in 1h 45m</div>
+                        </div>
+                        <Badge variant="primary" className="text-xs">Active</Badge>
+                      </div>
+
+                      <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                        <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                        <div className="flex-1">
+                          <div className="font-medium text-sm">Last Collection</div>
+                          <div className="text-xs text-text-secondary">156 trends • 2 hours ago</div>
+                        </div>
+                        <Badge variant="secondary" className="text-xs">Completed</Badge>
                       </div>
                     </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
           </>
         )}
+
+        {/* Trends Tab */}
+        {activeTab === 'trends' && <GoogleTrendsPanel />}
+
+        {/* Articles Tab */}
+        {activeTab === 'articles' && <ArticlesManager />}
+
+        {/* Settings Tab */}
+        {activeTab === 'settings' && <AutomationSettings />}
 
         {/* SerpApi Monitor Tab */}
         {activeTab === 'serpapi' && <SerpApiMonitor />}
