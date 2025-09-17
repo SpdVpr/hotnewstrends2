@@ -42,6 +42,8 @@ export function GoogleTrendsPanel() {
       const response = await fetch('/api/trends?source=google');
       if (response.ok) {
         const data = await response.json();
+        console.log('🔍 Trends API response:', data.data);
+        console.log('🔍 First trend:', data.data?.topics?.[0]);
         setTrendsData(data.data);
       }
     } catch (error) {
@@ -125,8 +127,11 @@ export function GoogleTrendsPanel() {
     .sort((a, b) => {
       const aVolume = a.searchVolume || parseSearchVolume(a.formattedTraffic);
       const bVolume = b.searchVolume || parseSearchVolume(b.formattedTraffic);
+      console.log(`🔍 Sorting: "${a.title}" (${aVolume}) vs "${b.title}" (${bVolume})`);
       return bVolume - aVolume;
     });
+
+  console.log('🔍 Current trends after sorting:', currentTrends.map(t => ({ title: t.title, volume: t.searchVolume || parseSearchVolume(t.formattedTraffic) })));
 
   return (
     <Card>
