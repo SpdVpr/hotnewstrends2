@@ -1,8 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// Performance monitoring and security headers middleware
+// Performance monitoring, security headers, and admin authentication middleware
 export function middleware(request: NextRequest) {
   const startTime = Date.now();
+  const pathname = request.nextUrl.pathname;
+
+  // Admin authentication check
+  if (pathname.startsWith('/admin') && pathname !== '/admin/login') {
+    const authCookie = request.cookies.get('admin-auth');
+
+    if (!authCookie || authCookie.value !== 'authenticated') {
+      const loginUrl = new URL('/admin/login', request.url);
+      return NextResponse.redirect(loginUrl);
+    }
+  }
+
   const response = NextResponse.next();
 
   // Security headers
@@ -30,7 +42,7 @@ export function middleware(request: NextRequest) {
   response.headers.set('X-Response-Time', `${Date.now() - startTime}ms`);
   
   // Cache control for different routes
-  const pathname = request.nextUrl.pathname;
+  // (pathname already defined above)
 
   // In development, disable all caching to prevent stale content
   if (process.env.NODE_ENV === 'development') {

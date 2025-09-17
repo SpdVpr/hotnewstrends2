@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Navigation } from '@/components/Navigation';
 import { Button } from '@/components/ui/Button';
 import { Card, CardHeader, CardContent, CardTitle, CardDescription } from '@/components/ui/Card';
@@ -75,6 +76,7 @@ interface DailyPlanJob {
 }
 
 export default function AdminPage() {
+  const router = useRouter();
   const [stats, setStats] = useState<AutomationStats | null>(null);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [dailyPlan, setDailyPlan] = useState<DailyPlan | null>(null);
@@ -258,6 +260,24 @@ export default function AdminPage() {
     }
   };
 
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/admin/login', {
+        method: 'DELETE',
+      });
+
+      // Clear client-side cookie
+      document.cookie = 'admin-auth=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+
+      // Redirect to login
+      router.push('/admin/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Force redirect even if API call fails
+      router.push('/admin/login');
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     const variants = {
       pending: 'secondary',
@@ -289,9 +309,18 @@ export default function AdminPage() {
       <Navigation />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-text mb-2">Admin Dashboard</h1>
-          <p className="text-text-secondary">Manage content automation and monitor article generation</p>
+        <div className="mb-8 flex justify-between items-start">
+          <div>
+            <h1 className="text-3xl font-bold text-text mb-2">Admin Dashboard</h1>
+            <p className="text-text-secondary">Manage content automation and monitor article generation</p>
+          </div>
+          <Button
+            onClick={handleLogout}
+            variant="outline"
+            className="text-red-600 border-red-200 hover:bg-red-50"
+          >
+            🔐 Logout
+          </Button>
         </div>
 
         {/* Tab Navigation */}
