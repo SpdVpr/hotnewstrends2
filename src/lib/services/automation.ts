@@ -83,8 +83,8 @@ class AutomationService {
         return;
       }
       
-      // Get trending topics from Google Trends API
-      const trends = await this.getTrendingTopicsFromGoogle();
+      // Get trending topics from Firebase (not API)
+      const trends = await this.getTrendingTopicsFromFirebase();
       const highPotentialTopics = this.filterHighPotentialTopics(
         trends,
         this.config.minConfidenceScore,
@@ -219,7 +219,45 @@ class AutomationService {
   }
 
   /**
-   * Get trending topics from Google Trends API
+   * Get trending topics from Firebase (collected by trend scheduler)
+   */
+  private async getTrendingTopicsFromFirebase(): Promise<TrendingTopic[]> {
+    try {
+      console.log('🔍 Fetching trending topics from Firebase...');
+
+      // Import Firebase trends service
+      const { firebaseTrendsService } = await import('./firebase-trends');
+
+      // Get trends that need articles (not yet processed)
+      const firebaseTrends = await firebaseTrendsService.getTrendsNeedingArticles(20);
+
+      // Convert Firebase format to TrendingTopic format
+      const topics: TrendingTopic[] = firebaseTrends.map((trend: any) => ({
+        title: trend.title || trend.keyword || 'Unknown Topic',
+        keyword: trend.keyword || 'unknown',
+        category: trend.category || 'News',
+        traffic: trend.formattedTraffic || `${trend.searchVolume}+`,
+        formattedTraffic: trend.formattedTraffic,
+        searchVolume: trend.searchVolume || trend.traffic || 1000,
+        region: trend.region || 'US',
+        timeframe: trend.timeframe || 'now',
+        relatedQueries: trend.relatedQueries || [],
+        confidence: trend.confidence || 0.8,
+        growthRate: trend.growthRate || 30,
+        source: trend.source || 'Firebase',
+        sources: trend.sources || []
+      }));
+
+      console.log(`✅ Firebase returned ${topics.length} trends needing articles`);
+      return topics;
+    } catch (error) {
+      console.error('❌ Error fetching trends from Firebase:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get trending topics from Google Trends API (used by trend collection, not article generation)
    */
   private async getTrendingTopicsFromGoogle(): Promise<TrendingTopic[]> {
     try {

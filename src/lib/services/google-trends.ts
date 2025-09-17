@@ -76,7 +76,10 @@ export const googleTrendsService = {
 
           // Record successful SerpAPI call
           try {
-            await fetch('/api/serpapi-usage', { method: 'POST' });
+            const baseUrl = process.env.VERCEL_URL
+              ? `https://${process.env.VERCEL_URL}`
+              : process.env.NEXTAUTH_URL || 'http://localhost:3000';
+            await fetch(`${baseUrl}/api/serpapi-usage`, { method: 'POST' });
             console.log('📊 SerpAPI call recorded successfully');
           } catch (recordError) {
             console.warn('⚠️ Failed to record SerpAPI call:', recordError);
