@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Navigation } from '@/components/Navigation';
 import { ArticleCard } from '@/components/ArticleCard';
-import { CategoryFilter } from '@/components/CategoryFilter';
+import { CategoryFilter, ScrollableCategoryFilter } from '@/components/CategoryFilter';
 import { Button, Badge } from '@/components/ui';
 import { Article, Category } from '@/types';
 
@@ -124,12 +124,12 @@ export default function Home() {
 
           {/* Trending Now Banner */}
           {!loading && (
-            <div className="bg-gradient-to-r from-orange/10 to-red/10 border border-orange/20 rounded-lg p-4 mb-8">
-              <div className="flex items-center justify-center">
-                <Badge variant="trending" className="mr-3">
+            <div className="bg-gradient-to-r from-orange/10 to-red/10 border border-orange/20 rounded-lg p-3 md:p-4 mb-8">
+              <div className="flex items-center justify-center flex-col sm:flex-row gap-2 sm:gap-0">
+                <Badge variant="trending" className="mr-0 sm:mr-3 mb-1 sm:mb-0 text-xs sm:text-sm">
                   🔥 TRENDING NOW
                 </Badge>
-                <div className="text-text font-medium min-h-[24px] flex items-center">
+                <div className="text-text font-medium min-h-[24px] flex items-center text-sm sm:text-base text-center">
                   {trendingTopics.length > 0 ? (
                     <div className="relative overflow-hidden">
                       <div
@@ -142,7 +142,7 @@ export default function Home() {
                         {trendingTopics.map((topic, index) => (
                           <div
                             key={index}
-                            className="h-6 flex items-center capitalize"
+                            className="h-6 flex items-center capitalize justify-center"
                             style={{ lineHeight: '24px' }}
                           >
                             {topic}
@@ -151,7 +151,7 @@ export default function Home() {
                       </div>
                     </div>
                   ) : (
-                    <span>Loading trending topics...</span>
+                    <span className="text-center">Loading trending topics...</span>
                   )}
                 </div>
               </div>
@@ -161,11 +161,24 @@ export default function Home() {
 
         {/* Category Filter */}
         <section className="mb-8">
-          <CategoryFilter
-            categories={categories}
-            selectedCategory={selectedCategory}
-            onCategoryChange={setSelectedCategory}
-          />
+          {/* Mobile: Scrollable horizontal filter */}
+          <div className="block md:hidden">
+            <ScrollableCategoryFilter
+              categories={categories}
+              selectedCategory={selectedCategory}
+              onCategoryChange={setSelectedCategory}
+              showScrollIndicators={true}
+            />
+          </div>
+
+          {/* Desktop: Regular flex filter */}
+          <div className="hidden md:block">
+            <CategoryFilter
+              categories={categories}
+              selectedCategory={selectedCategory}
+              onCategoryChange={setSelectedCategory}
+            />
+          </div>
         </section>
 
         {/* Articles Grid */}

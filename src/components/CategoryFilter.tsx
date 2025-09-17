@@ -103,8 +103,9 @@ const ScrollableCategoryFilter: React.FC<ScrollableCategoryFilterProps> = ({
       {showScrollIndicators && canScrollLeft && (
         <button
           onClick={scrollLeft}
-          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-background/80 backdrop-blur-sm rounded-full p-2 shadow-md hover:bg-background transition-colors"
+          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-background/90 backdrop-blur-sm rounded-full p-2 shadow-lg hover:bg-background transition-all duration-200 border border-border/50"
           aria-label="Scroll left"
+          style={{ touchAction: 'manipulation' }}
         >
           <svg className="h-4 w-4 text-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -115,9 +116,13 @@ const ScrollableCategoryFilter: React.FC<ScrollableCategoryFilterProps> = ({
       {/* Scrollable Container */}
       <div
         ref={scrollRef}
-        className="flex gap-2 overflow-x-auto scrollbar-hide pb-2"
+        className="flex gap-3 overflow-x-auto scrollbar-hide pb-2 px-1"
         onScroll={checkScrollability}
-        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        style={{
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
+          scrollSnapType: 'x mandatory'
+        }}
       >
         {allCategories.map((category) => {
           const isSelected = selectedCategory === category.id;
@@ -129,11 +134,17 @@ const ScrollableCategoryFilter: React.FC<ScrollableCategoryFilterProps> = ({
               size="sm"
               onClick={() => onCategoryChange(category.id)}
               className={cn(
-                'rounded-full whitespace-nowrap flex-shrink-0 transition-all duration-200',
-                isSelected 
-                  ? 'shadow-md' 
-                  : 'hover:shadow-sm hover:scale-105'
+                'rounded-full whitespace-nowrap flex-shrink-0 transition-all duration-200 min-w-fit px-4 py-2',
+                'text-sm font-medium',
+                'scroll-snap-align-start',
+                isSelected
+                  ? 'shadow-md scale-105 ring-2 ring-primary/20'
+                  : 'hover:shadow-sm hover:scale-105 active:scale-95'
               )}
+              style={{
+                minWidth: 'fit-content',
+                touchAction: 'manipulation'
+              }}
             >
               {category.name}
             </Button>
@@ -145,8 +156,9 @@ const ScrollableCategoryFilter: React.FC<ScrollableCategoryFilterProps> = ({
       {showScrollIndicators && canScrollRight && (
         <button
           onClick={scrollRight}
-          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-background/80 backdrop-blur-sm rounded-full p-2 shadow-md hover:bg-background transition-colors"
+          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-background/90 backdrop-blur-sm rounded-full p-2 shadow-lg hover:bg-background transition-all duration-200 border border-border/50"
           aria-label="Scroll right"
+          style={{ touchAction: 'manipulation' }}
         >
           <svg className="h-4 w-4 text-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
