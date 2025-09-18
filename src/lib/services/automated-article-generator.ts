@@ -1021,17 +1021,147 @@ class AutomatedArticleGenerator {
 
   /**
    * Force refresh of daily plan (useful when trends are updated)
-   * This reads the latest trends from Firebase and recreates the daily plan
+   * This preserves already generated articles and only updates future ones
    */
   public async refreshDailyPlan(): Promise<void> {
     const today = new Date().toISOString().split('T')[0];
     console.log('🔄 Refreshing daily plan for', today);
     console.log('📊 Reading latest trends from Firebase for daily plan refresh...');
 
-    // Create a fresh daily plan with ALL latest trends (not just ones needing articles)
-    await this.createFreshDailyPlan(today);
+    // Update only future articles (preserve already generated ones)
+    await this.updateFutureDailyPlan(today);
 
-    console.log('✅ Daily plan refresh completed using Firebase trends');
+    console.log('✅ Daily plan refresh completed - preserved existing articles, updated future ones');
+  }
+
+  /**
+   * Update only future articles in daily plan (preserve already generated ones)
+   */
+  private async updateFutureDailyPlan(date: string): Promise<DailyPlan> {
+    console.log(`🔄 Updating future articles in daily plan for date: ${date}`);
+
+    try {
+      // Get current daily plan
+      const currentPlan = await this.getDailyPlan(date);
+      if (!currentPlan) {
+        console.log('📝 No existing daily plan found, creating fresh one');
+        return await this.createFreshDailyPlan(date);
+      }
+
+      console.log(`📋 Found existing daily plan with ${currentPlan.jobs.length} jobs`);
+
+      // Determine current time and which articles are already generated
+      const now = new Date();
+      const currentHour = now.getHours();
+      const currentMinute = now.getMinutes();
+      const currentTimeMinutes = currentHour * 60 + currentMinute;
+
+      // Find articles that are already generated (past their scheduled time)
+      const preservedJobs = [];
+      const futureJobs = [];
+
+      for (const job of currentPlan.jobs) {
+        const [hours, minutes] = job.scheduledTime.split(':').map(Number);
+        const jobTimeMinutes = hours * 60 + minutes;
+
+        if (jobTimeMinutes <= currentTimeMinutes) {
+          // This article should already be generated or is being generated now
+          preservedJobs.push(job);
+          console.log(`✅ Preserving job #${job.position}: "${job.trend.title}" (${job.scheduledTime})`);
+        } else {
+          // This article is in the future - will be updated
+          futureJobs.push(job);
+          console.log(`🔄 Will update job #${job.position}: "${job.trend.title}" (${job.scheduledTime})`);
+        }
+      }
+
+      console.log(`📊 Preserving ${preservedJobs.length} past/current jobs, updating ${futureJobs.length} future jobs`);
+
+      // Get latest trends from Firebase for future jobs
+      const { firebaseTrendsService } = await import('./firebase-trends');
+      const firebaseTrends = await firebaseTrendsService.getLatestTrends(50);
+      console.log(`📊 Retrieved ${firebaseTrends.length} latest trends from Firebase`);
+
+      // Convert and sort trends
+      const allTrends = firebaseTrends.map((fbTrend: any) => ({
+        id: fbTrend.id,
+        title: fbTrend.title || fbTrend.keyword,
+        keyword: fbTrend.keyword || fbTrend.title,
+        category: fbTrend.category || 'general',
+        traffic: fbTrend.formattedTraffic || `${fbTrend.searchVolume || 0}+`,
+        formattedTraffic: fbTrend.formattedTraffic || `${fbTrend.searchVolume || 0}+`,
+        searchVolume: fbTrend.searchVolume || 0,
+        region: fbTrend.region || 'US',
+        timeframe: fbTrend.timeframe || 'now',
+        relatedQueries: fbTrend.relatedQueries || [],
+        confidence: fbTrend.confidence || 0.8,
+        growthRate: fbTrend.growthRate || 25,
+        source: fbTrend.source || 'Firebase',
+        sources: fbTrend.sources || []
+      }));
+
+      // Sort by search volume (highest first)
+      const sortedTrends = allTrends.sort((a, b) => (b.searchVolume || 0) - (a.searchVolume || 0));
+
+      // Remove duplicates and exclude already used trends
+      const usedTitles = new Set(preservedJobs.map(job => job.trend.title.toLowerCase().trim()));
+      const availableTrends = [];
+      const seenTitles = new Set();
+
+      for (const trend of sortedTrends) {
+        const normalizedTitle = trend.title.toLowerCase().trim();
+        if (!seenTitles.has(normalizedTitle) && !usedTitles.has(normalizedTitle)) {
+          seenTitles.add(normalizedTitle);
+          availableTrends.push(trend);
+        }
+      }
+
+      console.log(`📊 Found ${availableTrends.length} available trends for future jobs`);
+
+      // Update future jobs with new trends
+      const updatedFutureJobs = futureJobs.map((job, index) => {
+        if (index < availableTrends.length) {
+          const newTrend = availableTrends[index];
+          console.log(`🔄 Updating job #${job.position}: "${job.trend.title}" → "${newTrend.title}" (${newTrend.searchVolume} searches)`);
+
+          return {
+            ...job,
+            trend: newTrend,
+            status: 'pending' as const,
+            createdAt: new Date(),
+            updatedAt: new Date()
+          };
+        } else {
+          // Keep original if no new trend available
+          console.log(`⚠️ No new trend available for job #${job.position}, keeping "${job.trend.title}"`);
+          return job;
+        }
+      });
+
+      // Combine preserved and updated jobs
+      const allJobs = [...preservedJobs, ...updatedFutureJobs];
+      allJobs.sort((a, b) => a.position - b.position);
+
+      // Create updated daily plan
+      const updatedPlan: DailyPlan = {
+        ...currentPlan,
+        jobs: allJobs,
+        updatedAt: new Date(),
+        totalJobs: allJobs.length,
+        completedJobs: preservedJobs.filter(job => job.status === 'completed').length,
+        pendingJobs: allJobs.filter(job => job.status === 'pending').length
+      };
+
+      // Save updated plan
+      await this.saveDailyPlan(updatedPlan);
+      console.log(`✅ Updated daily plan saved with ${preservedJobs.length} preserved + ${updatedFutureJobs.length} updated jobs`);
+
+      return updatedPlan;
+
+    } catch (error) {
+      console.error('❌ Error updating future daily plan:', error);
+      throw error;
+    }
   }
 
   /**

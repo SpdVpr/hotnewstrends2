@@ -79,7 +79,28 @@ export async function GET(request: NextRequest) {
     }
     
     console.log(`✅ Trends update completed: ${successCount} saved, ${errorCount} failed`);
-    
+
+    // Auto-refresh Daily Plan after trends update
+    let dailyPlanRefresh = null;
+    if (successCount > 0) {
+      try {
+        console.log('🔄 Auto-refreshing Daily Plan with new trends...');
+        const { automatedArticleGenerator } = await import('@/lib/services/automated-article-generator');
+        await automatedArticleGenerator.refreshDailyPlan();
+        dailyPlanRefresh = {
+          status: 'success',
+          message: 'Daily Plan automatically refreshed with new trends'
+        };
+        console.log('✅ Daily Plan auto-refresh completed');
+      } catch (error) {
+        console.error('❌ Failed to auto-refresh Daily Plan:', error);
+        dailyPlanRefresh = {
+          status: 'error',
+          error: error instanceof Error ? error.message : 'Unknown error'
+        };
+      }
+    }
+
     // Get updated stats
     let updatedStats = null;
     try {
@@ -107,6 +128,7 @@ export async function GET(request: NextRequest) {
           rssCount
         },
         saveResults: saveResults.slice(0, 10), // First 10 results
+        dailyPlanRefresh,
         updatedStats,
         timestamp: new Date().toISOString()
       }
