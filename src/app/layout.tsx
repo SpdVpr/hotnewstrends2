@@ -35,7 +35,7 @@ export const metadata: Metadata = {
     description: "AI-powered newsroom delivering comprehensive articles about trending topics within hours.",
     images: [
       {
-        url: "https://hotnewstrends.com/og-image.jpg",
+        url: "https://hotnewstrends.com/hnt-logo.png",
         width: 1200,
         height: 630,
         alt: "HotNewsTrends - AI-powered newsroom",
@@ -47,7 +47,7 @@ export const metadata: Metadata = {
     title: "HotNewsTrends.com - Where Speed Meets Style",
     description: "AI-powered newsroom delivering comprehensive articles about trending topics within hours.",
     creator: "@hotnewstrends",
-    images: ["https://hotnewstrends.com/og-image.jpg"],
+    images: ["https://hotnewstrends.com/hnt-logo.png"],
   },
   icons: {
     icon: [

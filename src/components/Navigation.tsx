@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { SearchInput } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -42,10 +43,14 @@ const Navigation: React.FC<NavigationProps> = ({ className }) => {
           {/* Logo */}
           <div className="flex items-center">
             <Link href="/" className="flex items-center">
-              <h1 className="text-2xl font-bold text-primary">
-                HotNewsTrends
-                <span className="text-orange ml-1">↗</span>
-              </h1>
+              <Image
+                src="/hnt-logo.png"
+                alt="HotNewsTrends"
+                width={180}
+                height={40}
+                className="h-8 w-auto"
+                priority
+              />
             </Link>
           </div>
           
@@ -151,17 +156,27 @@ export interface LogoProps {
 
 const Logo: React.FC<LogoProps> = ({ className, size = 'md' }) => {
   const sizes = {
-    sm: 'text-lg',
-    md: 'text-2xl',
-    lg: 'text-3xl',
+    sm: { width: 120, height: 26 },
+    md: { width: 180, height: 40 },
+    lg: { width: 240, height: 53 },
+  };
+
+  const heightClasses = {
+    sm: 'h-6',
+    md: 'h-8',
+    lg: 'h-12',
   };
 
   return (
     <Link href="/" className={cn('flex items-center', className)}>
-      <h1 className={cn('font-bold text-primary', sizes[size])}>
-        HotNewsTrends
-        <span className="text-orange ml-1">↗</span>
-      </h1>
+      <Image
+        src="/hnt-logo.png"
+        alt="HotNewsTrends"
+        width={sizes[size].width}
+        height={sizes[size].height}
+        className={cn('w-auto', heightClasses[size])}
+        priority
+      />
     </Link>
   );
 };
