@@ -1028,11 +1028,103 @@ class AutomatedArticleGenerator {
     console.log('🔄 Refreshing daily plan for', today);
     console.log('📊 Reading latest trends from Firebase for daily plan refresh...');
 
-    // Simply recreate the daily plan with current Firebase data
-    // The trends scheduler handles updating Firebase with fresh SerpAPI data
-    await this.createDailyPlan(today);
+    // Create a fresh daily plan with ALL latest trends (not just ones needing articles)
+    await this.createFreshDailyPlan(today);
 
     console.log('✅ Daily plan refresh completed using Firebase trends');
+  }
+
+  /**
+   * Create a fresh daily plan with ALL latest trends (for refresh functionality)
+   */
+  private async createFreshDailyPlan(date: string): Promise<DailyPlan> {
+    console.log(`🔄 Creating fresh daily plan for date: ${date}`);
+
+    try {
+      // Get ALL latest trends from Firebase (not just ones needing articles)
+      console.log('📊 Fetching ALL latest trends from Firebase for fresh daily plan...');
+
+      let firebaseTrends: any[] = [];
+
+      try {
+        const { firebaseTrendsService } = await import('./firebase-trends');
+        firebaseTrends = await firebaseTrendsService.getLatestTrends(50); // Get ALL trends
+        console.log(`📊 Retrieved ${firebaseTrends.length} latest trends from Firebase`);
+      } catch (firebaseError) {
+        console.error('❌ Firebase trends fetch failed:', firebaseError);
+        throw firebaseError;
+      }
+
+      if (!firebaseTrends || firebaseTrends.length === 0) {
+        console.warn('⚠️ No trends available from Firebase for fresh daily plan');
+        throw new Error('No trends available');
+      }
+
+      // Convert Firebase trends to TrackedTrend format
+      const allTrends = firebaseTrends.map((fbTrend: any) => {
+        const trend = {
+          id: fbTrend.id,
+          title: fbTrend.title || fbTrend.keyword,
+          keyword: fbTrend.keyword || fbTrend.title,
+          category: fbTrend.category || 'general',
+          traffic: fbTrend.formattedTraffic || `${fbTrend.searchVolume || 0}+`,
+          formattedTraffic: fbTrend.formattedTraffic || `${fbTrend.searchVolume || 0}+`,
+          searchVolume: fbTrend.searchVolume || 0,
+          region: fbTrend.region || 'US',
+          timeframe: fbTrend.timeframe || 'now',
+          relatedQueries: fbTrend.relatedQueries || [],
+          confidence: fbTrend.confidence || 0.8,
+          growthRate: fbTrend.growthRate || 25,
+          source: fbTrend.source || 'Firebase',
+          sources: fbTrend.sources || []
+        };
+        return trend;
+      });
+
+      // Sort by search volume (highest first)
+      const sortedTrends = allTrends.sort((a, b) => (b.searchVolume || 0) - (a.searchVolume || 0));
+      console.log(`📊 Sorted ${sortedTrends.length} trends by search volume`);
+      console.log(`🔍 Top trend: "${sortedTrends[0]?.title}" (${sortedTrends[0]?.searchVolume} searches, source: ${sortedTrends[0]?.source})`);
+
+      // Create jobs for top trends
+      const jobs: Job[] = [];
+      const maxJobs = Math.min(this.MAX_DAILY_ARTICLES, sortedTrends.length);
+
+      for (let i = 0; i < maxJobs; i++) {
+        const trend = sortedTrends[i];
+        const scheduledTime = this.calculateScheduledTime(i);
+
+        const job: Job = {
+          id: `${date}-${i + 1}`,
+          topic: trend.title,
+          keyword: trend.keyword,
+          category: trend.category,
+          scheduledTime,
+          status: 'pending',
+          createdAt: new Date().toISOString(),
+          searchVolume: trend.searchVolume,
+          source: trend.source
+        };
+
+        jobs.push(job);
+      }
+
+      const dailyPlan: DailyPlan = {
+        date,
+        jobs,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
+      await this.storeDailyPlan(dailyPlan);
+      console.log(`✅ Fresh daily plan created with ${jobs.length} jobs from latest trends`);
+
+      return dailyPlan;
+
+    } catch (error) {
+      console.error('❌ Error creating fresh daily plan:', error);
+      throw error;
+    }
   }
 
   /**
