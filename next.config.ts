@@ -159,6 +159,9 @@ const nextConfig: NextConfig = {
             font-src 'self' data:;
             connect-src 'self'
               https://www.google-analytics.com
+              https://region1.google-analytics.com
+              https://analytics.google.com
+              https://stats.g.doubleclick.net
               https://www.googletagmanager.com
               https://api.perplexity.ai
               https://api.unsplash.com
