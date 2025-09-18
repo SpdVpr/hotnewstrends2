@@ -8,13 +8,13 @@ export async function GET(request: NextRequest) {
     // Check if we have required config
     const hasServiceAccount = !!process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
     const hasSerpApiKey = !!process.env.SERPAPI_KEY;
-    
+
+    console.log(`🔑 Service Account: ${hasServiceAccount ? 'SET' : 'NOT_SET'}`);
+    console.log(`🔑 SerpAPI Key: ${hasSerpApiKey ? 'SET' : 'NOT_SET'}`);
+
+    // Try to proceed without service account (using client-side Firebase)
     if (!hasServiceAccount) {
-      return NextResponse.json({
-        success: false,
-        error: 'FIREBASE_SERVICE_ACCOUNT_KEY environment variable not set',
-        details: 'Cannot save trends to Firebase without service account key'
-      }, { status: 500 });
+      console.log('⚠️ No service account - trying client-side Firebase...');
     }
     
     if (!hasSerpApiKey) {
