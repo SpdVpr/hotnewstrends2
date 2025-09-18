@@ -2,9 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { StructuredData } from "@/components/StructuredData";
 import { AIMetaTags } from "@/components/AIMetaTags";
-import { AnalyticsProvider } from "@/components/AnalyticsProvider";
 import { StartupInitializer } from "@/components/StartupInitializer";
-import { PerformanceMonitor } from "@/components/PerformanceMonitor";
 import "./globals.css";
 
 const inter = Inter({
@@ -113,11 +111,8 @@ export default function RootLayout({
         />
       </head>
       <body className="font-sans antialiased bg-background text-foreground">
-        <PerformanceMonitor />
         <StartupInitializer />
-        <AnalyticsProvider>
-          {children}
-        </AnalyticsProvider>
+        {children}
       </body>
     </html>
   );
