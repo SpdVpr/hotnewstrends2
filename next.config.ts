@@ -171,7 +171,11 @@ const nextConfig: NextConfig = {
               https://www.google.com
               https://feeds.reuters.com
               https://rss.cnn.com/rss/edition.rss
-              https://rss.cnn.com/rss/cnn_topstories.rss;
+              https://rss.cnn.com/rss/cnn_topstories.rss
+              https://firestore.googleapis.com
+              https://firebase.googleapis.com
+              https://identitytoolkit.googleapis.com
+              https://securetoken.googleapis.com;
             frame-src 'self';
             object-src 'none';
             base-uri 'self';

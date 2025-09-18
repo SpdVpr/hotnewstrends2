@@ -30,7 +30,7 @@ export function middleware(request: NextRequest) {
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data: https: blob:",
-    "connect-src 'self' https://www.google-analytics.com https://www.googletagmanager.com https://api.perplexity.ai https://api.unsplash.com https://api.pexels.com https://trends.google.com https://www.google.com https://serpapi.com https://rss.cnn.com https://feeds.bbci.co.uk https://www.reuters.com https://feeds.reuters.com",
+    "connect-src 'self' https://www.google-analytics.com https://www.googletagmanager.com https://api.perplexity.ai https://api.unsplash.com https://api.pexels.com https://trends.google.com https://www.google.com https://serpapi.com https://rss.cnn.com https://feeds.bbci.co.uk https://www.reuters.com https://feeds.reuters.com https://firestore.googleapis.com https://firebase.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com",
     "frame-ancestors 'none'",
     "base-uri 'self'",
     "form-action 'self'"
