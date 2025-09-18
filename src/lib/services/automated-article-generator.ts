@@ -1184,7 +1184,7 @@ class AutomatedArticleGenerator {
       };
 
       // Save updated plan
-      await this.saveDailyPlan(updatedPlan);
+      await this.storeDailyPlan(updatedPlan);
       console.log(`✅ Updated daily plan saved with ${preservedJobs.length} preserved + ${updatedFutureJobs.length} updated jobs`);
 
       return updatedPlan;
