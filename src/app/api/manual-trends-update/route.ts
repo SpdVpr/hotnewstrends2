@@ -85,20 +85,52 @@ export async function GET(request: NextRequest) {
     if (successCount > 0) {
       try {
         console.log('🔄 Auto-refreshing Daily Plan with new trends...');
+        console.log(`📊 Trends updated: ${successCount} new trends saved to Firebase`);
+
         const { automatedArticleGenerator } = await import('@/lib/services/automated-article-generator');
+
+        // Get stats before refresh
+        const statsBefore = automatedArticleGenerator.getStats();
+        console.log('📊 Daily Plan BEFORE refresh:', {
+          totalJobs: statsBefore.totalJobs,
+          pendingJobs: statsBefore.pendingJobs,
+          completedJobs: statsBefore.completedJobs
+        });
+
         await automatedArticleGenerator.refreshDailyPlan();
+
+        // Get stats after refresh
+        const statsAfter = automatedArticleGenerator.getStats();
+        console.log('📊 Daily Plan AFTER refresh:', {
+          totalJobs: statsAfter.totalJobs,
+          pendingJobs: statsAfter.pendingJobs,
+          completedJobs: statsAfter.completedJobs
+        });
+
         dailyPlanRefresh = {
           status: 'success',
-          message: 'Daily Plan automatically refreshed with new trends'
+          message: 'Daily Plan automatically refreshed with new trends',
+          before: {
+            totalJobs: statsBefore.totalJobs,
+            pendingJobs: statsBefore.pendingJobs
+          },
+          after: {
+            totalJobs: statsAfter.totalJobs,
+            pendingJobs: statsAfter.pendingJobs
+          }
         };
-        console.log('✅ Daily Plan auto-refresh completed');
+        console.log('✅ Daily Plan auto-refresh completed successfully');
       } catch (error) {
         console.error('❌ Failed to auto-refresh Daily Plan:', error);
+        console.error('❌ Error details:', error instanceof Error ? error.stack : error);
         dailyPlanRefresh = {
           status: 'error',
-          error: error instanceof Error ? error.message : 'Unknown error'
+          error: error instanceof Error ? error.message : 'Unknown error',
+          details: error instanceof Error ? error.stack : undefined
         };
       }
+    } else {
+      console.log('⚠️ No trends updated, skipping Daily Plan refresh');
     }
 
     // Get updated stats
