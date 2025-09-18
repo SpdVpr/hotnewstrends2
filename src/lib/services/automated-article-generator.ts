@@ -201,7 +201,8 @@ class AutomatedArticleGenerator {
           slug: fbTrend.slug || (fbTrend.title || fbTrend.keyword).toLowerCase().replace(/[^a-z0-9]+/g, '-'),
           category: fbTrend.category || 'general',
           formattedTraffic: fbTrend.formattedTraffic,
-          traffic: fbTrend.searchVolume || fbTrend.traffic || 0,
+          traffic: fbTrend.searchVolume || fbTrend.traffic || 0, // Use searchVolume as primary source
+          searchVolume: fbTrend.searchVolume || 0, // Keep searchVolume for sorting
           source: fbTrend.source,
           firstSeen: fbTrend.savedAt,
           lastSeen: fbTrend.savedAt,
@@ -209,7 +210,12 @@ class AutomatedArticleGenerator {
           hash: fbTrend.id
         };
 
-        // Ensure traffic is a number
+        // Ensure searchVolume is a number for sorting
+        if (typeof trend.searchVolume === 'string') {
+          trend.searchVolume = parseInt(trend.searchVolume.replace(/[^0-9]/g, '')) || 0;
+        }
+
+        // Ensure traffic is a number (fallback)
         if (typeof trend.traffic === 'string') {
           trend.traffic = parseInt(trend.traffic.replace(/[^0-9]/g, '')) || 0;
         }
@@ -219,24 +225,24 @@ class AutomatedArticleGenerator {
 
       console.log(`📊 Converted ${allTrends.length} Firebase trends to TrackedTrend format`);
 
-      // Debug: Show sample trends with traffic values
+      // Debug: Show sample trends with search volume values
       if (allTrends.length > 0) {
         console.log('📊 Sample trends for daily plan:');
         allTrends.slice(0, 3).forEach((trend, i) => {
-          console.log(`  ${i + 1}. "${trend.title}" - ${trend.category} - traffic: ${trend.traffic} (${typeof trend.traffic})`);
+          console.log(`  ${i + 1}. "${trend.title}" - ${trend.category} - searchVolume: ${trend.searchVolume} (${typeof trend.searchVolume})`);
         });
       }
 
-      // Sort trends by search volume (highest first)
+      // Sort trends by search volume (highest first) - this is the key fix!
       const sortedTrends = allTrends
-        .sort((a, b) => b.traffic - a.traffic)
+        .sort((a, b) => (b.searchVolume || 0) - (a.searchVolume || 0))
         .slice(0, this.MAX_DAILY_ARTICLES);
 
       console.log(`📊 Sorted trends for daily plan: ${sortedTrends.length} trends`);
       if (sortedTrends.length > 0) {
-        console.log('📊 Top 3 trends:');
+        console.log('📊 Top 3 trends by search volume:');
         sortedTrends.slice(0, 3).forEach((trend, i) => {
-          console.log(`  ${i + 1}. "${trend.title}" - traffic: ${trend.traffic}`);
+          console.log(`  ${i + 1}. "${trend.title}" - searchVolume: ${trend.searchVolume} searches`);
         });
       } else {
         console.warn('⚠️ No sorted trends available for daily plan!');

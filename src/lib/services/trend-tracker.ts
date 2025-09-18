@@ -12,6 +12,7 @@ export interface TrackedTrend {
   category: string;
   formattedTraffic: string;
   traffic: number;
+  searchVolume?: number; // For proper sorting by search volume
   source: string;
   firstSeen: string;
   lastSeen: string;
