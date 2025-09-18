@@ -87,7 +87,7 @@ export const googleTrendsService = {
 
           if (data.trending_searches) {
             const serpTopics = data.trending_searches
-              .slice(0, 30) // Limit to 30 SerpAPI topics (increased from 20 for better coverage)
+              .slice(0, 50) // Use up to 50 SerpAPI topics (no RSS supplement needed)
               .map((item: any) => ({
                 title: item.query || item.title || 'Unknown Topic',
                 keyword: item.query || item.title || 'unknown',
@@ -108,21 +108,17 @@ export const googleTrendsService = {
                 }))
               }));
 
-            // Get limited RSS topics for variety (max 10 as supplement to SerpAPI)
-            console.log(`📰 Fetching up to 10 RSS topics as supplement to SerpAPI...`);
-            const rssTopics = (await this.fetchFromRSSFeeds(region)).slice(0, 10);
+            // Use ONLY SerpAPI data - no RSS feeds for maximum quality
+            console.log(`🎯 Using ONLY SerpAPI data for maximum quality and reliability`);
 
-            // SerpAPI gets absolute priority - put them first, then RSS
-            const allTopics = [
-              ...serpTopics.sort((a, b) => b.searchVolume - a.searchVolume), // SerpAPI first, sorted by real volume
-              ...rssTopics.sort((a, b) => b.searchVolume - a.searchVolume)   // RSS second, sorted by their volume
-            ];
+            // Sort SerpAPI topics by search volume (highest first)
+            const allTopics = serpTopics.sort((a, b) => b.searchVolume - a.searchVolume);
 
-            console.log(`✅ Prioritized data: ${serpTopics.length} SerpAPI (primary) + ${rssTopics.length} RSS (supplement, max 10) = ${allTopics.length} total topics`);
+            console.log(`✅ Pure SerpAPI data: ${serpTopics.length} high-quality trends from SerpAPI only`);
             return {
               topics: allTopics,
               total: allTopics.length,
-              source: 'SerpAPI + RSS',
+              source: 'SerpAPI Only',
               region,
               timeframe: 'now',
               lastUpdated: new Date().toISOString()
@@ -133,14 +129,13 @@ export const googleTrendsService = {
         }
       }
 
-      // Fallback to RSS feeds
-      console.log('📰 Falling back to RSS feeds...');
-      const rssTopics = await this.fetchFromRSSFeeds(region);
+      // No fallback - if SerpAPI fails, return empty results
+      console.log('❌ SerpAPI failed and no fallback configured - returning empty results');
 
       return {
-        topics: rssTopics,
-        total: rssTopics.length,
-        source: 'RSS Feeds',
+        topics: [],
+        total: 0,
+        source: 'SerpAPI Failed',
         region,
         timeframe: 'now',
         lastUpdated: new Date().toISOString()

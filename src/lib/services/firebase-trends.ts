@@ -280,6 +280,20 @@ class FirebaseTrendsService {
   }
 
   /**
+   * Delete a trend by ID
+   */
+  async deleteTrend(trendId: string): Promise<void> {
+    try {
+      const trendDoc = doc(db, this.COLLECTION_NAME, trendId);
+      await deleteDoc(trendDoc);
+      console.log(`🗑️ Deleted trend: ${trendId}`);
+    } catch (error) {
+      console.error(`❌ Error deleting trend ${trendId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
    * Clean up old trends (older than retention period)
    */
   private async cleanupOldTrends(): Promise<void> {
