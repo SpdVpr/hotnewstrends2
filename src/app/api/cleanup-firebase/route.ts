@@ -1,7 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+// GET /api/cleanup-firebase - Remove all RSS trends from Firebase, keep only SerpAPI (browser-friendly)
+export async function GET(request: NextRequest) {
+  return performCleanup();
+}
+
 // POST /api/cleanup-firebase - Remove all RSS trends from Firebase, keep only SerpAPI
 export async function POST(request: NextRequest) {
+  return performCleanup();
+}
+
+async function performCleanup() {
   try {
     console.log('🧹 Starting Firebase cleanup - removing RSS trends, keeping only SerpAPI...');
     
