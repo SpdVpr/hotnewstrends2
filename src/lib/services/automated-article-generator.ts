@@ -1166,17 +1166,46 @@ class AutomatedArticleGenerator {
           const newTrend = availableTrends[index];
           console.log(`🔄 Updating job #${job.position}: "${job.trend.title}" → "${newTrend.title}" (${newTrend.searchVolume} searches)`);
 
+          // Ensure scheduledAt exists - create if missing
+          let scheduledAt = job.scheduledAt;
+          if (!scheduledAt) {
+            console.warn(`⚠️ Job #${job.position} missing scheduledAt, creating new one`);
+            const startHour = 6; // Start at 6:00 AM
+            const intervalMinutes = (22 - 6) * 60 / 24; // ~40 minutes apart
+            const scheduledTime = new Date(date + 'T00:00:00.000Z');
+            const scheduledHour = startHour + Math.floor((job.position - 1) * intervalMinutes / 60);
+            const scheduledMinute = Math.floor((job.position - 1) * intervalMinutes) % 60;
+            scheduledTime.setUTCHours(scheduledHour, scheduledMinute, 0, 0);
+            scheduledAt = scheduledTime.toISOString();
+          }
+
           return {
             ...job,
             trend: newTrend,
             status: 'pending' as const,
-            createdAt: new Date(),
-            updatedAt: new Date()
+            updatedAt: new Date(),
+            // Keep or create scheduledAt - CRITICAL for time-based processing!
+            scheduledAt: scheduledAt
           };
         } else {
-          // Keep original if no new trend available
+          // Keep original if no new trend available - but ensure scheduledAt exists
+          let scheduledAt = job.scheduledAt;
+          if (!scheduledAt) {
+            console.warn(`⚠️ Job #${job.position} missing scheduledAt, creating new one`);
+            const startHour = 6;
+            const intervalMinutes = (22 - 6) * 60 / 24;
+            const scheduledTime = new Date(date + 'T00:00:00.000Z');
+            const scheduledHour = startHour + Math.floor((job.position - 1) * intervalMinutes / 60);
+            const scheduledMinute = Math.floor((job.position - 1) * intervalMinutes) % 60;
+            scheduledTime.setUTCHours(scheduledHour, scheduledMinute, 0, 0);
+            scheduledAt = scheduledTime.toISOString();
+          }
+
           console.log(`⚠️ No new trend available for job #${job.position}, keeping "${job.trend.title}"`);
-          return job;
+          return {
+            ...job,
+            scheduledAt: scheduledAt
+          };
         }
       });
 
