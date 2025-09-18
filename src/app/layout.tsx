@@ -75,9 +75,6 @@ export default function RootLayout({
         <meta name="theme-color" content="#007AFF" />
         <meta name="msapplication-TileColor" content="#007AFF" />
 
-        {/* Content Security Policy - Override for Google Analytics */}
-        <meta httpEquiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.googletagmanager.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: http:; font-src 'self' data:; connect-src 'self' https://www.google-analytics.com https://region1.google-analytics.com https://region2.google-analytics.com https://region3.google-analytics.com https://region4.google-analytics.com https://region5.google-analytics.com https://analytics.google.com https://stats.g.doubleclick.net https://www.googletagmanager.com https://api.perplexity.ai https://api.unsplash.com https://api.pexels.com https://trends.google.com https://www.google.com https://serpapi.com https://rss.cnn.com https://feeds.bbci.co.uk https://www.reuters.com https://feeds.reuters.com https://firestore.googleapis.com https://firebase.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com; frame-src 'self'; object-src 'none'; base-uri 'self';" />
-
         {/* Preconnect to essential external domains only */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
