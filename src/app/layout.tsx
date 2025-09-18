@@ -75,19 +75,9 @@ export default function RootLayout({
         <meta name="theme-color" content="#007AFF" />
         <meta name="msapplication-TileColor" content="#007AFF" />
 
-        {/* Preconnect to external domains for faster loading */}
+        {/* Preconnect to essential external domains only */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link rel="preconnect" href="https://cdn.marvel.com" />
-        <link rel="preconnect" href="https://i.abcnewsfe.com" />
-        <link rel="preconnect" href="https://static.standard.co.uk" />
-        <link rel="preconnect" href="https://cyprus-mail.com" />
-        <link rel="preconnect" href="https://i.ytimg.com" />
-
-        {/* DNS prefetch for other domains */}
-        <link rel="dns-prefetch" href="https://cdn.abcotvs.com" />
-        <link rel="dns-prefetch" href="https://staticg.sportskeeda.com" />
-        <link rel="dns-prefetch" href="https://images.foxtv.com" />
 
         <AIMetaTags type="website" />
         <StructuredData type="website" />

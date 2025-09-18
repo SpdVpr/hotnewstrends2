@@ -30,7 +30,7 @@ export function middleware(request: NextRequest) {
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data: https: blob:",
-    "connect-src 'self' https://www.google-analytics.com https://api.perplexity.ai https://api.unsplash.com https://api.pexels.com",
+    "connect-src 'self' https://www.google-analytics.com https://api.perplexity.ai https://api.unsplash.com https://api.pexels.com https://trends.google.com https://www.google.com https://serpapi.com",
     "frame-ancestors 'none'",
     "base-uri 'self'",
     "form-action 'self'"
@@ -89,9 +89,8 @@ export function middleware(request: NextRequest) {
   // Preload critical resources
   if (pathname === '/') {
     response.headers.set('Link', [
-      '</fonts/inter.woff2>; rel=preload; as=font; type=font/woff2; crossorigin',
-      '</api/trends>; rel=prefetch',
-      '</logo.png>; rel=preload; as=image'
+      '</logo.png>; rel=preload; as=image',
+      '</api/trends>; rel=prefetch'
     ].join(', '));
   }
 

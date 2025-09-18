@@ -165,7 +165,9 @@ const nextConfig: NextConfig = {
               https://rss.cnn.com
               https://feeds.bbci.co.uk
               https://www.reuters.com
-              https://serpapi.com;
+              https://serpapi.com
+              https://trends.google.com
+              https://www.google.com;
             frame-src 'self';
             object-src 'none';
             base-uri 'self';
@@ -190,7 +192,9 @@ const nextConfig: NextConfig = {
   },
   // Compiler optimizations
   compiler: {
-    removeConsole: process.env.NODE_ENV === 'production',
+    removeConsole: process.env.NODE_ENV === 'production' ? {
+      exclude: ['error', 'warn']
+    } : false,
   },
   // Bundle analyzer
   webpack: (config, { dev, isServer }) => {
