@@ -20,12 +20,18 @@ class StartupService {
     console.log('🚀 Initializing application services...');
 
     try {
-      // Trends scheduler disabled - only daily plan system generates articles
-      console.log('⚠️ Trends scheduler startup disabled - only daily plan system generates articles');
-      console.log('📊 Use admin panel to manually control trends updates if needed');
+      // Start trends scheduler automatically for continuous trend updates
+      console.log('🚀 Starting trends scheduler for automatic trend updates...');
+      try {
+        trendsScheduler.start();
+        console.log('✅ Trends scheduler started successfully');
+      } catch (schedulerError) {
+        console.error('❌ Failed to start trends scheduler:', schedulerError);
+        console.log('⚠️ Trends scheduler can be started manually from admin panel');
+      }
 
       this.initialized = true;
-      console.log('🎉 Application startup complete (trends scheduler disabled)');
+      console.log('🎉 Application startup complete with trends scheduler');
     } catch (error) {
       console.error('❌ Error during application startup:', error);
     }

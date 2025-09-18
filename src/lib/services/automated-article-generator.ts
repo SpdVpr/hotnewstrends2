@@ -144,12 +144,33 @@ class AutomatedArticleGenerator {
    * Create a daily plan with 24 articles from top trends
    */
   private async createDailyPlan(date: string): Promise<DailyPlan> {
-    try {
-      // Get current trends from trend tracker (which has the latest data)
-      const allTrends = trendTracker.getAllTrends();
+    console.log(`🔄 Starting createDailyPlan for date: ${date}`);
 
-      if (!allTrends || allTrends.length === 0) {
-        console.warn('No trends available for daily plan');
+    try {
+      // Get current trends from Firebase directly
+      console.log('📊 Fetching trends from Firebase for daily plan...');
+
+      let firebaseTrends: any[] = [];
+
+      try {
+        const { firebaseTrendsService } = await import('./firebase-trends');
+        firebaseTrends = await firebaseTrendsService.getTrendsNeedingArticles(50);
+        console.log(`📊 Retrieved ${firebaseTrends.length} trends from Firebase service`);
+      } catch (firebaseError) {
+        console.error('❌ Firebase trends fetch failed:', firebaseError);
+        // Create empty plan on Firebase error
+        const dailyPlan: DailyPlan = {
+          date,
+          jobs: [],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+        this.storeDailyPlan(dailyPlan);
+        return dailyPlan;
+      }
+
+      if (!firebaseTrends || firebaseTrends.length === 0) {
+        console.warn('⚠️ No trends available from Firebase for daily plan');
         // Create empty plan
         const dailyPlan: DailyPlan = {
           date,
@@ -161,16 +182,62 @@ class AutomatedArticleGenerator {
         return dailyPlan;
       }
 
+      // Convert Firebase trends to TrackedTrend format
+      const allTrends = firebaseTrends.map((fbTrend: any) => {
+        const trend = {
+          id: fbTrend.id,
+          title: fbTrend.title || fbTrend.keyword,
+          slug: fbTrend.slug || (fbTrend.title || fbTrend.keyword).toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+          category: fbTrend.category || 'general',
+          formattedTraffic: fbTrend.formattedTraffic,
+          traffic: fbTrend.searchVolume || fbTrend.traffic || 0,
+          source: fbTrend.source,
+          firstSeen: fbTrend.savedAt,
+          lastSeen: fbTrend.savedAt,
+          articleGenerated: fbTrend.articleGenerated,
+          hash: fbTrend.id
+        };
+
+        // Ensure traffic is a number
+        if (typeof trend.traffic === 'string') {
+          trend.traffic = parseInt(trend.traffic.replace(/[^0-9]/g, '')) || 0;
+        }
+
+        return trend;
+      });
+
+      console.log(`📊 Converted ${allTrends.length} Firebase trends to TrackedTrend format`);
+
+      // Debug: Show sample trends with traffic values
+      if (allTrends.length > 0) {
+        console.log('📊 Sample trends for daily plan:');
+        allTrends.slice(0, 3).forEach((trend, i) => {
+          console.log(`  ${i + 1}. "${trend.title}" - ${trend.category} - traffic: ${trend.traffic} (${typeof trend.traffic})`);
+        });
+      }
+
       // Sort trends by search volume (highest first)
       const sortedTrends = allTrends
         .sort((a, b) => b.traffic - a.traffic)
         .slice(0, this.MAX_DAILY_ARTICLES);
+
+      console.log(`📊 Sorted trends for daily plan: ${sortedTrends.length} trends`);
+      if (sortedTrends.length > 0) {
+        console.log('📊 Top 3 trends:');
+        sortedTrends.slice(0, 3).forEach((trend, i) => {
+          console.log(`  ${i + 1}. "${trend.title}" - traffic: ${trend.traffic}`);
+        });
+      } else {
+        console.warn('⚠️ No sorted trends available for daily plan!');
+      }
 
       // Get existing plan to preserve completed jobs
       const existingPlan = this.getDailyPlan(date);
       const completedJobs = existingPlan?.jobs.filter(job =>
         job.status === 'completed' || job.status === 'generating'
       ) || [];
+
+      console.log(`📊 Existing plan: ${completedJobs.length} completed jobs`);
 
       // Create jobs for remaining slots
       const jobs: ArticleGenerationJob[] = [...completedJobs];
@@ -451,6 +518,39 @@ class AutomatedArticleGenerator {
 
         if (!articleId) {
           throw new Error('Article creation failed');
+        }
+
+        // Mark trend as processed in Firebase processed_topics collection
+        try {
+          const { db } = await import('@/lib/firebase');
+          const { doc, setDoc, Timestamp } = await import('firebase/firestore');
+
+          const now = new Date();
+          const expiresAt = new Date(now.getTime() + 48 * 60 * 60 * 1000); // +48 hours
+          const keyword = job.trend.title.toLowerCase().trim();
+          const docId = keyword.replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, '_').substring(0, 50);
+
+          const processedTopic = {
+            keyword: keyword,
+            processedAt: Timestamp.fromDate(now),
+            expiresAt: Timestamp.fromDate(expiresAt)
+          };
+
+          const docRef = doc(db, 'processed_topics', docId);
+          await setDoc(docRef, processedTopic);
+
+          console.log(`🚫 Marked "${job.trend.title}" as processed in Firebase until ${expiresAt.toLocaleString()}`);
+        } catch (processedError) {
+          console.warn(`⚠️ Failed to mark "${job.trend.title}" as processed:`, processedError);
+        }
+
+        // Mark trend as generated in Firebase trends collection
+        try {
+          const { firebaseTrendsService } = await import('./firebase-trends');
+          await firebaseTrendsService.markTrendAsGenerated(job.trendId, articleId);
+          console.log(`✅ Marked trend ${job.trendId} as generated in Firebase`);
+        } catch (trendError) {
+          console.warn(`⚠️ Failed to mark trend as generated:`, trendError);
         }
 
         // Mark as completed

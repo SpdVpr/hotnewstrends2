@@ -1,0 +1,725 @@
+{
+  "date": "2025-09-18",
+  "jobs": [
+    {
+      "id": "job_2025-09-18_1_windsor_castle",
+      "trendId": "SMptUQzhu8BFBxo1QZck",
+      "trend": {
+        "id": "SMptUQzhu8BFBxo1QZck",
+        "title": "windsor castle",
+        "slug": "windsor-castle",
+        "category": "general",
+        "formattedTraffic": "44915+",
+        "traffic": 109697,
+        "source": "SerpAPI",
+        "firstSeen": {
+          "type": "firestore/timestamp/1.0",
+          "seconds": 1758132015,
+          "nanoseconds": 854000000
+        },
+        "lastSeen": {
+          "type": "firestore/timestamp/1.0",
+          "seconds": 1758132015,
+          "nanoseconds": 854000000
+        },
+        "articleGenerated": false,
+        "hash": "SMptUQzhu8BFBxo1QZck"
+      },
+      "status": "completed",
+      "position": 1,
+      "createdAt": "2025-09-18T06:45:19.780Z",
+      "scheduledAt": "2025-09-18T06:00:00.000Z",
+      "startedAt": "2025-09-18T06:45:19.793Z",
+      "template": "general",
+      "qualityScore": {
+        "content": 76,
+        "seo": 72,
+        "relevance": 60,
+        "uniqueness": 80,
+        "overall": 72
+      },
+      "completedAt": "2025-09-18T06:45:36.798Z",
+      "articleId": "OFHHg52aJwwLZuT0IeD0"
+    },
+    {
+      "id": "job_2025-09-18_2_susan_monarez",
+      "trendId": "yoLVZhvQovUcVIW9nMEN",
+      "trend": {
+        "id": "yoLVZhvQovUcVIW9nMEN",
+        "title": "susan monarez",
+        "slug": "susan-monarez",
+        "category": "general",
+        "formattedTraffic": "52615+",
+        "traffic": 108878,
+        "source": "SerpAPI",
+        "firstSeen": {
+          "type": "firestore/timestamp/1.0",
+          "seconds": 1758132015,
+          "nanoseconds": 854000000
+        },
+        "lastSeen": {
+          "type": "firestore/timestamp/1.0",
+          "seconds": 1758132015,
+          "nanoseconds": 854000000
+        },
+        "articleGenerated": false,
+        "hash": "yoLVZhvQovUcVIW9nMEN"
+      },
+      "status": "completed",
+      "position": 2,
+      "createdAt": "2025-09-18T06:46:39.082Z",
+      "scheduledAt": "2025-09-18T06:40:00.000Z",
+      "startedAt": "2025-09-18T06:48:05.060Z",
+      "template": "general",
+      "qualityScore": {
+        "content": 74,
+        "seo": 59,
+        "relevance": 60,
+        "uniqueness": 80,
+        "overall": 68
+      },
+      "completedAt": "2025-09-18T06:48:18.737Z",
+      "articleId": "fDtry5BeYdb5ab41ynym"
+    },
+    {
+      "id": "job_2025-09-18_3_the_summer_i_turned_pretty_finale",
+      "trendId": "UDywYSb0lmiRguC73fuS",
+      "trend": {
+        "id": "UDywYSb0lmiRguC73fuS",
+        "title": "the summer i turned pretty finale",
+        "slug": "the-summer-i-turned-pretty-finale",
+        "category": "general",
+        "formattedTraffic": "74203+",
+        "traffic": 107658,
+        "source": "SerpAPI",
+        "firstSeen": {
+          "type": "firestore/timestamp/1.0",
+          "seconds": 1758130178,
+          "nanoseconds": 44000000
+        },
+        "lastSeen": {
+          "type": "firestore/timestamp/1.0",
+          "seconds": 1758130178,
+          "nanoseconds": 44000000
+        },
+        "articleGenerated": false,
+        "hash": "UDywYSb0lmiRguC73fuS"
+      },
+      "status": "pending",
+      "position": 3,
+      "createdAt": "2025-09-18T06:46:39.083Z",
+      "scheduledAt": "2025-09-18T07:20:00.000Z"
+    },
+    {
+      "id": "job_2025-09-18_4_tsitp_finale",
+      "trendId": "hREt8SWs0adzw9unE2rZ",
+      "trend": {
+        "id": "hREt8SWs0adzw9unE2rZ",
+        "title": "tsitp finale",
+        "slug": "tsitp-finale",
+        "category": "general",
+        "formattedTraffic": "98007+",
+        "traffic": 107288,
+        "source": "SerpAPI",
+        "firstSeen": {
+          "type": "firestore/timestamp/1.0",
+          "seconds": 1758116241,
+          "nanoseconds": 842000000
+        },
+        "lastSeen": {
+          "type": "firestore/timestamp/1.0",
+          "seconds": 1758116241,
+          "nanoseconds": 842000000
+        },
+        "articleGenerated": false,
+        "hash": "hREt8SWs0adzw9unE2rZ"
+      },
+      "status": "pending",
+      "position": 4,
+      "createdAt": "2025-09-18T06:46:39.083Z",
+      "scheduledAt": "2025-09-18T08:00:00.000Z"
+    },
+    {
+      "id": "job_2025-09-18_5_bayern_munich_vs_chelsea_f_c__timeline",
+      "trendId": "8kJjRCSGtpse6vhCOvec",
+      "trend": {
+        "id": "8kJjRCSGtpse6vhCOvec",
+        "title": "bayern munich vs chelsea f.c. timeline",
+        "slug": "bayern-munich-vs-chelsea-f-c-timeline",
+        "category": "general",
+        "formattedTraffic": "17148+",
+        "traffic": 107127,
+        "source": "SerpAPI",
+        "firstSeen": {
+          "type": "firestore/timestamp/1.0",
+          "seconds": 1758131515,
+          "nanoseconds": 620000000
+        },
+        "lastSeen": {
+          "type": "firestore/timestamp/1.0",
+          "seconds": 1758131515,
+          "nanoseconds": 620000000
+        },
+        "articleGenerated": false,
+        "hash": "8kJjRCSGtpse6vhCOvec"
+      },
+      "status": "pending",
+      "position": 5,
+      "createdAt": "2025-09-18T06:46:39.083Z",
+      "scheduledAt": "2025-09-18T08:40:00.000Z"
+    },
+    {
+      "id": "job_2025-09-18_6_dream_vs_fever",
+      "trendId": "hoyOPXEdx0H6zhCVQsKy",
+      "trend": {
+        "id": "hoyOPXEdx0H6zhCVQsKy",
+        "title": "dream vs fever",
+        "slug": "dream-vs-fever",
+        "category": "general",
+        "formattedTraffic": "52823+",
+        "traffic": 106722,
+        "source": "SerpAPI",
+        "firstSeen": {
+          "type": "firestore/timestamp/1.0",
+          "seconds": 1758115507,
+          "nanoseconds": 718000000
+        },
+        "lastSeen": {
+          "type": "firestore/timestamp/1.0",
+          "seconds": 1758115507,
+          "nanoseconds": 718000000
+        },
+        "articleGenerated": false,
+        "hash": "hoyOPXEdx0H6zhCVQsKy"
+      },
+      "status": "pending",
+      "position": 6,
+      "createdAt": "2025-09-18T06:46:39.083Z",
+      "scheduledAt": "2025-09-18T09:20:00.000Z"
+    },
+    {
+      "id": "job_2025-09-18_7_luigi_mangione",
+      "trendId": "kupdYzVeWkf1JwDI19fM",
+      "trend": {
+        "id": "kupdYzVeWkf1JwDI19fM",
+        "title": "luigi mangione",
+        "slug": "luigi-mangione",
+        "category": "general",
+        "formattedTraffic": "91982+",
+        "traffic": 104375,
+        "source": "SerpAPI",
+        "firstSeen": {
+          "type": "firestore/timestamp/1.0",
+          "seconds": 1758106157,
+          "nanoseconds": 440000000
+        },
+        "lastSeen": {
+          "type": "firestore/timestamp/1.0",
+          "seconds": 1758106157,
+          "nanoseconds": 440000000
+        },
+        "articleGenerated": false,
+        "hash": "kupdYzVeWkf1JwDI19fM"
+      },
+      "status": "pending",
+      "position": 7,
+      "createdAt": "2025-09-18T06:46:39.083Z",
+      "scheduledAt": "2025-09-18T10:00:00.000Z"
+    },
+    {
+      "id": "job_2025-09-18_8_pakistan_vs_uae",
+      "trendId": "7OBbkXE83f77jmOCaOcz",
+      "trend": {
+        "id": "7OBbkXE83f77jmOCaOcz",
+        "title": "pakistan vs uae",
+        "slug": "pakistan-vs-uae",
+        "category": "general",
+        "formattedTraffic": "36702+",
+        "traffic": 104261,
+        "source": "SerpAPI",
+        "firstSeen": {
+          "type": "firestore/timestamp/1.0",
+          "seconds": 1758124832,
+          "nanoseconds": 308000000
+        },
+        "lastSeen": {
+          "type": "firestore/timestamp/1.0",
+          "seconds": 1758124832,
+          "nanoseconds": 308000000
+        },
+        "articleGenerated": false,
+        "hash": "7OBbkXE83f77jmOCaOcz"
+      },
+      "status": "pending",
+      "position": 8,
+      "createdAt": "2025-09-18T06:46:39.083Z",
+      "scheduledAt": "2025-09-18T10:40:00.000Z"
+    },
+    {
+      "id": "job_2025-09-18_9_ned_fulmer",
+      "trendId": "CAweyiwYBq6B6bKKtnOy",
+      "trend": {
+        "id": "CAweyiwYBq6B6bKKtnOy",
+        "title": "ned fulmer",
+        "slug": "ned-fulmer",
+        "category": "general",
+        "formattedTraffic": "98941+",
+        "traffic": 103936,
+        "source": "SerpAPI",
+        "firstSeen": {
+          "type": "firestore/timestamp/1.0",
+          "seconds": 1758130178,
+          "nanoseconds": 44000000
+        },
+        "lastSeen": {
+          "type": "firestore/timestamp/1.0",
+          "seconds": 1758130178,
+          "nanoseconds": 44000000
+        },
+        "articleGenerated": false,
+        "hash": "CAweyiwYBq6B6bKKtnOy"
+      },
+      "status": "pending",
+      "position": 9,
+      "createdAt": "2025-09-18T06:46:39.083Z",
+      "scheduledAt": "2025-09-18T11:20:00.000Z"
+    },
+    {
+      "id": "job_2025-09-18_10_real_madrid_vs_marseille",
+      "trendId": "AHa9IzTUIyvgoZ0mOxV1",
+      "trend": {
+        "id": "AHa9IzTUIyvgoZ0mOxV1",
+        "title": "real madrid vs marseille",
+        "slug": "real-madrid-vs-marseille",
+        "category": "general",
+        "formattedTraffic": "67724+",
+        "traffic": 103641,
+        "source": "SerpAPI",
+        "firstSeen": {
+          "type": "firestore/timestamp/1.0",
+          "seconds": 1758115507,
+          "nanoseconds": 718000000
+        },
+        "lastSeen": {
+          "type": "firestore/timestamp/1.0",
+          "seconds": 1758115507,
+          "nanoseconds": 718000000
+        },
+        "articleGenerated": false,
+        "hash": "AHa9IzTUIyvgoZ0mOxV1"
+      },
+      "status": "pending",
+      "position": 10,
+      "createdAt": "2025-09-18T06:46:39.084Z",
+      "scheduledAt": "2025-09-18T12:00:00.000Z"
+    },
+    {
+      "id": "job_2025-09-18_11_cardi_b",
+      "trendId": "nVXvTwmgw19BCDsdNrj9",
+      "trend": {
+        "id": "nVXvTwmgw19BCDsdNrj9",
+        "title": "cardi b",
+        "slug": "cardi-b",
+        "category": "general",
+        "formattedTraffic": "61553+",
+        "traffic": 103625,
+        "source": "SerpAPI",
+        "firstSeen": {
+          "type": "firestore/timestamp/1.0",
+          "seconds": 1758113604,
+          "nanoseconds": 352000000
+        },
+        "lastSeen": {
+          "type": "firestore/timestamp/1.0",
+          "seconds": 1758113604,
+          "nanoseconds": 352000000
+        },
+        "articleGenerated": false,
+        "hash": "nVXvTwmgw19BCDsdNrj9"
+      },
+      "status": "pending",
+      "position": 11,
+      "createdAt": "2025-09-18T06:46:39.084Z",
+      "scheduledAt": "2025-09-18T12:40:00.000Z"
+    },
+    {
+      "id": "job_2025-09-18_12_delta_state_university",
+      "trendId": "b9ZNnm0GYEUgYBSFTBZJ",
+      "trend": {
+        "id": "b9ZNnm0GYEUgYBSFTBZJ",
+        "title": "delta state university",
+        "slug": "delta-state-university",
+        "category": "general",
+        "formattedTraffic": "88710+",
+        "traffic": 103526,
+        "source": "SerpAPI",
+        "firstSeen": {
+          "type": "firestore/timestamp/1.0",
+          "seconds": 1758016537,
+          "nanoseconds": 703000000
+        },
+        "lastSeen": {
+          "type": "firestore/timestamp/1.0",
+          "seconds": 1758016537,
+          "nanoseconds": 703000000
+        },
+        "articleGenerated": false,
+        "hash": "b9ZNnm0GYEUgYBSFTBZJ"
+      },
+      "status": "pending",
+      "position": 12,
+      "createdAt": "2025-09-18T06:46:39.084Z",
+      "scheduledAt": "2025-09-18T13:20:00.000Z"
+    },
+    {
+      "id": "job_2025-09-18_13_francisco_lindor",
+      "trendId": "jrjkHc5laQ5te8AqGJpw",
+      "trend": {
+        "id": "jrjkHc5laQ5te8AqGJpw",
+        "title": "francisco lindor",
+        "slug": "francisco-lindor",
+        "category": "general",
+        "formattedTraffic": "14238+",
+        "traffic": 102464,
+        "source": "SerpAPI",
+        "firstSeen": {
+          "type": "firestore/timestamp/1.0",
+          "seconds": 1758125413,
+          "nanoseconds": 690000000
+        },
+        "lastSeen": {
+          "type": "firestore/timestamp/1.0",
+          "seconds": 1758125413,
+          "nanoseconds": 690000000
+        },
+        "articleGenerated": false,
+        "hash": "jrjkHc5laQ5te8AqGJpw"
+      },
+      "status": "pending",
+      "position": 13,
+      "createdAt": "2025-09-18T06:46:39.084Z",
+      "scheduledAt": "2025-09-18T14:00:00.000Z"
+    },
+    {
+      "id": "job_2025-09-18_14_where_to_watch_dancing_with_the_stars",
+      "trendId": "sn0DsIrcV2rie2tn80g0",
+      "trend": {
+        "id": "sn0DsIrcV2rie2tn80g0",
+        "title": "where to watch dancing with the stars",
+        "slug": "where-to-watch-dancing-with-the-stars",
+        "category": "general",
+        "formattedTraffic": "34893+",
+        "traffic": 102409,
+        "source": "SerpAPI",
+        "firstSeen": {
+          "type": "firestore/timestamp/1.0",
+          "seconds": 1758116956,
+          "nanoseconds": 381000000
+        },
+        "lastSeen": {
+          "type": "firestore/timestamp/1.0",
+          "seconds": 1758116956,
+          "nanoseconds": 381000000
+        },
+        "articleGenerated": false,
+        "hash": "sn0DsIrcV2rie2tn80g0"
+      },
+      "status": "pending",
+      "position": 14,
+      "createdAt": "2025-09-18T06:46:39.084Z",
+      "scheduledAt": "2025-09-18T14:40:00.000Z"
+    },
+    {
+      "id": "job_2025-09-18_15_anaconda_2025",
+      "trendId": "Ri5PkvFb121JM9azbEEn",
+      "trend": {
+        "id": "Ri5PkvFb121JM9azbEEn",
+        "title": "anaconda 2025",
+        "slug": "anaconda-2025",
+        "category": "general",
+        "formattedTraffic": "79111+",
+        "traffic": 101823,
+        "source": "SerpAPI",
+        "firstSeen": {
+          "type": "firestore/timestamp/1.0",
+          "seconds": 1758130178,
+          "nanoseconds": 44000000
+        },
+        "lastSeen": {
+          "type": "firestore/timestamp/1.0",
+          "seconds": 1758130178,
+          "nanoseconds": 44000000
+        },
+        "articleGenerated": false,
+        "hash": "Ri5PkvFb121JM9azbEEn"
+      },
+      "status": "pending",
+      "position": 15,
+      "createdAt": "2025-09-18T06:46:39.084Z",
+      "scheduledAt": "2025-09-18T15:20:00.000Z"
+    },
+    {
+      "id": "job_2025-09-18_16_dancing_with_the_stars",
+      "trendId": "bm5YsnFg4QGHLRgMXBza",
+      "trend": {
+        "id": "bm5YsnFg4QGHLRgMXBza",
+        "title": "dancing with the stars",
+        "slug": "dancing-with-the-stars",
+        "category": "general",
+        "formattedTraffic": "59375+",
+        "traffic": 100572,
+        "source": "SerpAPI",
+        "firstSeen": {
+          "type": "firestore/timestamp/1.0",
+          "seconds": 1758110414,
+          "nanoseconds": 886000000
+        },
+        "lastSeen": {
+          "type": "firestore/timestamp/1.0",
+          "seconds": 1758110414,
+          "nanoseconds": 886000000
+        },
+        "articleGenerated": false,
+        "hash": "bm5YsnFg4QGHLRgMXBza"
+      },
+      "status": "pending",
+      "position": 16,
+      "createdAt": "2025-09-18T06:46:39.084Z",
+      "scheduledAt": "2025-09-18T16:00:00.000Z"
+    },
+    {
+      "id": "job_2025-09-18_17_robert_irwin",
+      "trendId": "YWB3XsLXm5bFxt6oHo1L",
+      "trend": {
+        "id": "YWB3XsLXm5bFxt6oHo1L",
+        "title": "robert irwin",
+        "slug": "robert-irwin",
+        "category": "general",
+        "formattedTraffic": "75046+",
+        "traffic": 99946,
+        "source": "SerpAPI",
+        "firstSeen": {
+          "type": "firestore/timestamp/1.0",
+          "seconds": 1758116956,
+          "nanoseconds": 381000000
+        },
+        "lastSeen": {
+          "type": "firestore/timestamp/1.0",
+          "seconds": 1758116956,
+          "nanoseconds": 381000000
+        },
+        "articleGenerated": false,
+        "hash": "YWB3XsLXm5bFxt6oHo1L"
+      },
+      "status": "pending",
+      "position": 17,
+      "createdAt": "2025-09-18T06:46:39.084Z",
+      "scheduledAt": "2025-09-18T16:40:00.000Z"
+    },
+    {
+      "id": "job_2025-09-18_18_bradley_steven_perry",
+      "trendId": "dpzG1KOhFxGTU4MRw9xE",
+      "trend": {
+        "id": "dpzG1KOhFxGTU4MRw9xE",
+        "title": "bradley steven perry",
+        "slug": "bradley-steven-perry",
+        "category": "general",
+        "formattedTraffic": "52234+",
+        "traffic": 98989,
+        "source": "SerpAPI",
+        "firstSeen": {
+          "type": "firestore/timestamp/1.0",
+          "seconds": 1758131515,
+          "nanoseconds": 620000000
+        },
+        "lastSeen": {
+          "type": "firestore/timestamp/1.0",
+          "seconds": 1758131515,
+          "nanoseconds": 620000000
+        },
+        "articleGenerated": false,
+        "hash": "dpzG1KOhFxGTU4MRw9xE"
+      },
+      "status": "pending",
+      "position": 18,
+      "createdAt": "2025-09-18T06:46:39.084Z",
+      "scheduledAt": "2025-09-18T17:20:00.000Z"
+    },
+    {
+      "id": "job_2025-09-18_19_matt_gutman",
+      "trendId": "xtsvfEW0yoWzYm61VDbU",
+      "trend": {
+        "id": "xtsvfEW0yoWzYm61VDbU",
+        "title": "matt gutman",
+        "slug": "matt-gutman",
+        "category": "general",
+        "formattedTraffic": "31992+",
+        "traffic": 98406,
+        "source": "SerpAPI",
+        "firstSeen": {
+          "type": "firestore/timestamp/1.0",
+          "seconds": 1758130178,
+          "nanoseconds": 44000000
+        },
+        "lastSeen": {
+          "type": "firestore/timestamp/1.0",
+          "seconds": 1758130178,
+          "nanoseconds": 44000000
+        },
+        "articleGenerated": false,
+        "hash": "xtsvfEW0yoWzYm61VDbU"
+      },
+      "status": "pending",
+      "position": 19,
+      "createdAt": "2025-09-18T06:46:39.084Z",
+      "scheduledAt": "2025-09-18T18:00:00.000Z"
+    },
+    {
+      "id": "job_2025-09-18_20_the_housemaid_movie",
+      "trendId": "V6HggluNzEBx0A54OXIC",
+      "trend": {
+        "id": "V6HggluNzEBx0A54OXIC",
+        "title": "the housemaid movie",
+        "slug": "the-housemaid-movie",
+        "category": "general",
+        "formattedTraffic": "47939+",
+        "traffic": 97683,
+        "source": "SerpAPI",
+        "firstSeen": {
+          "type": "firestore/timestamp/1.0",
+          "seconds": 1758129535,
+          "nanoseconds": 775000000
+        },
+        "lastSeen": {
+          "type": "firestore/timestamp/1.0",
+          "seconds": 1758129535,
+          "nanoseconds": 775000000
+        },
+        "articleGenerated": false,
+        "hash": "V6HggluNzEBx0A54OXIC"
+      },
+      "status": "pending",
+      "position": 20,
+      "createdAt": "2025-09-18T06:46:39.084Z",
+      "scheduledAt": "2025-09-18T18:40:00.000Z"
+    },
+    {
+      "id": "job_2025-09-18_21_taylor_swift",
+      "trendId": "mpoiDNeeQ09Cx4iinSUd",
+      "trend": {
+        "id": "mpoiDNeeQ09Cx4iinSUd",
+        "title": "taylor swift",
+        "slug": "taylor-swift",
+        "category": "general",
+        "formattedTraffic": "52678+",
+        "traffic": 96787,
+        "source": "SerpAPI",
+        "firstSeen": {
+          "type": "firestore/timestamp/1.0",
+          "seconds": 1758130178,
+          "nanoseconds": 44000000
+        },
+        "lastSeen": {
+          "type": "firestore/timestamp/1.0",
+          "seconds": 1758130178,
+          "nanoseconds": 44000000
+        },
+        "articleGenerated": false,
+        "hash": "mpoiDNeeQ09Cx4iinSUd"
+      },
+      "status": "pending",
+      "position": 21,
+      "createdAt": "2025-09-18T06:46:39.084Z",
+      "scheduledAt": "2025-09-18T19:20:00.000Z"
+    },
+    {
+      "id": "job_2025-09-18_22_offset",
+      "trendId": "6s2ZS17qD2vYZDk8it6z",
+      "trend": {
+        "id": "6s2ZS17qD2vYZDk8it6z",
+        "title": "offset",
+        "slug": "offset",
+        "category": "general",
+        "formattedTraffic": "79451+",
+        "traffic": 96461,
+        "source": "SerpAPI",
+        "firstSeen": {
+          "type": "firestore/timestamp/1.0",
+          "seconds": 1758131515,
+          "nanoseconds": 620000000
+        },
+        "lastSeen": {
+          "type": "firestore/timestamp/1.0",
+          "seconds": 1758131515,
+          "nanoseconds": 620000000
+        },
+        "articleGenerated": false,
+        "hash": "6s2ZS17qD2vYZDk8it6z"
+      },
+      "status": "pending",
+      "position": 22,
+      "createdAt": "2025-09-18T06:46:39.084Z",
+      "scheduledAt": "2025-09-18T20:00:00.000Z"
+    },
+    {
+      "id": "job_2025-09-18_23_constitution",
+      "trendId": "xyLdTEN6JskzzsBM3aQD",
+      "trend": {
+        "id": "xyLdTEN6JskzzsBM3aQD",
+        "title": "constitution",
+        "slug": "constitution",
+        "category": "general",
+        "formattedTraffic": "87528+",
+        "traffic": 96067,
+        "source": "SerpAPI",
+        "firstSeen": {
+          "type": "firestore/timestamp/1.0",
+          "seconds": 1758132015,
+          "nanoseconds": 854000000
+        },
+        "lastSeen": {
+          "type": "firestore/timestamp/1.0",
+          "seconds": 1758132015,
+          "nanoseconds": 854000000
+        },
+        "articleGenerated": false,
+        "hash": "xyLdTEN6JskzzsBM3aQD"
+      },
+      "status": "pending",
+      "position": 23,
+      "createdAt": "2025-09-18T06:46:39.084Z",
+      "scheduledAt": "2025-09-18T20:40:00.000Z"
+    },
+    {
+      "id": "job_2025-09-18_24_paul_newman",
+      "trendId": "oC6VraIHYm6cCmGdIif0",
+      "trend": {
+        "id": "oC6VraIHYm6cCmGdIif0",
+        "title": "paul newman",
+        "slug": "paul-newman",
+        "category": "general",
+        "formattedTraffic": "31375+",
+        "traffic": 96066,
+        "source": "SerpAPI",
+        "firstSeen": {
+          "type": "firestore/timestamp/1.0",
+          "seconds": 1758111490,
+          "nanoseconds": 928000000
+        },
+        "lastSeen": {
+          "type": "firestore/timestamp/1.0",
+          "seconds": 1758111490,
+          "nanoseconds": 928000000
+        },
+        "articleGenerated": false,
+        "hash": "oC6VraIHYm6cCmGdIif0"
+      },
+      "status": "pending",
+      "position": 24,
+      "createdAt": "2025-09-18T06:46:39.084Z",
+      "scheduledAt": "2025-09-18T21:20:00.000Z"
+    }
+  ],
+  "createdAt": "2025-09-18T06:45:19.220Z",
+  "updatedAt": "2025-09-18T06:48:18.738Z"
+}

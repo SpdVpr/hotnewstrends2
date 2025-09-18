@@ -103,30 +103,75 @@ class FirebaseTrendsService {
   }
 
   /**
-   * Get trends that need articles generated
+   * Get trends that need articles generated (excluding processed topics)
    */
   async getTrendsNeedingArticles(limitCount: number = 10): Promise<FirebaseTrend[]> {
     try {
+      // Step 1: Get processed topics to exclude
+      console.log('🔍 Checking processed topics...');
+      const processedCollection = collection(db, 'processed_topics');
+      const processedSnapshot = await getDocs(processedCollection);
+
+      const processedKeywords = new Set<string>();
+      processedSnapshot.forEach(doc => {
+        const data = doc.data();
+        if (data.keyword) {
+          processedKeywords.add(data.keyword.toLowerCase());
+        }
+      });
+
+      console.log(`📋 Found ${processedKeywords.size} processed topics to exclude`);
+
+      // Step 2: Get trends that need articles
       const trendsCollection = collection(db, this.COLLECTION_NAME);
       const q = query(
         trendsCollection,
         where('articleGenerated', '==', false),
         orderBy('searchVolume', 'desc'), // Prioritize high-traffic trends
-        limit(limitCount)
+        limit(limitCount * 2) // Get more to filter out processed ones
       );
 
       const snapshot = await getDocs(q);
       const trends: FirebaseTrend[] = [];
 
+      const seenKeywords = new Set<string>();
+
       snapshot.forEach(doc => {
+        const trendData = doc.data() as FirebaseTrend;
+        const keyword = (trendData.keyword || trendData.title || '').toLowerCase();
+
+        // Skip if already processed
+        if (processedKeywords.has(keyword)) {
+          console.log(`⏭️ Skipping processed topic: "${keyword}"`);
+          return;
+        }
+
+        // Skip if duplicate in current batch
+        if (seenKeywords.has(keyword)) {
+          console.log(`🔄 Skipping duplicate trend: "${keyword}"`);
+          return;
+        }
+
+        seenKeywords.add(keyword);
         trends.push({
           id: doc.id,
-          ...doc.data()
+          ...trendData
         } as FirebaseTrend);
       });
 
-      console.log(`📝 Found ${trends.length} trends needing articles`);
-      return trends;
+      // Limit to requested count
+      const filteredTrends = trends.slice(0, limitCount);
+
+      console.log(`📝 Found ${filteredTrends.length} trends needing articles (after filtering ${processedKeywords.size} processed topics)`);
+
+      if (filteredTrends.length > 0) {
+        console.log('📊 Sample unprocessed trends:');
+        filteredTrends.slice(0, 3).forEach((trend, i) => {
+          console.log(`  ${i + 1}. "${trend.title}" - ${trend.searchVolume}`);
+        });
+      }
+
+      return filteredTrends;
     } catch (error) {
       console.error('❌ Error getting trends needing articles:', error);
       return [];

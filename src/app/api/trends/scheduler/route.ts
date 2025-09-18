@@ -11,8 +11,21 @@ import { firebaseTrendsService } from '@/lib/services/firebase-trends';
 export async function GET() {
   try {
     const schedulerStats = trendsScheduler.getStats();
-    const trendsStats = await firebaseTrendsService.getTrendsStats();
-    
+
+    // Try to get Firebase stats, but don't fail if it doesn't work
+    let trendsStats = {
+      total: 0,
+      needingArticles: 0,
+      articlesGenerated: 0,
+      latestBatchId: null
+    };
+
+    try {
+      trendsStats = await firebaseTrendsService.getTrendsStats();
+    } catch (firebaseError) {
+      console.warn('⚠️ Firebase trends stats failed, using defaults:', firebaseError);
+    }
+
     return NextResponse.json({
       success: true,
       data: {

@@ -36,12 +36,23 @@ export async function POST(request: NextRequest) {
     const { action } = await request.json();
     
     if (action === 'refresh') {
-      await automatedArticleGenerator.refreshDailyPlan();
+      try {
+        console.log('🔄 Starting daily plan refresh...');
+        await automatedArticleGenerator.refreshDailyPlan();
+        console.log('✅ Daily plan refresh completed');
 
-      return NextResponse.json({
-        success: true,
-        message: 'Daily plan refreshed successfully'
-      });
+        return NextResponse.json({
+          success: true,
+          message: 'Daily plan refreshed successfully'
+        });
+      } catch (refreshError) {
+        console.error('❌ Daily plan refresh failed:', refreshError);
+        return NextResponse.json({
+          success: false,
+          error: 'Failed to refresh daily plan',
+          details: refreshError instanceof Error ? refreshError.message : 'Unknown error'
+        }, { status: 500 });
+      }
     }
 
     if (action === 'reset-failed') {
