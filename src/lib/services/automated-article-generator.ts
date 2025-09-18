@@ -1087,7 +1087,7 @@ class AutomatedArticleGenerator {
       console.log(`🔍 Top trend: "${sortedTrends[0]?.title}" (${sortedTrends[0]?.searchVolume} searches, source: ${sortedTrends[0]?.source})`);
 
       // Create jobs for top trends
-      const jobs: Job[] = [];
+      const jobs: ArticleGenerationJob[] = [];
       const maxJobs = Math.min(this.MAX_DAILY_ARTICLES, sortedTrends.length);
       const startHour = 6; // Start at 6:00 AM
       const endHour = 22; // End at 10:00 PM
@@ -1102,16 +1102,14 @@ class AutomatedArticleGenerator {
         const scheduledMinute = Math.floor(i * intervalMinutes) % 60;
         scheduledTime.setUTCHours(scheduledHour, scheduledMinute, 0, 0);
 
-        const job: Job = {
-          id: `${date}-${i + 1}`,
-          topic: trend.title,
-          keyword: trend.keyword,
-          category: trend.category,
-          scheduledTime: scheduledTime.toISOString(),
+        const job: ArticleGenerationJob = {
+          id: `job_${date}_${i + 1}_${trend.title.replace(/[^a-zA-Z0-9]/g, '_')}`,
+          trendId: trend.id,
+          trend,
           status: 'pending',
+          position: i + 1,
           createdAt: new Date().toISOString(),
-          searchVolume: trend.searchVolume,
-          source: trend.source
+          scheduledAt: scheduledTime.toISOString()
         };
 
         jobs.push(job);
