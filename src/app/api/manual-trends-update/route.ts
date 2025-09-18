@@ -50,30 +50,32 @@ export async function GET(request: NextRequest) {
     
     console.log(`📈 Breakdown: ${serpApiCount} SerpAPI + ${rssCount} RSS = ${trendsData.topics.length} total`);
     
-    // Save trends to Firebase
-    console.log('💾 Saving trends to Firebase...');
-    const saveResults = [];
+    // Save trends to Firebase using batch method
+    console.log('💾 Saving trends to Firebase using batch method...');
     let successCount = 0;
     let errorCount = 0;
-    
-    for (const trend of trendsData.topics) {
-      try {
-        const savedTrend = await firebaseTrendsService.saveTrend(trend);
-        saveResults.push({
-          title: trend.title,
-          status: 'success',
-          id: savedTrend.id
-        });
-        successCount++;
-      } catch (error) {
-        saveResults.push({
-          title: trend.title,
-          status: 'error',
-          error: error instanceof Error ? error.message : 'Unknown error'
-        });
-        errorCount++;
-        console.error(`❌ Failed to save trend "${trend.title}":`, error);
-      }
+    let saveResults = [];
+
+    try {
+      // Use saveTrendsBatch method instead of individual saves
+      const batchId = await firebaseTrendsService.saveTrendsBatch(trendsData.topics);
+      console.log(`✅ Successfully saved batch with ID: ${batchId}`);
+
+      successCount = trendsData.topics.length;
+      saveResults = trendsData.topics.slice(0, 10).map(trend => ({
+        title: trend.title,
+        status: 'success',
+        batchId: batchId
+      }));
+
+    } catch (error) {
+      console.error('❌ Failed to save trends batch:', error);
+      errorCount = trendsData.topics.length;
+      saveResults = [{
+        title: 'Batch Save',
+        status: 'error',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      }];
     }
     
     console.log(`✅ Trends update completed: ${successCount} saved, ${errorCount} failed`);
