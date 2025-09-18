@@ -17,7 +17,6 @@ const Navigation: React.FC<NavigationProps> = ({ className }) => {
   const [searchQuery, setSearchQuery] = useState('');
 
   const navigationItems = [
-    { name: 'Home', href: '/', current: true },
     { name: 'Technology', href: '/category/technology', current: false },
     { name: 'News', href: '/category/news', current: false },
     { name: 'Business', href: '/category/business', current: false },
@@ -39,23 +38,23 @@ const Navigation: React.FC<NavigationProps> = ({ className }) => {
   return (
     <header className={cn('sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-surface', className)}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between h-16 gap-8">
           {/* Logo */}
-          <div className="flex items-center">
+          <div className="flex items-center flex-shrink-0">
             <Link href="/" className="flex items-center">
               <Image
                 src="/hnt-logo.png"
                 alt="HotNewsTrends"
-                width={180}
-                height={40}
-                className="h-8 w-auto"
+                width={200}
+                height={44}
+                className="h-10 w-auto hover:opacity-90 transition-opacity"
                 priority
               />
             </Link>
           </div>
           
           {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center space-x-8">
+          <nav className="hidden lg:flex items-center space-x-6 flex-1">
             {navigationItems.map((item) => (
               <Link
                 key={item.name}
@@ -73,7 +72,7 @@ const Navigation: React.FC<NavigationProps> = ({ className }) => {
           </nav>
           
           {/* Search Bar - Desktop */}
-          <div className="hidden md:flex flex-1 max-w-lg mx-8">
+          <div className="hidden md:flex flex-1 max-w-md mx-4">
             <SearchInput
               placeholder="Search trending topics..."
               onSearch={handleSearch}
@@ -82,7 +81,7 @@ const Navigation: React.FC<NavigationProps> = ({ className }) => {
           </div>
 
           {/* Desktop Actions */}
-          <div className="hidden md:flex items-center space-x-4">
+          <div className="hidden md:flex items-center space-x-4 flex-shrink-0">
             <ThemeToggle size="sm" />
           </div>
 
@@ -156,19 +155,19 @@ export interface LogoProps {
 
 const Logo: React.FC<LogoProps> = ({ className, size = 'md' }) => {
   const sizes = {
-    sm: { width: 120, height: 26 },
-    md: { width: 180, height: 40 },
-    lg: { width: 240, height: 53 },
+    sm: { width: 140, height: 31 },
+    md: { width: 200, height: 44 },
+    lg: { width: 280, height: 62 },
   };
 
   const heightClasses = {
-    sm: 'h-6',
-    md: 'h-8',
-    lg: 'h-12',
+    sm: 'h-7',
+    md: 'h-10',
+    lg: 'h-14',
   };
 
   return (
-    <Link href="/" className={cn('flex items-center', className)}>
+    <Link href="/" className={cn('flex items-center hover:opacity-90 transition-opacity', className)}>
       <Image
         src="/hnt-logo.png"
         alt="HotNewsTrends"
