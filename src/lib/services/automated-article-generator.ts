@@ -1072,34 +1072,33 @@ class AutomatedArticleGenerator {
       const futureJobs = [];
 
       for (const job of currentPlan.jobs) {
-        // Safety check for scheduledTime
-        if (!job.scheduledTime || typeof job.scheduledTime !== 'string') {
-          console.warn(`⚠️ Job #${job.position} has invalid scheduledTime:`, job.scheduledTime);
-          // Assume it's a future job if scheduledTime is invalid
+        // Safety check for scheduledAt (ISO timestamp)
+        if (!job.scheduledAt || typeof job.scheduledAt !== 'string') {
+          console.warn(`⚠️ Job #${job.position} has invalid scheduledAt:`, job.scheduledAt);
+          // Assume it's a future job if scheduledAt is invalid
           futureJobs.push(job);
           continue;
         }
 
         try {
-          const [hours, minutes] = job.scheduledTime.split(':').map(Number);
-
-          // Validate parsed time
-          if (isNaN(hours) || isNaN(minutes)) {
-            console.warn(`⚠️ Job #${job.position} has invalid time format: "${job.scheduledTime}"`);
+          // Parse ISO timestamp to get time
+          const scheduledTime = new Date(job.scheduledAt);
+          if (isNaN(scheduledTime.getTime())) {
+            console.warn(`⚠️ Job #${job.position} has invalid scheduledAt format: "${job.scheduledAt}"`);
             futureJobs.push(job);
             continue;
           }
 
-          const jobTimeMinutes = hours * 60 + minutes;
+          const jobTimeMinutes = scheduledTime.getHours() * 60 + scheduledTime.getMinutes();
 
           if (jobTimeMinutes <= currentTimeMinutes) {
             // This article should already be generated or is being generated now
             preservedJobs.push(job);
-            console.log(`✅ Preserving job #${job.position}: "${job.trend?.title || 'Unknown'}" (${job.scheduledTime})`);
+            console.log(`✅ Preserving job #${job.position}: "${job.trend?.title || 'Unknown'}" (${scheduledTime.toLocaleTimeString()})`);
           } else {
             // This article is in the future - will be updated
             futureJobs.push(job);
-            console.log(`🔄 Will update job #${job.position}: "${job.trend?.title || 'Unknown'}" (${job.scheduledTime})`);
+            console.log(`🔄 Will update job #${job.position}: "${job.trend?.title || 'Unknown'}" (${scheduledTime.toLocaleTimeString()})`);
           }
         } catch (error) {
           console.error(`❌ Error parsing scheduledTime for job #${job.position}:`, error);
