@@ -44,7 +44,12 @@ class AnalyticsManager {
 
   // Initialize Google Analytics
   init(): void {
-    if (!this.gaId || this.isInitialized) return;
+    if (!this.gaId || this.isInitialized) {
+      if (!this.gaId) {
+        console.warn('⚠️ Google Analytics ID not found - analytics disabled');
+      }
+      return;
+    }
 
     try {
       // Load gtag script

@@ -184,7 +184,9 @@ export const googleTrendsService = {
 
       for (const feedUrl of rssFeeds) {
         try {
-          const response = await fetch(feedUrl);
+          // Use RSS proxy to avoid CORS issues
+          const proxyUrl = `/api/rss-proxy?url=${encodeURIComponent(feedUrl)}`;
+          const response = await fetch(proxyUrl);
           const xmlText = await response.text();
 
           // Simple XML parsing for RSS items

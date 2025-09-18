@@ -159,6 +159,7 @@ const nextConfig: NextConfig = {
             font-src 'self' data:;
             connect-src 'self'
               https://www.google-analytics.com
+              https://www.googletagmanager.com
               https://api.perplexity.ai
               https://api.unsplash.com
               https://api.pexels.com
@@ -167,7 +168,10 @@ const nextConfig: NextConfig = {
               https://www.reuters.com
               https://serpapi.com
               https://trends.google.com
-              https://www.google.com;
+              https://www.google.com
+              https://feeds.reuters.com
+              https://rss.cnn.com/rss/edition.rss
+              https://rss.cnn.com/rss/cnn_topstories.rss;
             frame-src 'self';
             object-src 'none';
             base-uri 'self';

@@ -30,7 +30,7 @@ export function middleware(request: NextRequest) {
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data: https: blob:",
-    "connect-src 'self' https://www.google-analytics.com https://api.perplexity.ai https://api.unsplash.com https://api.pexels.com https://trends.google.com https://www.google.com https://serpapi.com",
+    "connect-src 'self' https://www.google-analytics.com https://www.googletagmanager.com https://api.perplexity.ai https://api.unsplash.com https://api.pexels.com https://trends.google.com https://www.google.com https://serpapi.com https://rss.cnn.com https://feeds.bbci.co.uk https://www.reuters.com https://feeds.reuters.com",
     "frame-ancestors 'none'",
     "base-uri 'self'",
     "form-action 'self'"
@@ -86,12 +86,9 @@ export function middleware(request: NextRequest) {
     response.headers.set('X-RateLimit-Reset', String(Date.now() + 60000));
   }
 
-  // Preload critical resources
+  // Prefetch API routes only
   if (pathname === '/') {
-    response.headers.set('Link', [
-      '</logo.png>; rel=preload; as=image',
-      '</api/trends>; rel=prefetch'
-    ].join(', '));
+    response.headers.set('Link', '</api/trends>; rel=prefetch');
   }
 
   return response;
