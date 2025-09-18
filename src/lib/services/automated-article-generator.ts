@@ -1061,17 +1061,39 @@ class AutomatedArticleGenerator {
       const futureJobs = [];
 
       for (const job of currentPlan.jobs) {
-        const [hours, minutes] = job.scheduledTime.split(':').map(Number);
-        const jobTimeMinutes = hours * 60 + minutes;
-
-        if (jobTimeMinutes <= currentTimeMinutes) {
-          // This article should already be generated or is being generated now
-          preservedJobs.push(job);
-          console.log(`✅ Preserving job #${job.position}: "${job.trend.title}" (${job.scheduledTime})`);
-        } else {
-          // This article is in the future - will be updated
+        // Safety check for scheduledTime
+        if (!job.scheduledTime || typeof job.scheduledTime !== 'string') {
+          console.warn(`⚠️ Job #${job.position} has invalid scheduledTime:`, job.scheduledTime);
+          // Assume it's a future job if scheduledTime is invalid
           futureJobs.push(job);
-          console.log(`🔄 Will update job #${job.position}: "${job.trend.title}" (${job.scheduledTime})`);
+          continue;
+        }
+
+        try {
+          const [hours, minutes] = job.scheduledTime.split(':').map(Number);
+
+          // Validate parsed time
+          if (isNaN(hours) || isNaN(minutes)) {
+            console.warn(`⚠️ Job #${job.position} has invalid time format: "${job.scheduledTime}"`);
+            futureJobs.push(job);
+            continue;
+          }
+
+          const jobTimeMinutes = hours * 60 + minutes;
+
+          if (jobTimeMinutes <= currentTimeMinutes) {
+            // This article should already be generated or is being generated now
+            preservedJobs.push(job);
+            console.log(`✅ Preserving job #${job.position}: "${job.trend?.title || 'Unknown'}" (${job.scheduledTime})`);
+          } else {
+            // This article is in the future - will be updated
+            futureJobs.push(job);
+            console.log(`🔄 Will update job #${job.position}: "${job.trend?.title || 'Unknown'}" (${job.scheduledTime})`);
+          }
+        } catch (error) {
+          console.error(`❌ Error parsing scheduledTime for job #${job.position}:`, error);
+          // Assume it's a future job if parsing fails
+          futureJobs.push(job);
         }
       }
 
@@ -1104,11 +1126,20 @@ class AutomatedArticleGenerator {
       const sortedTrends = allTrends.sort((a, b) => (b.searchVolume || 0) - (a.searchVolume || 0));
 
       // Remove duplicates and exclude already used trends
-      const usedTitles = new Set(preservedJobs.map(job => job.trend.title.toLowerCase().trim()));
+      const usedTitles = new Set(
+        preservedJobs
+          .filter(job => job.trend && job.trend.title)
+          .map(job => job.trend.title.toLowerCase().trim())
+      );
       const availableTrends = [];
       const seenTitles = new Set();
 
       for (const trend of sortedTrends) {
+        if (!trend.title) {
+          console.warn('⚠️ Trend missing title:', trend);
+          continue;
+        }
+
         const normalizedTitle = trend.title.toLowerCase().trim();
         if (!seenTitles.has(normalizedTitle) && !usedTitles.has(normalizedTitle)) {
           seenTitles.add(normalizedTitle);
