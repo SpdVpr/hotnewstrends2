@@ -153,7 +153,7 @@ const nextConfig: NextConfig = {
           key: 'Content-Security-Policy',
           value: `
             default-src 'self';
-            script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.google-analytics.com;
+            script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.google-analytics.com https://www.googletagmanager.com;
             style-src 'self' 'unsafe-inline';
             img-src 'self' data: https: http:;
             font-src 'self' data:;
