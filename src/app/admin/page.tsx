@@ -12,6 +12,7 @@ import { GoogleTrendsPanel } from '@/components/admin/GoogleTrendsPanel';
 import { ArticlesManager } from '@/components/admin/ArticlesManager';
 import { AutomationSettings } from '@/components/admin/AutomationSettings';
 import TrendTrackingPanel from '@/components/admin/TrendTrackingPanel';
+import TrendTrackingStatusPanel from '@/components/admin/TrendTrackingStatusPanel';
 import SerpApiMonitor from '@/components/admin/SerpApiMonitor';
 import ArticleQualityPanel from '@/components/admin/ArticleQualityPanel';
 import TrendsSchedulerPanel from '@/components/admin/TrendsSchedulerPanel';
@@ -82,7 +83,7 @@ export default function AdminPage() {
   const [dailyPlan, setDailyPlan] = useState<DailyPlan | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'trends' | 'articles' | 'settings' | 'serpapi'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'trends' | 'articles' | 'settings' | 'serpapi' | 'trend-tracking'>('overview');
   const [nextUpdateCountdown, setNextUpdateCountdown] = useState<string>('Calculating...');
 
   // Manual generation form
@@ -328,6 +329,7 @@ export default function AdminPage() {
           {[
             { key: 'overview', label: '📊 Control Panel', icon: '📊' },
             { key: 'trends', label: '📈 Trends', icon: '📈' },
+            { key: 'trend-tracking', label: '📊 Trend Tracking', icon: '📊' },
             { key: 'articles', label: '📝 Articles', icon: '📝' },
             { key: 'settings', label: '⚙️ Settings', icon: '⚙️' },
             { key: 'serpapi', label: '🔍 SerpApi Monitor', icon: '🔍' }
@@ -654,6 +656,9 @@ export default function AdminPage() {
 
         {/* Trends Tab */}
         {activeTab === 'trends' && <GoogleTrendsPanel />}
+
+        {/* Trend Tracking Status Tab */}
+        {activeTab === 'trend-tracking' && <TrendTrackingStatusPanel />}
 
         {/* Articles Tab */}
         {activeTab === 'articles' && <ArticlesManager />}

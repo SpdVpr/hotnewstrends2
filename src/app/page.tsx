@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { Navigation } from '@/components/Navigation';
 import { ArticleCard } from '@/components/ArticleCard';
 import { CategoryFilter, ScrollableCategoryFilter } from '@/components/CategoryFilter';
-import TrendTrackingStatus from '@/components/TrendTrackingStatus';
 import { Button, Badge } from '@/components/ui';
 import { Article, Category } from '@/types';
 
@@ -244,11 +243,6 @@ export default function Home() {
               onCategoryChange={setSelectedCategory}
             />
           </div>
-        </section>
-
-        {/* Trend Tracking Status */}
-        <section className="mb-8">
-          <TrendTrackingStatus />
         </section>
 
         {/* Articles Grid */}
