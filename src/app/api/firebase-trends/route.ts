@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: {
-        topics: trends,
+        trends: trends, // Changed from topics to trends to match GoogleTrendsPanel expectation
         total: trends.length,
         source: 'Firebase',
         lastUpdated: new Date().toISOString()

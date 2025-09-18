@@ -43,7 +43,73 @@ export function GoogleTrendsPanel() {
       const response = await fetch('/api/firebase-trends?limit=50');
       if (response.ok) {
         const data = await response.json();
-        console.log('🔍 Firebase trends response:', data.data);
+        console.log('🔍 Firebase trends response:', data);
+
+        if (data.success && data.data && data.data.trends && data.data.trends.length > 0) {
+          // Convert Firebase trends to expected format
+          const trendsData: GoogleTrendsData = {
+            topics: data.data.trends.map((trend: any) => ({
+              title: trend.title || trend.keyword,
+              formattedTraffic: trend.formattedTraffic || `${trend.searchVolume}+`,
+              searchVolume: trend.searchVolume || 0,
+              category: trend.category || 'general',
+              source: trend.source || 'Firebase',
+              originalTitle: trend.originalTitle,
+              relatedQueries: trend.relatedQueries || []
+            })),
+            lastUpdated: data.data.lastUpdated || new Date().toISOString(),
+            region: 'US',
+            timeframe: 'now',
+            total: data.data.trends.length,
+            source: 'Firebase'
+          };
+
+          console.log('🔍 First Firebase trend:', trendsData.topics?.[0]);
+          setTrendsData(trendsData);
+        } else {
+          console.warn('⚠️ No trends data in Firebase response:', data);
+          // Set empty state
+          setTrendsData({
+            topics: [],
+            lastUpdated: new Date().toISOString(),
+            region: 'US',
+            timeframe: 'now',
+            total: 0,
+            source: 'Firebase (empty)'
+          });
+        }
+      } else {
+        console.error('❌ Firebase trends API failed:', response.status, response.statusText);
+      }
+    } catch (error) {
+      console.error('Error fetching Firebase trends:', error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      // Force update trends scheduler to get fresh data into Firebase
+      const schedulerResponse = await fetch('/api/trends/scheduler', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'force-update' })
+      });
+
+      if (schedulerResponse.ok) {
+        console.log('✅ Trends scheduler force update initiated');
+        // Wait a moment for Firebase to be updated
+        await new Promise(resolve => setTimeout(resolve, 3000));
+      }
+
+      // Now fetch fresh data from Firebase
+      const response = await fetch('/api/firebase-trends?limit=50');
+      if (response.ok) {
+        const data = await response.json();
+        console.log('🔍 Refresh Firebase trends response:', data.data);
 
         // Convert Firebase trends to expected format
         const trendsData: GoogleTrendsData = {
@@ -63,24 +129,7 @@ export function GoogleTrendsPanel() {
           source: 'Firebase'
         };
 
-        console.log('🔍 First Firebase trend:', trendsData.topics?.[0]);
         setTrendsData(trendsData);
-      }
-    } catch (error) {
-      console.error('Error fetching Firebase trends:', error);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
-
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    try {
-      const response = await fetch('/api/trends?source=google&refresh=true');
-      if (response.ok) {
-        const data = await response.json();
-        setTrendsData(data.data);
       }
     } catch (error) {
       console.error('Error refreshing trends:', error);
