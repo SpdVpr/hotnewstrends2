@@ -426,20 +426,31 @@ export default function AdminPage() {
                             className="text-xs px-2 py-1 h-6"
                             onClick={async () => {
                               try {
+                                setActionLoading('reset');
+                                console.log('🔄 Starting daily plan refresh with latest Firebase trends...');
+
                                 const response = await fetch('/api/daily-plan', {
                                   method: 'POST',
                                   headers: { 'Content-Type': 'application/json' },
-                                  body: JSON.stringify({ action: 'reset-failed' })
+                                  body: JSON.stringify({ action: 'refresh' })
                                 });
+
                                 if (response.ok) {
-                                  fetchData();
+                                  console.log('✅ Daily plan refreshed successfully');
+                                  fetchData(); // Reload the data to show new plan
+                                } else {
+                                  const errorData = await response.json();
+                                  console.error('❌ Daily plan refresh failed:', errorData);
                                 }
                               } catch (error) {
-                                console.error('Reset failed:', error);
+                                console.error('❌ Reset failed:', error);
+                              } finally {
+                                setActionLoading(null);
                               }
                             }}
+                            disabled={actionLoading === 'reset'}
                           >
-                            🔄 Reset
+                            {actionLoading === 'reset' ? '🔄 Refreshing...' : '🔄 Reset'}
                           </Button>
                           <Button
                             size="sm"
