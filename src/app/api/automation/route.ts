@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { automationService } from '@/lib/services/automation';
+import { automatedArticleGenerator } from '@/lib/services/automated-article-generator';
 
 // GET /api/automation - Get automation status and stats
 export async function GET() {
   try {
-    const stats = automationService.getStats();
+    const stats = await automatedArticleGenerator.getStats();
     
     return NextResponse.json({
       success: true,
@@ -30,58 +30,27 @@ export async function POST(request: NextRequest) {
 
     switch (action) {
       case 'start':
-        await automationService.start();
+        console.log('🚀 Starting automated article generator...');
+        await automatedArticleGenerator.start();
         return NextResponse.json({
           success: true,
-          message: 'Automation service started'
+          message: 'Automated article generator started'
         });
 
       case 'stop':
-        automationService.stop();
-
-        // Also stop automated article generator
-        try {
-          const { automatedArticleGenerator } = await import('@/lib/services/automated-article-generator');
-          automatedArticleGenerator.stop();
-          console.log('🛑 Automated article generator stopped');
-        } catch (error) {
-          console.warn('⚠️ Could not stop automated article generator:', error);
-        }
-
+        console.log('🛑 Stopping automated article generator...');
+        automatedArticleGenerator.stop();
         return NextResponse.json({
           success: true,
-          message: 'Automation service and article generator stopped'
+          message: 'Automated article generator stopped'
         });
 
       case 'force_stop':
-        // Force stop everything - automation service and article generator
-        automationService.stop();
-
-        try {
-          const { automatedArticleGenerator } = await import('@/lib/services/automated-article-generator');
-          automatedArticleGenerator.stop();
-          console.log('🛑 FORCE STOP: Automated article generator stopped');
-        } catch (error) {
-          console.warn('⚠️ Could not force stop automated article generator:', error);
-        }
-
+        console.log('🛑 FORCE STOP: Stopping automated article generator...');
+        automatedArticleGenerator.stop();
         return NextResponse.json({
           success: true,
-          message: 'FORCE STOP: All automation stopped'
-        });
-
-      case 'updateConfig':
-        if (!config) {
-          return NextResponse.json(
-            { success: false, error: 'Config is required' },
-            { status: 400 }
-          );
-        }
-        automationService.updateConfig(config);
-        return NextResponse.json({
-          success: true,
-          message: 'Configuration updated',
-          data: automationService.getConfig()
+          message: 'FORCE STOP: Automated article generator stopped'
         });
 
       default:

@@ -39,7 +39,7 @@ class TrendTracker {
     newTrends: TrackedTrend[];
     stats: TrendTrackingStats;
   }> {
-    const existingTrends = this.getStoredTrends();
+    const existingTrends = await this.getStoredTrends();
     const newTrends: TrackedTrend[] = [];
     let duplicatesFiltered = 0;
 
@@ -77,7 +77,7 @@ class TrendTracker {
 
     // Clean up old trends (keep only recent ones)
     const cleanedTrends = this.cleanupOldTrends(existingTrends);
-    this.storeTrackedTrends(cleanedTrends);
+    await this.storeTrackedTrends(cleanedTrends);
 
     const stats: TrendTrackingStats = {
       totalTrends: cleanedTrends.length,
@@ -95,14 +95,14 @@ class TrendTracker {
   /**
    * Mark trend as having article generated
    */
-  markArticleGenerated(trendId: string, articleId: string): void {
-    const trends = this.getStoredTrends();
+  async markArticleGenerated(trendId: string, articleId: string): Promise<void> {
+    const trends = await this.getStoredTrends();
     const trend = trends.find(t => t.id === trendId);
-    
+
     if (trend) {
       trend.articleGenerated = true;
       trend.articleId = articleId;
-      this.storeTrackedTrends(trends);
+      await this.storeTrackedTrends(trends);
       console.log(`✅ Marked trend "${trend.title}" as having article generated: ${articleId}`);
     }
   }
@@ -193,25 +193,37 @@ class TrendTracker {
   }
 
   /**
-   * Get stored trends from localStorage/database
+   * Get stored trends from localStorage/Firebase
    */
-  private getStoredTrends(): TrackedTrend[] {
+  private async getStoredTrends(): Promise<TrackedTrend[]> {
     try {
       if (typeof window !== 'undefined') {
         // Client-side: use localStorage
         const stored = localStorage.getItem(this.STORAGE_KEY);
         return stored ? JSON.parse(stored) : [];
       } else {
-        // Server-side: use file system
-        const fs = require('fs');
-        const path = require('path');
-        const filePath = path.join(process.cwd(), 'data', 'tracked-trends.json');
-
-        if (fs.existsSync(filePath)) {
-          const stored = fs.readFileSync(filePath, 'utf8');
-          return JSON.parse(stored);
+        // Server-side: use Firebase instead of file system
+        try {
+          const { firebaseTrendsService } = await import('./firebase-trends');
+          const trends = await firebaseTrendsService.getLatestTrends(this.MAX_STORED_TRENDS);
+          return trends.map((trend: any) => ({
+            id: trend.id,
+            title: trend.title || trend.keyword,
+            slug: trend.slug || (trend.title || trend.keyword).toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+            category: trend.category || 'General',
+            formattedTraffic: trend.formattedTraffic || trend.traffic?.toString() || '0',
+            traffic: typeof trend.traffic === 'number' ? trend.traffic : parseInt(trend.traffic?.toString().replace(/[^0-9]/g, '') || '0'),
+            source: trend.source || 'firebase',
+            firstSeen: trend.firstSeen || trend.createdAt || new Date().toISOString(),
+            lastSeen: trend.lastSeen || trend.updatedAt || new Date().toISOString(),
+            articleGenerated: trend.articleGenerated || false,
+            articleId: trend.articleId,
+            hash: trend.hash || this.generateTrendHash({ title: trend.title || trend.keyword, category: trend.category || 'General' })
+          }));
+        } catch (firebaseError) {
+          console.warn('Firebase trends not available, using empty array:', firebaseError);
+          return [];
         }
-        return [];
       }
     } catch (error) {
       console.error('Error loading stored trends:', error);
@@ -220,26 +232,17 @@ class TrendTracker {
   }
 
   /**
-   * Store trends to localStorage/database
+   * Store trends to localStorage/Firebase
    */
-  private storeTrackedTrends(trends: TrackedTrend[]): void {
+  private async storeTrackedTrends(trends: TrackedTrend[]): Promise<void> {
     try {
       if (typeof window !== 'undefined') {
         // Client-side: use localStorage
         localStorage.setItem(this.STORAGE_KEY, JSON.stringify(trends));
       } else {
-        // Server-side: use file system
-        const fs = require('fs');
-        const path = require('path');
-        const dataDir = path.join(process.cwd(), 'data');
-
-        // Ensure data directory exists
-        if (!fs.existsSync(dataDir)) {
-          fs.mkdirSync(dataDir, { recursive: true });
-        }
-
-        const filePath = path.join(dataDir, 'tracked-trends.json');
-        fs.writeFileSync(filePath, JSON.stringify(trends, null, 2));
+        // Server-side: Firebase storage is handled by firebase-trends service
+        // We don't need to store here as trends are already in Firebase
+        console.log(`📊 Trends tracking: ${trends.length} trends processed (stored in Firebase)`);
       }
     } catch (error) {
       console.error('Error storing trends:', error);

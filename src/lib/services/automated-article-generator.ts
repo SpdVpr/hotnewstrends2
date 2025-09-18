@@ -117,13 +117,24 @@ class AutomatedArticleGenerator {
       console.log('🔍 Checking scheduled articles and daily plan...');
 
       // Ensure we have a daily plan
-      await this.ensureDailyPlan();
+      try {
+        await this.ensureDailyPlan();
+      } catch (planError) {
+        console.error('❌ Error ensuring daily plan:', planError);
+        // Continue with processing even if daily plan fails
+      }
 
       // Check for articles that should be generated now
-      await this.processScheduledJobs();
+      try {
+        await this.processScheduledJobs();
+      } catch (jobsError) {
+        console.error('❌ Error processing scheduled jobs:', jobsError);
+        // Continue running even if job processing fails
+      }
 
     } catch (error) {
-      console.error('❌ Error processing scheduled articles:', error);
+      console.error('❌ Critical error in processNewTrends:', error);
+      // Don't stop the service for errors - just log them
     }
   }
 
