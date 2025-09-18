@@ -87,7 +87,7 @@ export const googleTrendsService = {
 
           if (data.trending_searches) {
             const serpTopics = data.trending_searches
-              .slice(0, 20) // Limit to 20 SerpAPI topics for better variety
+              .slice(0, 30) // Limit to 30 SerpAPI topics (increased from 20 for better coverage)
               .map((item: any) => ({
                 title: item.query || item.title || 'Unknown Topic',
                 keyword: item.query || item.title || 'unknown',
@@ -108,15 +108,18 @@ export const googleTrendsService = {
                 }))
               }));
 
-            // Get RSS topics as well
-            console.log('📰 Also fetching RSS feeds for additional topics...');
-            const rssTopics = await this.fetchFromRSSFeeds(region);
+            // Get limited RSS topics for variety (only if we have room)
+            const maxRssTopics = Math.max(0, 50 - serpTopics.length); // Leave room for SerpAPI
+            console.log(`📰 Fetching up to ${maxRssTopics} RSS topics for additional variety...`);
+            const rssTopics = maxRssTopics > 0 ? (await this.fetchFromRSSFeeds(region)).slice(0, maxRssTopics) : [];
 
-            // Combine and sort by search volume
-            const allTopics = [...serpTopics, ...rssTopics]
-              .sort((a, b) => b.searchVolume - a.searchVolume);
+            // SerpAPI gets absolute priority - put them first, then RSS
+            const allTopics = [
+              ...serpTopics.sort((a, b) => b.searchVolume - a.searchVolume), // SerpAPI first, sorted by real volume
+              ...rssTopics.sort((a, b) => b.searchVolume - a.searchVolume)   // RSS second, sorted by their volume
+            ];
 
-            console.log(`✅ Combined data: ${serpTopics.length} SerpAPI + ${rssTopics.length} RSS = ${allTopics.length} total topics`);
+            console.log(`✅ Prioritized data: ${serpTopics.length} SerpAPI (first) + ${rssTopics.length} RSS (second) = ${allTopics.length} total topics`);
             return {
               topics: allTopics,
               total: allTopics.length,
