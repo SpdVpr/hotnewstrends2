@@ -174,8 +174,8 @@ export async function GET(request: NextRequest) {
       success: true,
       data: {
         currentTime: {
-          utc: currentUTCTime,
-          utcFormatted: `${currentHour.toString().padStart(2, '0')}:${currentMinute.toString().padStart(2, '0')} UTC`,
+          utc: now.toISOString(),
+          utcFormatted: `${now.getUTCHours().toString().padStart(2, '0')}:${now.getUTCMinutes().toString().padStart(2, '0')} UTC`,
           pragueFormatted: `${pragueHour.toString().padStart(2, '0')}:${pragueMinute.toString().padStart(2, '0')} Prague`,
           minutesSinceMidnight: currentTimeMinutes,
           pragueTime: pragueTime.toISOString()
