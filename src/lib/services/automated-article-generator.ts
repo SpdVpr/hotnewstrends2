@@ -1089,17 +1089,25 @@ class AutomatedArticleGenerator {
       // Create jobs for top trends
       const jobs: Job[] = [];
       const maxJobs = Math.min(this.MAX_DAILY_ARTICLES, sortedTrends.length);
+      const startHour = 6; // Start at 6:00 AM
+      const endHour = 22; // End at 10:00 PM
+      const intervalMinutes = (endHour - startHour) * 60 / this.MAX_DAILY_ARTICLES; // ~40 minutes apart
 
       for (let i = 0; i < maxJobs; i++) {
         const trend = sortedTrends[i];
-        const scheduledTime = this.calculateScheduledTime(i);
+
+        // Create scheduled time for the target date
+        const scheduledTime = new Date(date + 'T00:00:00.000Z');
+        const scheduledHour = startHour + Math.floor(i * intervalMinutes / 60);
+        const scheduledMinute = Math.floor(i * intervalMinutes) % 60;
+        scheduledTime.setUTCHours(scheduledHour, scheduledMinute, 0, 0);
 
         const job: Job = {
           id: `${date}-${i + 1}`,
           topic: trend.title,
           keyword: trend.keyword,
           category: trend.category,
-          scheduledTime,
+          scheduledTime: scheduledTime.toISOString(),
           status: 'pending',
           createdAt: new Date().toISOString(),
           searchVolume: trend.searchVolume,
