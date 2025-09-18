@@ -20,7 +20,8 @@ let app: FirebaseApp;
 let db: Firestore;
 let auth: Auth;
 let storage: FirebaseStorage;
-let analytics: any = null;
+// Firebase Analytics disabled - using Google Analytics directly
+// let analytics: any = null;
 
 if (getApps().length === 0) {
   app = initializeApp(firebaseConfig);
@@ -33,17 +34,17 @@ db = getFirestore(app);
 auth = getAuth(app);
 storage = getStorage(app);
 
-// Initialize Analytics only on client side
-if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID) {
-  try {
-    const { getAnalytics } = require('firebase/analytics');
-    analytics = getAnalytics(app);
-  } catch (error) {
-    console.warn('Analytics not available:', error);
-  }
-}
+// Firebase Analytics disabled - using Google Analytics gtag directly
+// if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID) {
+//   try {
+//     const { getAnalytics } = require('firebase/analytics');
+//     analytics = getAnalytics(app);
+//   } catch (error) {
+//     console.warn('Analytics not available:', error);
+//   }
+// }
 
-export { app, db, auth, storage, analytics };
+export { app, db, auth, storage };
 
 // Firebase collections
 export const COLLECTIONS = {
