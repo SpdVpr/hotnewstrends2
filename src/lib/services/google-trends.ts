@@ -108,10 +108,9 @@ export const googleTrendsService = {
                 }))
               }));
 
-            // Get limited RSS topics for variety (only if we have room)
-            const maxRssTopics = Math.max(0, 50 - serpTopics.length); // Leave room for SerpAPI
-            console.log(`📰 Fetching up to ${maxRssTopics} RSS topics for additional variety...`);
-            const rssTopics = maxRssTopics > 0 ? (await this.fetchFromRSSFeeds(region)).slice(0, maxRssTopics) : [];
+            // Get limited RSS topics for variety (max 10 as supplement to SerpAPI)
+            console.log(`📰 Fetching up to 10 RSS topics as supplement to SerpAPI...`);
+            const rssTopics = (await this.fetchFromRSSFeeds(region)).slice(0, 10);
 
             // SerpAPI gets absolute priority - put them first, then RSS
             const allTopics = [
@@ -119,7 +118,7 @@ export const googleTrendsService = {
               ...rssTopics.sort((a, b) => b.searchVolume - a.searchVolume)   // RSS second, sorted by their volume
             ];
 
-            console.log(`✅ Prioritized data: ${serpTopics.length} SerpAPI (first) + ${rssTopics.length} RSS (second) = ${allTopics.length} total topics`);
+            console.log(`✅ Prioritized data: ${serpTopics.length} SerpAPI (primary) + ${rssTopics.length} RSS (supplement, max 10) = ${allTopics.length} total topics`);
             return {
               topics: allTopics,
               total: allTopics.length,
@@ -196,14 +195,14 @@ export const googleTrendsService = {
           const items = this.parseRSSItems(xmlText);
           topics.push(...items);
 
-          if (topics.length >= 40) break; // Limit to 40 topics for better variety
+          if (topics.length >= 15) break; // Limit to 15 topics total from all RSS feeds
         } catch (feedError) {
           console.warn(`⚠️ RSS feed failed: ${feedUrl}`, feedError);
         }
       }
 
       console.log(`✅ RSS feeds returned ${topics.length} topics`);
-      return topics.slice(0, 20); // Limit to 20 RSS topics for better variety
+      return topics.slice(0, 10); // Limit to 10 RSS topics as supplement to SerpAPI
 
     } catch (error) {
       console.error('Error fetching RSS feeds:', error);
@@ -221,7 +220,7 @@ export const googleTrendsService = {
       const descRegex = /<description[^>]*><!\[CDATA\[(.*?)\]\]><\/description>|<description[^>]*>(.*?)<\/description>/;
 
       let match;
-      while ((match = itemRegex.exec(xmlText)) !== null && topics.length < 20) {
+      while ((match = itemRegex.exec(xmlText)) !== null && topics.length < 10) {
         const itemContent = match[1];
 
         const titleMatch = titleRegex.exec(itemContent);
