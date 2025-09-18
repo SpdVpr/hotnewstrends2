@@ -336,6 +336,18 @@ class AutomatedArticleGenerator {
 
     console.log(`🎯 Found ${pendingJobs.length} pending jobs ready to process`);
 
+    // CRITICAL FIX: Sort pending jobs by scheduledAt (oldest first)
+    pendingJobs.sort((a, b) => new Date(a.scheduledAt!).getTime() - new Date(b.scheduledAt!).getTime());
+
+    // Debug: Show pending jobs in order
+    if (pendingJobs.length > 0) {
+      console.log('📅 Pending jobs (sorted by time):');
+      pendingJobs.forEach(job => {
+        const scheduledTime = new Date(job.scheduledAt!);
+        console.log(`  #${job.position}: "${job.trend.title}" at ${scheduledTime.toLocaleString()} ✅ READY`);
+      });
+    }
+
     // Debug: Show next few scheduled jobs
     const nextJobs = dailyPlan.jobs
       .filter(job => job.status === 'pending' && job.scheduledAt)
@@ -362,9 +374,9 @@ class AutomatedArticleGenerator {
       return;
     }
 
-    // Process the first pending job
+    // Process the OLDEST pending job (first in sorted array)
     const job = pendingJobs[0];
-    console.log(`🚀 Processing scheduled job: ${job.trend.title} (position ${job.position})`);
+    console.log(`🚀 Processing OLDEST scheduled job: ${job.trend.title} (position ${job.position}) scheduled for ${new Date(job.scheduledAt!).toLocaleString()}`);
 
     await this.processGenerationJob(job);
   }
