@@ -1086,15 +1086,31 @@ class AutomatedArticleGenerator {
       console.log(`📊 Sorted ${sortedTrends.length} trends by search volume`);
       console.log(`🔍 Top trend: "${sortedTrends[0]?.title}" (${sortedTrends[0]?.searchVolume} searches, source: ${sortedTrends[0]?.source})`);
 
-      // Create jobs for top trends
+      // Remove duplicates by title (keep highest search volume)
+      const uniqueTrends = [];
+      const seenTitles = new Set();
+
+      for (const trend of sortedTrends) {
+        const normalizedTitle = trend.title.toLowerCase().trim();
+        if (!seenTitles.has(normalizedTitle)) {
+          seenTitles.add(normalizedTitle);
+          uniqueTrends.push(trend);
+        } else {
+          console.log(`🔄 Skipping duplicate: "${trend.title}" (${trend.searchVolume} searches)`);
+        }
+      }
+
+      console.log(`✅ Deduplication: ${sortedTrends.length} → ${uniqueTrends.length} unique trends`);
+
+      // Create jobs for top unique trends
       const jobs: ArticleGenerationJob[] = [];
-      const maxJobs = Math.min(this.MAX_DAILY_ARTICLES, sortedTrends.length);
+      const maxJobs = Math.min(this.MAX_DAILY_ARTICLES, uniqueTrends.length);
       const startHour = 6; // Start at 6:00 AM
       const endHour = 22; // End at 10:00 PM
       const intervalMinutes = (endHour - startHour) * 60 / this.MAX_DAILY_ARTICLES; // ~40 minutes apart
 
       for (let i = 0; i < maxJobs; i++) {
-        const trend = sortedTrends[i];
+        const trend = uniqueTrends[i];
 
         // Create scheduled time for the target date
         const scheduledTime = new Date(date + 'T00:00:00.000Z');
