@@ -70,62 +70,83 @@ class ContentGeneratorService {
       const tone = request.tone || template.tone;
       const customPrompt = template.contentPrompt.replace('{topic}', request.topic);
 
-      // Try real Perplexity API first
+      // Try real Perplexity API with retry logic
       console.log('🔑 API Key check:', this.apiKey ? `${this.apiKey.substring(0, 10)}...` : 'NO API KEY');
       if (this.apiKey && this.apiKey !== '') {
-        console.log('🌐 Attempting Perplexity API call...');
-        try {
-          const response = await fetch(this.baseUrl, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${this.apiKey}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              model: 'sonar-pro',
-              messages: [
-                { role: 'system', content: this.getSystemPrompt(request) },
-                { role: 'user', content: this.getUserPrompt(request) }
-              ],
-              max_tokens: Math.min(4000, (request.targetLength || 1000) * 2),
-              temperature: 0.1,
-              return_citations: true,
-              return_related_questions: true,
-              return_images: request.includeImages || true
-            })
-          });
+        const maxRetries = 3;
+        let lastError: any = null;
 
-          if (response.ok) {
-            const data = await response.json();
-            console.log('✅ Perplexity API response received');
-            console.log('🔍 API Response data:', JSON.stringify(data, null, 2));
-            return this.parsePerplexityResponse(data, request);
-          } else {
-            const errorText = await response.text();
-            console.error('❌ Perplexity API error:', response.status, errorText);
-            console.error('❌ API Key used:', this.apiKey ? `${this.apiKey.substring(0, 10)}...` : 'NO API KEY');
-            console.error('❌ Request body:', JSON.stringify({
-              model: 'sonar-pro',
-              messages: [
-                { role: 'system', content: this.getSystemPrompt(request) },
-                { role: 'user', content: this.getUserPrompt(request) }
-              ],
-              return_images: request.includeImages || true
-            }, null, 2));
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+          console.log(`🌐 Attempting Perplexity API call (attempt ${attempt}/${maxRetries})...`);
+          try {
+            const response = await fetch(this.baseUrl, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${this.apiKey}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                model: 'sonar-pro',
+                messages: [
+                  { role: 'system', content: this.getSystemPrompt(request) },
+                  { role: 'user', content: this.getUserPrompt(request) }
+                ],
+                max_tokens: Math.min(4000, (request.targetLength || 1000) * 2),
+                temperature: 0.1,
+                return_citations: true,
+                return_related_questions: true,
+                return_images: request.includeImages || true
+              })
+            });
+
+            if (response.ok) {
+              const data = await response.json();
+              console.log(`✅ Perplexity API response received on attempt ${attempt}`);
+              console.log('🔍 API Response data:', JSON.stringify(data, null, 2));
+              return this.parsePerplexityResponse(data, request);
+            } else {
+              const errorText = await response.text();
+              lastError = new Error(`API Error ${response.status}: ${errorText}`);
+              console.error(`❌ Perplexity API error (attempt ${attempt}):`, response.status, errorText);
+
+              // Don't retry on 4xx errors (client errors)
+              if (response.status >= 400 && response.status < 500) {
+                console.error('❌ Client error - not retrying');
+                break;
+              }
+
+              // Wait before retry (exponential backoff)
+              if (attempt < maxRetries) {
+                const waitTime = Math.pow(2, attempt) * 1000; // 2s, 4s, 8s
+                console.log(`⏳ Waiting ${waitTime}ms before retry...`);
+                await new Promise(resolve => setTimeout(resolve, waitTime));
+              }
+            }
+          } catch (apiError) {
+            lastError = apiError;
+            console.error(`❌ Perplexity API call failed (attempt ${attempt}):`, apiError);
+
+            // Wait before retry
+            if (attempt < maxRetries) {
+              const waitTime = Math.pow(2, attempt) * 1000;
+              console.log(`⏳ Waiting ${waitTime}ms before retry...`);
+              await new Promise(resolve => setTimeout(resolve, waitTime));
+            }
           }
-        } catch (apiError) {
-          console.error('❌ Perplexity API call failed:', apiError);
-          console.error('❌ Error details:', apiError.message);
-          console.error('❌ Error stack:', apiError.stack);
         }
+
+        console.error(`❌ All ${maxRetries} API attempts failed. Last error:`, lastError);
       }
 
       // 🚨 CRITICAL ERROR: Fallback to mock content
       console.error('🚨 CRITICAL: Using mock content generation - this should NOT happen in production!');
       console.error('🚨 This means Perplexity API failed and we are generating FAKE content!');
       console.error('🚨 API Key status:', this.apiKey ? 'Present' : 'Missing');
+      console.error('🚨 Topic that failed:', request.topic);
+      console.error('🚨 Category:', request.category);
 
-      return this.generateMockContent(request);
+      // Instead of mock content, throw an error to reject the article
+      throw new Error(`Failed to generate content for "${request.topic}" after ${this.apiKey ? 'API failures' : 'missing API key'}. This article should be rejected.`);
 
     } catch (error) {
       console.error('Error generating content:', error);
