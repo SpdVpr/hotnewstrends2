@@ -3,6 +3,34 @@
     {
       "path": "/api/cron/automation",
       "schedule": "0 */2 * * *"
+    },
+    {
+      "path": "/api/manual-trends-update",
+      "schedule": "0 7 * * *"
+    },
+    {
+      "path": "/api/manual-trends-update",
+      "schedule": "20 9 * * *"
+    },
+    {
+      "path": "/api/manual-trends-update",
+      "schedule": "40 11 * * *"
+    },
+    {
+      "path": "/api/manual-trends-update",
+      "schedule": "0 14 * * *"
+    },
+    {
+      "path": "/api/manual-trends-update",
+      "schedule": "20 16 * * *"
+    },
+    {
+      "path": "/api/manual-trends-update",
+      "schedule": "40 18 * * *"
+    },
+    {
+      "path": "/api/manual-trends-update",
+      "schedule": "0 21 * * *"
     }
   ],
   "functions": {
@@ -11,6 +39,9 @@
     },
     "src/app/api/cron/automation/route.ts": {
       "maxDuration": 300
+    },
+    "src/app/api/manual-trends-update/route.ts": {
+      "maxDuration": 60
     }
   },
   "headers": [
