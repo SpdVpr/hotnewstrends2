@@ -1021,46 +1021,18 @@ class AutomatedArticleGenerator {
 
   /**
    * Force refresh of daily plan (useful when trends are updated)
-   * This will fetch fresh trends from SerpAPI and recreate the daily plan
+   * This reads the latest trends from Firebase and recreates the daily plan
    */
   public async refreshDailyPlan(): Promise<void> {
     const today = new Date().toISOString().split('T')[0];
     console.log('🔄 Refreshing daily plan for', today);
+    console.log('📊 Reading latest trends from Firebase for daily plan refresh...');
 
-    try {
-      // Step 1: Fetch fresh trends from SerpAPI
-      console.log('📊 Fetching fresh trends from SerpAPI for daily plan refresh...');
-      const { googleTrendsService } = await import('./google-trends');
-      const freshTrends = await googleTrendsService.getDailyTrends('US');
+    // Simply recreate the daily plan with current Firebase data
+    // The trends scheduler handles updating Firebase with fresh SerpAPI data
+    await this.createDailyPlan(today);
 
-      if (!freshTrends || freshTrends.length === 0) {
-        console.warn('⚠️ No fresh trends available from SerpAPI, using existing Firebase data');
-        await this.createDailyPlan(today);
-        return;
-      }
-
-      console.log(`📊 Retrieved ${freshTrends.length} fresh trends from SerpAPI`);
-
-      // Step 2: Save fresh trends to Firebase
-      const { firebaseTrendsService } = await import('./firebase-trends');
-      const batchId = await firebaseTrendsService.saveTrendsBatch(freshTrends);
-      console.log(`💾 Saved fresh trends to Firebase with batchId: ${batchId}`);
-
-      // Step 3: Wait a moment for Firebase to process
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      // Step 4: Create new daily plan with fresh data
-      console.log('📅 Creating new daily plan with fresh trends...');
-      await this.createDailyPlan(today);
-
-      console.log('✅ Daily plan refresh completed with fresh trends');
-
-    } catch (error) {
-      console.error('❌ Error refreshing daily plan with fresh trends:', error);
-      // Fallback to existing data
-      console.log('🔄 Falling back to existing Firebase data...');
-      await this.createDailyPlan(today);
-    }
+    console.log('✅ Daily plan refresh completed using Firebase trends');
   }
 
   /**

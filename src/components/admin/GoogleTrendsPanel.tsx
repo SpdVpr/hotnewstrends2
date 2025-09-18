@@ -39,15 +39,35 @@ export function GoogleTrendsPanel() {
 
   const fetchTrends = async () => {
     try {
-      const response = await fetch('/api/trends?source=google');
+      // Read trends from Firebase instead of calling SerpAPI directly
+      const response = await fetch('/api/firebase-trends?limit=50');
       if (response.ok) {
         const data = await response.json();
-        console.log('🔍 Trends API response:', data.data);
-        console.log('🔍 First trend:', data.data?.topics?.[0]);
-        setTrendsData(data.data);
+        console.log('🔍 Firebase trends response:', data.data);
+
+        // Convert Firebase trends to expected format
+        const trendsData: GoogleTrendsData = {
+          topics: data.data.trends.map((trend: any) => ({
+            title: trend.title || trend.keyword,
+            formattedTraffic: trend.formattedTraffic || `${trend.searchVolume}+`,
+            searchVolume: trend.searchVolume || 0,
+            category: trend.category || 'general',
+            source: trend.source || 'Firebase',
+            originalTitle: trend.originalTitle,
+            relatedQueries: trend.relatedQueries || []
+          })),
+          lastUpdated: data.data.lastUpdated || new Date().toISOString(),
+          region: 'US',
+          timeframe: 'now',
+          total: data.data.trends.length,
+          source: 'Firebase'
+        };
+
+        console.log('🔍 First Firebase trend:', trendsData.topics?.[0]);
+        setTrendsData(trendsData);
       }
     } catch (error) {
-      console.error('Error fetching trends:', error);
+      console.error('Error fetching Firebase trends:', error);
     } finally {
       setLoading(false);
       setRefreshing(false);
