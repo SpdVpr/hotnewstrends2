@@ -76,17 +76,24 @@ export async function GET(request: NextRequest) {
     const scheduleWithStatus = updateSchedule.map(schedule => {
       const [hours, minutes] = schedule.time.split(':').map(Number);
       const scheduleTimeMinutes = hours * 60 + minutes;
-      
+
+      // Calculate Prague time for this schedule
+      const utcScheduleTime = new Date();
+      utcScheduleTime.setUTCHours(hours, minutes, 0, 0);
+      const pragueScheduleTime = new Date(utcScheduleTime.toLocaleString("en-US", {timeZone: "Europe/Prague"}));
+      const pragueHours = pragueScheduleTime.getHours();
+      const pragueMinutes = pragueScheduleTime.getMinutes();
+
       // Check if this update should have happened today
       const isPast = scheduleTimeMinutes < currentTimeMinutes;
       const isCurrent = Math.abs(scheduleTimeMinutes - currentTimeMinutes) <= 30; // Within 30 minutes
       const isNext = schedule === nextUpdate;
-      
+
       // Determine status indicator
       let status = 'pending';
       let indicator = '⏳';
       let statusText = 'Pending';
-      
+
       if (isPast) {
         // Check if update actually happened (within 2 hours of scheduled time)
         if (lastUpdateInfo) {
@@ -94,7 +101,7 @@ export async function GET(request: NextRequest) {
           const updateHour = updateTime.getUTCHours();
           const updateMinute = updateTime.getUTCMinutes();
           const updateTimeMinutes = updateHour * 60 + updateMinute;
-          
+
           // If last update was within 2 hours of this scheduled time
           const timeDiff = Math.abs(updateTimeMinutes - scheduleTimeMinutes);
           if (timeDiff <= 120) { // Within 2 hours
@@ -120,7 +127,7 @@ export async function GET(request: NextRequest) {
         indicator = '⏰';
         statusText = `Next (in ${minutesUntilNext} min)`;
       }
-      
+
       return {
         ...schedule,
         status,
@@ -129,7 +136,8 @@ export async function GET(request: NextRequest) {
         isPast,
         isCurrent,
         isNext,
-        utcTime: `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} UTC`
+        utcTime: `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} UTC`,
+        pragueTime: `${pragueHours.toString().padStart(2, '0')}:${pragueMinutes.toString().padStart(2, '0')} Prague`
       };
     });
     

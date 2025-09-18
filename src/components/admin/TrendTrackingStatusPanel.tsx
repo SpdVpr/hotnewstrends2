@@ -15,6 +15,7 @@ interface ScheduleItem {
   isCurrent: boolean;
   isNext: boolean;
   utcTime: string;
+  pragueTime: string;
 }
 
 interface TrendTrackingData {
@@ -222,20 +223,35 @@ export default function TrendTrackingStatusPanel() {
         {/* Current Time & Next Update */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
           <div>
-            <h4 className="font-medium text-gray-700 mb-1">🕐 Current Time</h4>
-            <p className="text-lg font-mono">
-              {currentTime.getUTCHours().toString().padStart(2, '0')}:
-              {currentTime.getUTCMinutes().toString().padStart(2, '0')}:
-              {currentTime.getUTCSeconds().toString().padStart(2, '0')} UTC
+            <h4 className="font-medium text-gray-700 mb-1">🕐 Aktuální čas (Praha)</h4>
+            <p className="text-xl font-mono text-blue-600">
+              {currentTime.toLocaleTimeString('cs-CZ', {
+                timeZone: 'Europe/Prague',
+                hour12: false
+              })}
             </p>
-            <p className="text-sm font-mono text-blue-600">
-              {currentTime.toLocaleTimeString('cs-CZ', { timeZone: 'Europe/Prague' })} Prague
+            <p className="text-sm text-gray-500">
+              {currentTime.toLocaleDateString('cs-CZ', {
+                timeZone: 'Europe/Prague',
+                weekday: 'long',
+                day: 'numeric',
+                month: 'long'
+              })}
             </p>
           </div>
           <div>
-            <h4 className="font-medium text-gray-700 mb-1">⏰ Next Update</h4>
+            <h4 className="font-medium text-gray-700 mb-1">⏰ Další aktualizace</h4>
             <p className="text-lg font-mono">
-              {data.nextUpdate.time} UTC
+              {(() => {
+                const [hours, minutes] = data.nextUpdate.time.split(':').map(Number);
+                const utcTime = new Date();
+                utcTime.setUTCHours(hours, minutes, 0, 0);
+                const pragueTime = new Date(utcTime.toLocaleString("en-US", {timeZone: "Europe/Prague"}));
+                return pragueTime.toLocaleTimeString('cs-CZ', {
+                  timeZone: 'Europe/Prague',
+                  hour12: false
+                });
+              })()} Praha
             </p>
             <p className="text-sm text-orange-600 font-semibold">
               ⏱️ {countdown}
@@ -246,17 +262,17 @@ export default function TrendTrackingStatusPanel() {
         {/* Last Update Info */}
         {data.lastUpdate && (
           <div className="p-4 bg-blue-50 rounded-lg">
-            <h4 className="font-medium text-gray-700 mb-2">📈 Last Update</h4>
+            <h4 className="font-medium text-gray-700 mb-2">📈 Poslední aktualizace</h4>
             <div className="text-sm space-y-1">
-              <p><strong>Time:</strong> {new Date(data.lastUpdate.timestamp).toLocaleString()} ({data.lastUpdate.hoursAgo}h {data.lastUpdate.minutesAgo % 60}m ago)</p>
-              <p><strong>Latest Trend:</strong> "{data.lastUpdate.trend.title}" ({data.lastUpdate.trend.searchVolume?.toLocaleString()} searches, {data.lastUpdate.trend.source})</p>
+              <p><strong>Čas:</strong> {new Date(data.lastUpdate.timestamp).toLocaleString('cs-CZ', { timeZone: 'Europe/Prague' })} (před {data.lastUpdate.hoursAgo}h {data.lastUpdate.minutesAgo % 60}m)</p>
+              <p><strong>Nejnovější trend:</strong> "{data.lastUpdate.trend.title}" ({data.lastUpdate.trend.searchVolume?.toLocaleString()} vyhledávání, {data.lastUpdate.trend.source})</p>
             </div>
           </div>
         )}
 
         {/* Schedule */}
         <div>
-          <h3 className="font-semibold text-gray-900 mb-4">📅 Daily Update Schedule (7 times)</h3>
+          <h3 className="font-semibold text-gray-900 mb-4">📅 Denní rozvrh aktualizací (7x denně)</h3>
           <div className="space-y-2">
             {data.schedule.map((item, index) => (
               <div 
@@ -267,8 +283,8 @@ export default function TrendTrackingStatusPanel() {
                   <div className="flex items-center space-x-3">
                     <span className="text-lg">{item.indicator}</span>
                     <div>
-                      <div className="font-medium">
-                        #{index + 1} - {item.utcTime}
+                      <div className="font-medium text-lg">
+                        #{index + 1} - {item.pragueTime}
                       </div>
                       <div className="text-sm opacity-75">
                         {item.description}
@@ -299,7 +315,7 @@ export default function TrendTrackingStatusPanel() {
             className="w-full"
             variant="outline"
           >
-            {loading ? '🔄 Refreshing...' : '🔄 Refresh Status'}
+            {loading ? '🔄 Aktualizuji...' : '🔄 Obnovit status'}
           </Button>
         </div>
       </CardContent>
