@@ -42,47 +42,31 @@ class AnalyticsManager {
     this.debugMode = process.env.NODE_ENV === 'development';
   }
 
-  // Initialize Google Analytics
+  // Initialize Google Analytics (gtag is already loaded via layout.tsx)
   init(): void {
-    if (!this.gaId || this.isInitialized) {
-      if (!this.gaId) {
-        console.warn('⚠️ Google Analytics ID not found - analytics disabled');
-      }
+    if (!this.gaId) {
+      console.warn('⚠️ Google Analytics ID not found - analytics disabled');
       return;
     }
 
-    try {
-      // Load gtag script
-      const script = document.createElement('script');
-      script.async = true;
-      script.src = `https://www.googletagmanager.com/gtag/js?id=${this.gaId}`;
-      document.head.appendChild(script);
-
-      // Initialize dataLayer
-      window.dataLayer = window.dataLayer || [];
-      window.gtag = function gtag() {
-        window.dataLayer.push(arguments);
-      };
-
-      // Configure GA
-      window.gtag('js', new Date());
-      window.gtag('config', this.gaId, {
-        page_title: document.title,
-        page_location: window.location.href,
-        debug_mode: this.debugMode,
-        // Enhanced ecommerce and content grouping
-        custom_map: {
-          custom_parameter_1: 'article_category',
-          custom_parameter_2: 'article_author',
-          custom_parameter_3: 'article_read_time'
-        }
-      });
-
+    // Check if gtag is already available (loaded via layout.tsx)
+    if (typeof window !== 'undefined' && window.gtag) {
       this.isInitialized = true;
-      console.log('📊 Google Analytics initialized');
-    } catch (error) {
-      console.error('Failed to initialize Google Analytics:', error);
+      console.log('📊 Google Analytics already initialized via layout.tsx');
+      return;
     }
+
+    // Wait for gtag to be available
+    const checkGtag = () => {
+      if (typeof window !== 'undefined' && window.gtag) {
+        this.isInitialized = true;
+        console.log('📊 Google Analytics connected to existing gtag');
+      } else {
+        setTimeout(checkGtag, 100);
+      }
+    };
+
+    checkGtag();
   }
 
   // Track page views
@@ -332,7 +316,5 @@ export function trackSocialShare(platform: string, url: string): void {
   });
 }
 
-// Initialize analytics on client side
-if (typeof window !== 'undefined') {
-  analytics.init();
-}
+// Analytics will be initialized via AnalyticsProvider component
+// No need to initialize here as gtag is loaded via layout.tsx
