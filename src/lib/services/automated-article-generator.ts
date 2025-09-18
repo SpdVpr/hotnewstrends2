@@ -317,13 +317,24 @@ class AutomatedArticleGenerator {
     if (!dailyPlan) return;
 
     const now = new Date();
-    console.log(`🕐 Current time: ${now.toLocaleString()}`);
+    console.log(`🕐 Current time: ${now.toLocaleString()} (${now.toISOString()})`);
+    console.log(`📋 Daily plan has ${dailyPlan.jobs.length} jobs total`);
+
+    // Debug: Show all jobs with their scheduled times
+    console.log('📅 All jobs in daily plan:');
+    dailyPlan.jobs.forEach(job => {
+      const scheduledTime = job.scheduledAt ? new Date(job.scheduledAt) : null;
+      const isReady = scheduledTime ? scheduledTime <= now : false;
+      console.log(`  #${job.position}: "${job.trend.title}" - Status: ${job.status} - Scheduled: ${scheduledTime?.toLocaleString() || 'N/A'} ${isReady ? '✅ READY' : '⏰ WAITING'}`);
+    });
 
     const pendingJobs = dailyPlan.jobs.filter(job =>
       job.status === 'pending' &&
       job.scheduledAt &&
       new Date(job.scheduledAt) <= now
     );
+
+    console.log(`🎯 Found ${pendingJobs.length} pending jobs ready to process`);
 
     // Debug: Show next few scheduled jobs
     const nextJobs = dailyPlan.jobs
