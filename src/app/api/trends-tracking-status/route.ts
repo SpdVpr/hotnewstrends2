@@ -22,6 +22,11 @@ export async function GET(request: NextRequest) {
     const currentHour = now.getUTCHours();
     const currentMinute = now.getUTCMinutes();
     const currentTimeMinutes = currentHour * 60 + currentMinute;
+
+    // Prague time (UTC+1, UTC+2 in summer)
+    const pragueTime = new Date(now.toLocaleString("en-US", {timeZone: "Europe/Prague"}));
+    const pragueHour = pragueTime.getHours();
+    const pragueMinute = pragueTime.getMinutes();
     
     // Calculate next scheduled update
     let nextUpdate = null;
@@ -155,8 +160,10 @@ export async function GET(request: NextRequest) {
       data: {
         currentTime: {
           utc: currentUTCTime,
-          formatted: `${currentHour.toString().padStart(2, '0')}:${currentMinute.toString().padStart(2, '0')} UTC`,
-          minutesSinceMidnight: currentTimeMinutes
+          utcFormatted: `${currentHour.toString().padStart(2, '0')}:${currentMinute.toString().padStart(2, '0')} UTC`,
+          pragueFormatted: `${pragueHour.toString().padStart(2, '0')}:${pragueMinute.toString().padStart(2, '0')} Prague`,
+          minutesSinceMidnight: currentTimeMinutes,
+          pragueTime: pragueTime.toISOString()
         },
         systemStatus: {
           status: systemStatus,

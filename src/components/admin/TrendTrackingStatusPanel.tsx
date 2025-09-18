@@ -20,8 +20,10 @@ interface ScheduleItem {
 interface TrendTrackingData {
   currentTime: {
     utc: string;
-    formatted: string;
+    utcFormatted: string;
+    pragueFormatted: string;
     minutesSinceMidnight: number;
+    pragueTime: string;
   };
   systemStatus: {
     status: string;
@@ -61,6 +63,8 @@ export default function TrendTrackingStatusPanel() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const [countdown, setCountdown] = useState<string>('');
 
   const fetchStatus = async () => {
     try {
@@ -82,12 +86,52 @@ export default function TrendTrackingStatusPanel() {
     }
   };
 
+  // Calculate real-time countdown
+  const updateCountdown = () => {
+    if (!data?.nextUpdate) return;
+
+    const now = new Date();
+    const [hours, minutes] = data.nextUpdate.time.split(':').map(Number);
+    const nextUpdateTime = new Date();
+    nextUpdateTime.setUTCHours(hours, minutes, 0, 0);
+
+    // If next update is tomorrow
+    if (nextUpdateTime <= now) {
+      nextUpdateTime.setDate(nextUpdateTime.getDate() + 1);
+    }
+
+    const diff = nextUpdateTime.getTime() - now.getTime();
+    const hoursLeft = Math.floor(diff / (1000 * 60 * 60));
+    const minutesLeft = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const secondsLeft = Math.floor((diff % (1000 * 60)) / 1000);
+
+    if (diff > 0) {
+      setCountdown(`${hoursLeft}h ${minutesLeft}m ${secondsLeft}s`);
+    } else {
+      setCountdown('Now!');
+    }
+  };
+
   useEffect(() => {
     fetchStatus();
     // Auto-refresh every 2 minutes
     const interval = setInterval(fetchStatus, 2 * 60 * 1000);
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    // Update current time every second
+    const timeInterval = setInterval(() => {
+      setCurrentTime(new Date());
+      updateCountdown();
+    }, 1000);
+
+    return () => clearInterval(timeInterval);
+  }, [data]);
+
+  useEffect(() => {
+    updateCountdown();
+  }, [data]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -179,15 +223,22 @@ export default function TrendTrackingStatusPanel() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
           <div>
             <h4 className="font-medium text-gray-700 mb-1">🕐 Current Time</h4>
-            <p className="text-lg font-mono">{data.currentTime.formatted}</p>
+            <p className="text-lg font-mono">
+              {currentTime.getUTCHours().toString().padStart(2, '0')}:
+              {currentTime.getUTCMinutes().toString().padStart(2, '0')}:
+              {currentTime.getUTCSeconds().toString().padStart(2, '0')} UTC
+            </p>
+            <p className="text-sm font-mono text-blue-600">
+              {currentTime.toLocaleTimeString('cs-CZ', { timeZone: 'Europe/Prague' })} Prague
+            </p>
           </div>
           <div>
             <h4 className="font-medium text-gray-700 mb-1">⏰ Next Update</h4>
             <p className="text-lg font-mono">
-              {data.nextUpdate.time} UTC 
-              <span className="text-sm text-gray-600 ml-2">
-                (in {data.nextUpdate.hoursUntil}h {data.nextUpdate.minutesUntil % 60}m)
-              </span>
+              {data.nextUpdate.time} UTC
+            </p>
+            <p className="text-sm text-orange-600 font-semibold">
+              ⏱️ {countdown}
             </p>
           </div>
         </div>
