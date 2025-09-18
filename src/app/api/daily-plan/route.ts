@@ -3,7 +3,7 @@ import { automatedArticleGenerator } from '@/lib/services/automated-article-gene
 
 export async function GET(request: NextRequest) {
   try {
-    const stats = automatedArticleGenerator.getStats();
+    const stats = await automatedArticleGenerator.getStats();
     
     return NextResponse.json({
       success: true,

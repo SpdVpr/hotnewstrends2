@@ -132,7 +132,7 @@ class AutomatedArticleGenerator {
    */
   private async ensureDailyPlan(): Promise<void> {
     const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-    let dailyPlan = this.getDailyPlan(today);
+    let dailyPlan = await this.getDailyPlan(today);
 
     if (!dailyPlan || dailyPlan.jobs.length < this.MAX_DAILY_ARTICLES) {
       console.log('📅 Creating/updating daily plan for', today);
@@ -165,7 +165,7 @@ class AutomatedArticleGenerator {
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         };
-        this.storeDailyPlan(dailyPlan);
+        await this.storeDailyPlan(dailyPlan);
         return dailyPlan;
       }
 
@@ -178,7 +178,7 @@ class AutomatedArticleGenerator {
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         };
-        this.storeDailyPlan(dailyPlan);
+        await this.storeDailyPlan(dailyPlan);
         return dailyPlan;
       }
 
@@ -232,7 +232,7 @@ class AutomatedArticleGenerator {
       }
 
       // Get existing plan to preserve completed jobs
-      const existingPlan = this.getDailyPlan(date);
+      const existingPlan = await this.getDailyPlan(date);
       const completedJobs = existingPlan?.jobs.filter(job =>
         job.status === 'completed' || job.status === 'generating'
       ) || [];
@@ -279,7 +279,7 @@ class AutomatedArticleGenerator {
         updatedAt: new Date().toISOString()
       };
 
-      this.storeDailyPlan(dailyPlan);
+      await this.storeDailyPlan(dailyPlan);
       console.log(`📅 Daily plan created/updated: ${jobs.length} articles scheduled for ${date}`);
 
       return dailyPlan;
@@ -295,7 +295,7 @@ class AutomatedArticleGenerator {
    */
   private async processScheduledJobs(): Promise<void> {
     const today = new Date().toISOString().split('T')[0];
-    const dailyPlan = this.getDailyPlan(today);
+    const dailyPlan = await this.getDailyPlan(today);
 
     if (!dailyPlan) return;
 
@@ -379,7 +379,7 @@ class AutomatedArticleGenerator {
       // Update job status
       job.status = 'generating';
       job.startedAt = new Date().toISOString();
-      this.updateJob(job);
+      await this.updateJob(job);
 
       // Select appropriate template
       const template = articleTemplateService.selectTemplate(
@@ -409,7 +409,7 @@ class AutomatedArticleGenerator {
 
       // Quality check
       job.status = 'quality_check';
-      this.updateJob(job);
+      await this.updateJob(job);
 
       const qualityScore = qualityScorerService.calculateQualityScore(
         generatedContent.title,
@@ -557,7 +557,7 @@ class AutomatedArticleGenerator {
         job.status = 'completed';
         job.completedAt = new Date().toISOString();
         job.articleId = articleId;
-        this.updateJob(job);
+        await this.updateJob(job);
 
         console.log(`✅ High-quality article generated for "${job.trend.title}": ${articleId} (Score: ${qualityScore.overall})`);
 
@@ -580,7 +580,7 @@ class AutomatedArticleGenerator {
           job.status = 'rejected';
           job.completedAt = new Date().toISOString();
           job.error = `Quality score too low: ${qualityScore.overall}/${this.MIN_QUALITY_SCORE}`;
-          this.updateJob(job);
+          await this.updateJob(job);
 
           console.log(`❌ Article rejected for "${job.trend.title}" after ${this.MAX_RETRIES} retries (Score: ${qualityScore.overall})`);
         }
@@ -602,7 +602,7 @@ class AutomatedArticleGenerator {
         job.status = 'failed';
         job.completedAt = new Date().toISOString();
         job.error = error instanceof Error ? error.message : 'Unknown error';
-        this.updateJob(job);
+        await this.updateJob(job);
 
         console.error(`❌ Failed to generate article for "${job.trend.title}" after ${this.MAX_RETRIES} retries:`, error);
       }
@@ -612,10 +612,10 @@ class AutomatedArticleGenerator {
   /**
    * Get generation statistics
    */
-  getStats(): GenerationStats {
+  async getStats(): Promise<GenerationStats> {
     const jobs = this.getStoredJobs();
     const todayJobs = this.getTodayJobCount();
-    const dailyPlan = this.getCurrentDailyPlan();
+    const dailyPlan = await this.getCurrentDailyPlan();
 
     // Find next scheduled job
     const nextScheduledJob = dailyPlan?.jobs
@@ -672,7 +672,7 @@ class AutomatedArticleGenerator {
   /**
    * Update existing job (both in storage and daily plan)
    */
-  private updateJob(updatedJob: ArticleGenerationJob): void {
+  private async updateJob(updatedJob: ArticleGenerationJob): Promise<void> {
     // Update in regular storage
     const jobs = this.getStoredJobs();
     const index = jobs.findIndex(j => j.id === updatedJob.id);
@@ -683,7 +683,7 @@ class AutomatedArticleGenerator {
     }
 
     // Also update in daily plan if it exists there
-    this.updateJobInPlan(updatedJob);
+    await this.updateJobInPlan(updatedJob);
   }
 
   /**
@@ -930,23 +930,16 @@ class AutomatedArticleGenerator {
   /**
    * Get daily plan for a specific date
    */
-  private getDailyPlan(date: string): DailyPlan | null {
+  private async getDailyPlan(date: string): Promise<DailyPlan | null> {
     try {
       if (typeof window !== 'undefined') {
-        // Client-side: use localStorage
+        // Client-side: use localStorage as fallback
         const stored = localStorage.getItem(`${this.DAILY_PLAN_KEY}_${date}`);
         return stored ? JSON.parse(stored) : null;
       } else {
-        // Server-side: use file system
-        const fs = require('fs');
-        const path = require('path');
-        const filePath = path.join(process.cwd(), 'data', `daily-plan-${date}.json`);
-
-        if (fs.existsSync(filePath)) {
-          const stored = fs.readFileSync(filePath, 'utf8');
-          return JSON.parse(stored);
-        }
-        return null;
+        // Server-side: use Firebase
+        const { firebaseDailyPlansService } = await import('./firebase-daily-plans');
+        return await firebaseDailyPlansService.getDailyPlan(date);
       }
     } catch (error) {
       console.error('Error loading daily plan:', error);
@@ -957,52 +950,55 @@ class AutomatedArticleGenerator {
   /**
    * Store daily plan for a specific date
    */
-  private storeDailyPlan(plan: DailyPlan): void {
+  private async storeDailyPlan(plan: DailyPlan): Promise<void> {
     try {
       if (typeof window !== 'undefined') {
-        // Client-side: use localStorage
+        // Client-side: use localStorage as fallback
         localStorage.setItem(`${this.DAILY_PLAN_KEY}_${plan.date}`, JSON.stringify(plan));
       } else {
-        // Server-side: use file system
-        const fs = require('fs');
-        const path = require('path');
-        const dataDir = path.join(process.cwd(), 'data');
-
-        // Ensure data directory exists
-        if (!fs.existsSync(dataDir)) {
-          fs.mkdirSync(dataDir, { recursive: true });
-        }
-
-        const filePath = path.join(dataDir, `daily-plan-${plan.date}.json`);
-        fs.writeFileSync(filePath, JSON.stringify(plan, null, 2));
+        // Server-side: use Firebase
+        const { firebaseDailyPlansService } = await import('./firebase-daily-plans');
+        await firebaseDailyPlansService.storeDailyPlan(plan);
       }
     } catch (error) {
       console.error('Error storing daily plan:', error);
+      throw error;
     }
   }
 
   /**
    * Get current daily plan (today's plan)
    */
-  public getCurrentDailyPlan(): DailyPlan | null {
+  public async getCurrentDailyPlan(): Promise<DailyPlan | null> {
     const today = new Date().toISOString().split('T')[0];
-    return this.getDailyPlan(today);
+    return await this.getDailyPlan(today);
   }
 
   /**
    * Update a job in the daily plan
    */
-  private updateJobInPlan(updatedJob: ArticleGenerationJob): void {
-    const today = new Date().toISOString().split('T')[0];
-    const dailyPlan = this.getDailyPlan(today);
+  private async updateJobInPlan(updatedJob: ArticleGenerationJob): Promise<void> {
+    try {
+      const today = new Date().toISOString().split('T')[0];
 
-    if (!dailyPlan) return;
+      if (typeof window !== 'undefined') {
+        // Client-side: use localStorage
+        const dailyPlan = await this.getDailyPlan(today);
+        if (!dailyPlan) return;
 
-    const jobIndex = dailyPlan.jobs.findIndex(job => job.id === updatedJob.id);
-    if (jobIndex !== -1) {
-      dailyPlan.jobs[jobIndex] = updatedJob;
-      dailyPlan.updatedAt = new Date().toISOString();
-      this.storeDailyPlan(dailyPlan);
+        const jobIndex = dailyPlan.jobs.findIndex(job => job.id === updatedJob.id);
+        if (jobIndex !== -1) {
+          dailyPlan.jobs[jobIndex] = updatedJob;
+          dailyPlan.updatedAt = new Date().toISOString();
+          await this.storeDailyPlan(dailyPlan);
+        }
+      } else {
+        // Server-side: use Firebase
+        const { firebaseDailyPlansService } = await import('./firebase-daily-plans');
+        await firebaseDailyPlansService.updateJobInPlan(today, updatedJob);
+      }
+    } catch (error) {
+      console.error('Error updating job in plan:', error);
     }
   }
 
@@ -1020,7 +1016,7 @@ class AutomatedArticleGenerator {
    */
   public async resetFailedJobs(): Promise<void> {
     const today = new Date().toISOString().split('T')[0];
-    const dailyPlan = this.getDailyPlan(today);
+    const dailyPlan = await this.getDailyPlan(today);
 
     if (!dailyPlan) {
       console.log('⚠️ No daily plan found to reset');
@@ -1040,7 +1036,7 @@ class AutomatedArticleGenerator {
 
     if (resetCount > 0) {
       dailyPlan.updatedAt = new Date().toISOString();
-      this.storeDailyPlan(dailyPlan);
+      await this.storeDailyPlan(dailyPlan);
       console.log(`🔄 Reset ${resetCount} failed/rejected jobs back to pending`);
     } else {
       console.log('✅ No failed/rejected jobs to reset');
@@ -1052,7 +1048,7 @@ class AutomatedArticleGenerator {
    */
   public async enableTestMode(): Promise<void> {
     const today = new Date().toISOString().split('T')[0];
-    const dailyPlan = this.getDailyPlan(today);
+    const dailyPlan = await this.getDailyPlan(today);
 
     if (!dailyPlan) {
       console.log('⚠️ No daily plan found for test mode');
@@ -1073,7 +1069,7 @@ class AutomatedArticleGenerator {
 
     if (testCount > 0) {
       dailyPlan.updatedAt = new Date().toISOString();
-      this.storeDailyPlan(dailyPlan);
+      await this.storeDailyPlan(dailyPlan);
       console.log(`🧪 Test mode enabled: ${testCount} jobs rescheduled with 5-minute intervals`);
       console.log(`🧪 First job will start at: ${new Date(now.getTime() + 0).toLocaleString()}`);
       console.log(`🧪 Last job will start at: ${new Date(now.getTime() + ((testCount - 1) * 5 * 60 * 1000)).toLocaleString()}`);
