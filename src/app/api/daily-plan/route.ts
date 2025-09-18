@@ -73,6 +73,15 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    if (action === 'disable-test-mode') {
+      await automatedArticleGenerator.disableTestMode();
+
+      return NextResponse.json({
+        success: true,
+        message: 'Test mode disabled - restored normal scheduling (6:00-22:00)'
+      });
+    }
+
     return NextResponse.json({
       success: false,
       error: 'Invalid action'

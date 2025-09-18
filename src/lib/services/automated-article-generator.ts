@@ -1427,6 +1427,48 @@ class AutomatedArticleGenerator {
       console.log('✅ No pending jobs to reschedule for test mode');
     }
   }
+
+  /**
+   * Disable test mode - restore normal scheduling (6:00-22:00, ~40min intervals)
+   */
+  public async disableTestMode(): Promise<void> {
+    const today = new Date().toISOString().split('T')[0];
+    const dailyPlan = await this.getDailyPlan(today);
+
+    if (!dailyPlan) {
+      console.log('⚠️ No daily plan found for disabling test mode');
+      return;
+    }
+
+    console.log('🔄 Disabling test mode - restoring normal scheduling...');
+
+    const startHour = 6; // Start at 6:00 AM
+    const endHour = 22; // End at 10:00 PM
+    const intervalMinutes = (endHour - startHour) * 60 / this.MAX_DAILY_ARTICLES; // ~40 minutes apart
+    let restoredCount = 0;
+
+    dailyPlan.jobs.forEach((job, index) => {
+      if (job.status === 'pending') {
+        // Restore normal scheduling
+        const scheduledTime = new Date(today + 'T00:00:00.000Z');
+        const scheduledHour = startHour + Math.floor((job.position - 1) * intervalMinutes / 60);
+        const scheduledMinute = Math.floor((job.position - 1) * intervalMinutes) % 60;
+        scheduledTime.setUTCHours(scheduledHour, scheduledMinute, 0, 0);
+
+        job.scheduledAt = scheduledTime.toISOString();
+        restoredCount++;
+      }
+    });
+
+    if (restoredCount > 0) {
+      dailyPlan.updatedAt = new Date().toISOString();
+      await this.storeDailyPlan(dailyPlan);
+      console.log(`✅ Test mode disabled: ${restoredCount} jobs restored to normal scheduling (6:00-22:00)`);
+      console.log(`📅 Jobs now scheduled from 6:00 AM to 10:00 PM with ~40 minute intervals`);
+    } else {
+      console.log('✅ No pending jobs to restore from test mode');
+    }
+  }
 }
 
 export const automatedArticleGenerator = new AutomatedArticleGenerator();
