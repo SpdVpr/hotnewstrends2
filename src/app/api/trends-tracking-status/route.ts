@@ -16,37 +16,44 @@ export async function GET(request: NextRequest) {
       { time: '21:00', description: 'Last update (before final articles)' }
     ];
     
-    // Get current time
+    // Get current time in Prague timezone
     const now = new Date();
-    const currentUTCTime = now.toISOString();
-    const currentHour = now.getUTCHours();
-    const currentMinute = now.getUTCMinutes();
-    const currentTimeMinutes = currentHour * 60 + currentMinute;
-
-    // Prague time (UTC+1, UTC+2 in summer)
     const pragueTime = new Date(now.toLocaleString("en-US", {timeZone: "Europe/Prague"}));
     const pragueHour = pragueTime.getHours();
     const pragueMinute = pragueTime.getMinutes();
-    
-    // Calculate next scheduled update
+    const currentTimeMinutes = pragueHour * 60 + pragueMinute;
+
+    // Calculate next scheduled update (using Prague time)
     let nextUpdate = null;
     let minutesUntilNext = null;
-    
+
+    // Convert UTC schedule to Prague time for comparison
     for (const schedule of updateSchedule) {
-      const [hours, minutes] = schedule.time.split(':').map(Number);
-      const scheduleTimeMinutes = hours * 60 + minutes;
-      
+      const [utcHours, utcMinutes] = schedule.time.split(':').map(Number);
+      // Convert UTC to Prague time
+      const utcTime = new Date();
+      utcTime.setUTCHours(utcHours, utcMinutes, 0, 0);
+      const pragueScheduleTime = new Date(utcTime.toLocaleString("en-US", {timeZone: "Europe/Prague"}));
+      const pragueScheduleHour = pragueScheduleTime.getHours();
+      const pragueScheduleMinute = pragueScheduleTime.getMinutes();
+      const scheduleTimeMinutes = pragueScheduleHour * 60 + pragueScheduleMinute;
+
       if (scheduleTimeMinutes > currentTimeMinutes) {
         nextUpdate = schedule;
         minutesUntilNext = scheduleTimeMinutes - currentTimeMinutes;
         break;
       }
     }
-    
-    // If no update today, next is tomorrow at 07:00
+
+    // If no update today, next is tomorrow at 07:00 UTC (08:00/09:00 Prague)
     if (!nextUpdate) {
       nextUpdate = updateSchedule[0];
-      minutesUntilNext = (24 * 60) - currentTimeMinutes + (7 * 60); // Until tomorrow 07:00
+      const utcTime = new Date();
+      utcTime.setUTCHours(7, 0, 0, 0);
+      utcTime.setDate(utcTime.getDate() + 1); // Tomorrow
+      const tomorrowPragueTime = new Date(utcTime.toLocaleString("en-US", {timeZone: "Europe/Prague"}));
+      const tomorrowMinutes = tomorrowPragueTime.getHours() * 60 + tomorrowPragueTime.getMinutes();
+      minutesUntilNext = (24 * 60) - currentTimeMinutes + tomorrowMinutes;
     }
     
     // Get latest trends from Firebase to check last update
@@ -74,17 +81,17 @@ export async function GET(request: NextRequest) {
     
     // Determine update status for each scheduled time
     const scheduleWithStatus = updateSchedule.map(schedule => {
-      const [hours, minutes] = schedule.time.split(':').map(Number);
-      const scheduleTimeMinutes = hours * 60 + minutes;
+      const [utcHours, utcMinutes] = schedule.time.split(':').map(Number);
 
       // Calculate Prague time for this schedule
       const utcScheduleTime = new Date();
-      utcScheduleTime.setUTCHours(hours, minutes, 0, 0);
+      utcScheduleTime.setUTCHours(utcHours, utcMinutes, 0, 0);
       const pragueScheduleTime = new Date(utcScheduleTime.toLocaleString("en-US", {timeZone: "Europe/Prague"}));
       const pragueHours = pragueScheduleTime.getHours();
       const pragueMinutes = pragueScheduleTime.getMinutes();
+      const scheduleTimeMinutes = pragueHours * 60 + pragueMinutes; // Use Prague time for comparison
 
-      // Check if this update should have happened today
+      // Check if this update should have happened today (using Prague time)
       const isPast = scheduleTimeMinutes < currentTimeMinutes;
       const isCurrent = Math.abs(scheduleTimeMinutes - currentTimeMinutes) <= 30; // Within 30 minutes
       const isNext = schedule === nextUpdate;
@@ -136,7 +143,7 @@ export async function GET(request: NextRequest) {
         isPast,
         isCurrent,
         isNext,
-        utcTime: `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} UTC`,
+        utcTime: `${utcHours.toString().padStart(2, '0')}:${utcMinutes.toString().padStart(2, '0')} UTC`,
         pragueTime: `${pragueHours.toString().padStart(2, '0')}:${pragueMinutes.toString().padStart(2, '0')} Prague`
       };
     });
