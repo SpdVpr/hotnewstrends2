@@ -97,6 +97,25 @@ class AutomatedArticleGenerator {
    * Store service status in Firebase (for serverless persistence)
    */
   private async storeServiceStatus(isRunning: boolean): Promise<void> {
+    // Check if Firebase is initialized
+    if (!this.db) {
+      console.error('❌ Firebase not initialized, cannot store service status');
+      // Fallback to localStorage immediately
+      try {
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('article_generator_firebase_status', JSON.stringify({
+            isRunning,
+            lastUpdated: new Date().toISOString(),
+            source: 'localStorage_fallback_no_firebase'
+          }));
+          console.log(`💾 Service status stored in localStorage (no Firebase): isRunning=${isRunning}`);
+        }
+      } catch (fallbackError) {
+        console.error('❌ Even localStorage fallback failed:', fallbackError);
+      }
+      return;
+    }
+
     const maxRetries = 3;
     let lastError: any;
 
@@ -145,6 +164,25 @@ class AutomatedArticleGenerator {
    * Load service status from Firebase (for serverless persistence)
    */
   private async loadServiceStatus(): Promise<boolean> {
+    // Check if Firebase is initialized
+    if (!this.db) {
+      console.error('❌ Firebase not initialized, cannot load service status');
+      // Fallback to localStorage immediately
+      try {
+        if (typeof window !== 'undefined') {
+          const fallbackData = localStorage.getItem('article_generator_firebase_status');
+          if (fallbackData) {
+            const parsed = JSON.parse(fallbackData);
+            console.log(`💾 Service status loaded from localStorage (no Firebase): isRunning=${parsed.isRunning}`);
+            return parsed.isRunning || false;
+          }
+        }
+      } catch (fallbackError) {
+        console.error('❌ Even localStorage fallback failed:', fallbackError);
+      }
+      return false;
+    }
+
     const maxRetries = 3;
     let lastError: any;
 
