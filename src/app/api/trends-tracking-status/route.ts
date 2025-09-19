@@ -5,15 +5,15 @@ export async function GET(request: NextRequest) {
   try {
     console.log('📊 Checking trends tracking status...');
     
-    // Define the exact schedule (7 times daily) - UTC times from vercel.json
+    // Define the exact schedule (7 times daily) - Prague times (converted from UTC in vercel.json)
     const updateSchedule = [
-      { time: '07:00', description: 'First update (before first article at 08:00)' },
-      { time: '09:20', description: 'Second update' },
-      { time: '11:40', description: 'Third update' },
-      { time: '14:00', description: 'Fourth update' },
-      { time: '16:20', description: 'Fifth update' },
-      { time: '18:40', description: 'Sixth update' },
-      { time: '21:00', description: 'Last update (before final articles)' }
+      { time: '09:00', description: 'First update (before first article at 08:00)' },
+      { time: '11:20', description: 'Second update' },
+      { time: '13:40', description: 'Third update' },
+      { time: '16:00', description: 'Fourth update' },
+      { time: '18:20', description: 'Fifth update' },
+      { time: '20:40', description: 'Sixth update' },
+      { time: '23:00', description: 'Last update (before final articles)' }
     ];
     
     // Get current time in Prague timezone
@@ -27,16 +27,10 @@ export async function GET(request: NextRequest) {
     let nextUpdate = null;
     let minutesUntilNext = null;
 
-    // Convert UTC schedule to Prague time for comparison
+    // Find next scheduled update (already in Prague time)
     for (const schedule of updateSchedule) {
-      const [utcHours, utcMinutes] = schedule.time.split(':').map(Number);
-      // Convert UTC to Prague time
-      const utcTime = new Date();
-      utcTime.setUTCHours(utcHours, utcMinutes, 0, 0);
-      const pragueScheduleTime = new Date(utcTime.toLocaleString("en-US", {timeZone: "Europe/Prague"}));
-      const pragueScheduleHour = pragueScheduleTime.getHours();
-      const pragueScheduleMinute = pragueScheduleTime.getMinutes();
-      const scheduleTimeMinutes = pragueScheduleHour * 60 + pragueScheduleMinute;
+      const [pragueHours, pragueMinutes] = schedule.time.split(':').map(Number);
+      const scheduleTimeMinutes = pragueHours * 60 + pragueMinutes;
 
       if (scheduleTimeMinutes > currentTimeMinutes) {
         nextUpdate = schedule;

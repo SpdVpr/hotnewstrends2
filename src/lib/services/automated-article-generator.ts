@@ -103,30 +103,45 @@ class AutomatedArticleGenerator {
 
     this.isRunning = true;
     console.log('🚀 Starting automated article generation...');
-    console.log('📅 System will check for scheduled articles every 10 minutes');
-    console.log('⏰ Articles are scheduled hourly (00:00, 01:00, 02:00, etc.)');
 
-    // Run immediately to check for any pending articles
-    this.checkScheduledArticles();
+    // Check if we're in production (Vercel) or development
+    const isProduction = process.env.NODE_ENV === 'production' && process.env.VERCEL;
 
-    // Store start time for persistence
-    this.storeStartTime();
+    if (isProduction) {
+      console.log('🌐 Production mode: Using Vercel cron jobs for scheduling');
+      console.log('⏰ Articles will be generated via /api/automation/cron every 10 minutes');
 
-    // Set up interval to check for scheduled articles (NOT generate every interval!)
-    this.intervalId = setInterval(async () => {
-      try {
-        await this.checkScheduledArticles();
+      // In production, we rely on Vercel cron jobs
+      // Just mark as running for status purposes
+      this.storeStartTime();
 
-        // Update last activity timestamp
-        this.updateLastActivity();
+    } else {
+      console.log('🏠 Development mode: Using local intervals');
+      console.log('📅 System will check for scheduled articles every 10 minutes');
+      console.log('⏰ Articles are scheduled hourly (00:00, 01:00, 02:00, etc.)');
 
-      } catch (error) {
-        console.error('❌ Error in scheduled check interval:', error);
-        // Don't stop the interval, just log the error and continue
-      }
-    }, this.CHECK_INTERVAL);
+      // Run immediately to check for any pending articles
+      this.checkScheduledArticles();
 
-    console.log(`✅ Article scheduler started (checking every ${this.CHECK_INTERVAL / 60000} minutes)`);
+      // Store start time for persistence
+      this.storeStartTime();
+
+      // Set up interval to check for scheduled articles (NOT generate every interval!)
+      this.intervalId = setInterval(async () => {
+        try {
+          await this.checkScheduledArticles();
+
+          // Update last activity timestamp
+          this.updateLastActivity();
+
+        } catch (error) {
+          console.error('❌ Error in scheduled check interval:', error);
+          // Don't stop the interval, just log the error and continue
+        }
+      }, this.CHECK_INTERVAL);
+    }
+
+    console.log(`✅ Article scheduler started (${isProduction ? 'cron-based' : 'interval-based'})`);
   }
 
   /**
@@ -229,8 +244,9 @@ class AutomatedArticleGenerator {
 
   /**
    * Ensure we have a daily plan for today with 24 articles
+   * Made public for external cron job access
    */
-  private async ensureDailyPlan(): Promise<void> {
+  public async ensureDailyPlan(): Promise<void> {
     const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
     let dailyPlan = await this.getDailyPlan(today);
 
@@ -398,8 +414,9 @@ class AutomatedArticleGenerator {
 
   /**
    * Process jobs that are scheduled to run now - ONLY ONE ARTICLE PER HOUR
+   * Made public for external cron job access
    */
-  private async processScheduledJobs(): Promise<void> {
+  public async processScheduledJobs(): Promise<void> {
     const today = new Date().toISOString().split('T')[0];
     const dailyPlan = await this.getDailyPlan(today);
 

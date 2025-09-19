@@ -1,8 +1,8 @@
 {
   "crons": [
     {
-      "path": "/api/cron/automation",
-      "schedule": "0 */2 * * *"
+      "path": "/api/automation/cron",
+      "schedule": "*/10 * * * *"
     },
     {
       "path": "/api/manual-trends-update",
@@ -37,7 +37,7 @@
     "src/app/api/automation/generate/route.ts": {
       "maxDuration": 300
     },
-    "src/app/api/cron/automation/route.ts": {
+    "src/app/api/automation/cron/route.ts": {
       "maxDuration": 300
     },
     "src/app/api/manual-trends-update/route.ts": {
