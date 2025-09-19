@@ -1312,21 +1312,21 @@ class AutomatedArticleGenerator {
   }
 
   /**
-   * Create a fresh daily plan with ALL latest trends (for refresh functionality)
+   * Create a fresh daily plan with trends needing articles (excluding processed topics)
    */
   private async createFreshDailyPlan(date: string): Promise<DailyPlan> {
     console.log(`🔄 Creating fresh daily plan for date: ${date}`);
 
     try {
-      // Get ALL latest trends from Firebase (not just ones needing articles)
-      console.log('📊 Fetching ALL latest trends from Firebase for fresh daily plan...');
+      // Get trends that need articles (excluding processed topics)
+      console.log('📊 Fetching trends needing articles from Firebase for fresh daily plan...');
 
       let firebaseTrends: any[] = [];
 
       try {
         const { firebaseTrendsService } = await import('./firebase-trends');
-        firebaseTrends = await firebaseTrendsService.getLatestTrends(50); // Get ALL trends
-        console.log(`📊 Retrieved ${firebaseTrends.length} latest trends from Firebase`);
+        firebaseTrends = await firebaseTrendsService.getTrendsNeedingArticles(50); // Get trends excluding processed topics
+        console.log(`📊 Retrieved ${firebaseTrends.length} trends needing articles from Firebase`);
       } catch (firebaseError) {
         console.error('❌ Firebase trends fetch failed:', firebaseError);
         throw firebaseError;
