@@ -69,6 +69,11 @@ export const googleTrendsService = {
         responseTime
       });
 
+      // Record SerpAPI usage for monitoring
+      if (success) {
+        serpApiMonitor.recordCall();
+      }
+
       return { data: data.interest_over_time?.timeline_data || [] };
     } catch (error) {
       console.error('Error fetching interest over time:', error);
@@ -133,6 +138,11 @@ export const googleTrendsService = {
         responseTime
       });
 
+      // Record SerpAPI usage for monitoring
+      if (success) {
+        serpApiMonitor.recordCall();
+      }
+
       return { queries: data.related_queries?.top || [] };
     } catch (error) {
       console.error('Error fetching related queries:', error);
@@ -183,15 +193,9 @@ export const googleTrendsService = {
             responseTime
           });
 
-          // Record successful SerpAPI call (legacy system)
-          try {
-            const baseUrl = process.env.VERCEL_URL
-              ? `https://${process.env.VERCEL_URL}`
-              : process.env.NEXTAUTH_URL || 'http://localhost:3000';
-            await fetch(`${baseUrl}/api/serpapi-usage`, { method: 'POST' });
-            console.log('📊 SerpAPI call recorded successfully');
-          } catch (recordError) {
-            console.warn('⚠️ Failed to record SerpAPI call:', recordError);
+          // Record SerpAPI usage for monitoring
+          if (success) {
+            serpApiMonitor.recordCall();
           }
 
           if (data.trending_searches) {

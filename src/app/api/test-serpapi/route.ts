@@ -15,35 +15,15 @@ export async function GET(request: NextRequest) {
 
     console.log('🔑 SerpAPI Key found:', serpApiKey ? `${serpApiKey.substring(0, 10)}...` : 'NO KEY');
 
-    // Test SerpAPI call
-    const response = await fetch(`https://serpapi.com/search?engine=google_trends_trending_now&geo=US&api_key=${serpApiKey}`);
-    const data = await response.json();
-
-    console.log('📡 SerpAPI Response Status:', response.status);
-    console.log('📊 SerpAPI Response Data Keys:', Object.keys(data));
-    
-    if (data.trending_searches) {
-      console.log(`✅ SerpAPI Success: ${data.trending_searches.length} trending searches found`);
-      console.log('🔍 First 3 trends:', data.trending_searches.slice(0, 3).map((item: any) => ({
-        query: item.query,
-        traffic: item.traffic,
-        category: item.category
-      })));
-    } else {
-      console.log('❌ SerpAPI Error or No Data:', data);
-    }
+    // SerpAPI test disabled to conserve quota
+    console.log('🚫 SerpAPI test disabled to conserve quota');
 
     return NextResponse.json({
-      success: response.ok,
+      success: false,
       hasKey: true,
       keyPreview: `${serpApiKey.substring(0, 10)}...`,
-      responseStatus: response.status,
-      dataKeys: Object.keys(data),
-      hasTrendingSearches: !!data.trending_searches,
-      trendingSearchesCount: data.trending_searches?.length || 0,
-      firstTrend: data.trending_searches?.[0] || null,
-      errorMessage: data.error || null,
-      rawResponse: data
+      message: 'SerpAPI test is disabled to conserve quota. Only scheduled updates are allowed.',
+      error: 'Test endpoint disabled'
     });
 
   } catch (error) {

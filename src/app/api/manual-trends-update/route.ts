@@ -25,22 +25,14 @@ export async function GET(request: NextRequest) {
       }, { status: 500 });
     }
     
-    // Import services
-    console.log('📦 Importing services...');
-    const { googleTrendsService } = await import('@/lib/services/google-trends');
-    const { firebaseTrendsService } = await import('@/lib/services/firebase-trends');
-    
-    // Fetch latest trends from SerpAPI only (no RSS)
-    console.log('📡 Fetching trends from SerpAPI...');
-    const trendsData = await googleTrendsService.getDailyTrends('US');
-    
-    if (!trendsData.topics || trendsData.topics.length === 0) {
-      return NextResponse.json({
-        success: false,
-        error: 'No trends data received from Google Trends service',
-        details: 'SerpAPI returned empty or invalid data'
-      }, { status: 400 });
-    }
+    // Manual trends update disabled to conserve SerpAPI quota
+    console.log('🚫 Manual trends update disabled to conserve SerpAPI quota');
+
+    return NextResponse.json({
+      success: false,
+      error: 'Manual trends update is disabled to conserve SerpAPI quota. Only scheduled updates are allowed.',
+      message: 'Use the automatic scheduler which updates 6 times per day'
+    }, { status: 403 });
     
     console.log(`📊 Received ${trendsData.topics.length} trends from ${trendsData.source}`);
     

@@ -45,60 +45,19 @@ export async function GET(request: NextRequest) {
     let trends;
 
     if (source === 'google') {
-      try {
-        // Check SerpAPI rate limits before making calls
-        const { serpApiMonitor } = await import('@/lib/utils/serpapi-monitor');
+      // Always use Firebase cached data instead of calling SerpAPI
+      console.log('📊 Using Firebase cached data (SerpAPI calls disabled)...');
+      const { firebaseTrendsService } = await import('@/lib/services/firebase-trends');
+      const cachedTrends = await firebaseTrendsService.getLatestTrends(limit);
 
-        if (!serpApiMonitor.canMakeCall()) {
-          console.warn('🚫 SerpAPI rate limit reached, using Firebase cache instead');
-          // Fall back to Firebase cached data
-          const { firebaseTrendsService } = await import('@/lib/services/firebase-trends');
-          const cachedTrends = await firebaseTrendsService.getLatestTrends(limit);
-
-          return NextResponse.json({
-            success: true,
-            data: {
-              topics: cachedTrends,
-              lastUpdated: new Date(),
-              region,
-              timeframe,
-              source: 'firebase_cache',
-              message: 'Using cached data due to API rate limits'
-            }
-          });
-        }
-
-        // Try Google Trends API first
-        console.log('🔍 Fetching from Google Trends API...');
-
-        if (category === 'all') {
-          trends = await googleTrendsService.getDailyTrends(region);
-        } else {
-          trends = await googleTrendsService.getTrendsByCategory(category, region);
-        }
-
-        console.log(`✅ Google Trends API returned ${trends.topics.length} topics`);
-
-        // Process new trends for article generation
-        if (trends.topics.length > 0) {
-          try {
-            const { newTrends, stats } = await trendTracker.processNewTrends(trends.topics, (trends as any).source || 'google');
-            console.log(`📊 Trend tracking: ${newTrends.length} new trends, ${stats.duplicatesFiltered} duplicates filtered`);
-
-            // Refresh daily plan with new trends
-            console.log('🔄 Refreshing daily plan with updated trends...');
-            await automatedArticleGenerator.refreshDailyPlan();
-
-            // Note: Automated article generation must be started manually from admin panel
-            console.log('ℹ️ Daily plan refreshed. Use admin panel to start/stop article generation.');
-          } catch (trackingError) {
-            console.warn('⚠️ Trend tracking failed:', trackingError);
-          }
-        }
-      } catch (error) {
-        console.warn('⚠️ Google Trends API failed, falling back to mock data:', error);
-        trends = await trendsService.getTrendingTopics(region, category, timeframe);
-      }
+      trends = {
+        topics: cachedTrends,
+        lastUpdated: new Date(),
+        region,
+        timeframe,
+        source: 'firebase_cache',
+        message: 'Using cached data from scheduled updates'
+      };
     } else {
       // Use mock data
       trends = await trendsService.getTrendingTopics(region, category, timeframe);

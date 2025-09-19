@@ -1,24 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// POST /api/force-trends-update - Force trends scheduler to update now
+// POST /api/force-trends-update - Disabled to prevent SerpAPI usage
 export async function POST(request: NextRequest) {
   try {
-    console.log('🚀 Force trends update initiated...');
-    
-    // Import services
-    const { googleTrendsService } = await import('@/lib/services/google-trends');
-    const { firebaseTrendsService } = await import('@/lib/services/firebase-trends');
-    
-    // Fetch latest trends from SerpAPI + RSS
-    console.log('📡 Fetching trends from SerpAPI + RSS...');
-    const trendsData = await googleTrendsService.getDailyTrends('US');
-    
-    if (!trendsData.topics || trendsData.topics.length === 0) {
-      return NextResponse.json({
-        success: false,
-        error: 'No trends data received from Google Trends service'
-      }, { status: 400 });
-    }
+    console.log('🚫 Force trends update disabled to conserve SerpAPI quota');
+
+    return NextResponse.json({
+      success: false,
+      error: 'Force trends update is disabled to conserve SerpAPI quota. Only scheduled updates are allowed.',
+      message: 'Use the automatic scheduler which updates 6 times per day'
+    }, { status: 403 });
     
     console.log(`📊 Received ${trendsData.topics.length} trends from ${trendsData.source}`);
     
