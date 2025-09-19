@@ -1244,7 +1244,7 @@ class AutomatedArticleGenerator {
       const updatedPlan: DailyPlan = {
         ...currentPlan,
         jobs: allJobs,
-        updatedAt: new Date(),
+        updatedAt: new Date().toISOString(),
         totalJobs: allJobs.length,
         completedJobs: preservedJobs.filter(job => job.status === 'completed').length,
         pendingJobs: allJobs.filter(job => job.status === 'pending').length
