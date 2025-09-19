@@ -8,12 +8,16 @@
     "build": "next build --turbopack",
     "start": "next start",
     "lint": "eslint",
-    "clear-cache": "node scripts/clear-dev-cache.js"
+    "clear-cache": "node scripts/clear-dev-cache.js",
+    "test:firebase": "node test-firebase-credentials.js",
+    "test:firebase:quick": "node quick-firebase-test.js",
+    "test:firebase:production": "node test-production-simulation.js"
   },
   "dependencies": {
     "clsx": "^2.1.1",
     "dotenv": "^17.2.2",
     "firebase": "^12.2.1",
+    "firebase-admin": "^13.5.0",
     "google-trends-api": "^4.9.2",
     "lucide-react": "^0.544.0",
     "next": "15.5.3",

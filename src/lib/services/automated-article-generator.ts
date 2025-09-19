@@ -59,7 +59,74 @@ class AutomatedArticleGenerator {
   private readonly MAX_RETRIES = 2; // Maximum retry attempts per article
   private isRunning = false;
   private intervalId?: NodeJS.Timeout;
-  private readonly SERVICE_STATUS_DOC = 'automation_service_status';
+  private readonly SERVICE_STATUS_DOC = 'article_generator_service_status';
+  private db: any = null; // Firebase Admin Firestore instance
+
+  constructor() {
+    this.initializeFirebaseAdmin();
+  }
+
+  /**
+   * Initialize Firebase Admin SDK for server-side operations
+   */
+  private async initializeFirebaseAdmin(): Promise<void> {
+    try {
+      // Only initialize on server-side
+      if (typeof window !== 'undefined') {
+        console.log('🔥 Skipping Firebase Admin initialization on client-side');
+        return;
+      }
+
+      console.log('🔥 Initializing Firebase Admin SDK...');
+
+      const admin = await import('firebase-admin');
+
+      // Check if already initialized
+      if (admin.apps.length > 0) {
+        console.log('🔥 Firebase Admin already initialized, using existing instance');
+        this.db = admin.firestore();
+        return;
+      }
+
+      // Get service account key from environment
+      const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+
+      if (!serviceAccountKey) {
+        console.error('❌ FIREBASE_SERVICE_ACCOUNT_KEY environment variable not found');
+        console.error('❌ Firebase Admin initialization failed - service account key missing');
+        return;
+      }
+
+      console.log('🔍 Parsing Firebase service account key...');
+      let serviceAccount;
+      try {
+        serviceAccount = JSON.parse(serviceAccountKey);
+        console.log('✅ Service account key parsed successfully');
+        console.log(`📧 Client email: ${serviceAccount.client_email}`);
+        console.log(`🆔 Project ID: ${serviceAccount.project_id}`);
+      } catch (parseError) {
+        console.error('❌ Failed to parse FIREBASE_SERVICE_ACCOUNT_KEY:', parseError);
+        console.error('❌ Make sure the environment variable contains valid JSON');
+        return;
+      }
+
+      // Initialize Firebase Admin
+      console.log('🔥 Initializing Firebase Admin with service account...');
+      admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount),
+        projectId: serviceAccount.project_id
+      });
+
+      this.db = admin.firestore();
+      console.log('✅ Firebase Admin SDK initialized successfully');
+      console.log('✅ Firestore database connection established');
+
+    } catch (error) {
+      console.error('❌ Firebase Admin initialization failed:', error);
+      console.error('❌ Stack trace:', error.stack);
+      this.db = null;
+    }
+  }
 
   /**
    * Safe date creation with validation
@@ -121,9 +188,10 @@ class AutomatedArticleGenerator {
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
+        const admin = await import('firebase-admin');
         const statusData = {
           isRunning,
-          lastUpdated: new Date().toISOString(),
+          lastUpdated: admin.firestore.FieldValue.serverTimestamp(),
           environment: process.env.NODE_ENV,
           isVercel: !!process.env.VERCEL,
           updatedBy: 'automated-article-generator'
