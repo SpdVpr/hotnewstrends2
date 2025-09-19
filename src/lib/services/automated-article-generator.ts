@@ -300,10 +300,12 @@ class AutomatedArticleGenerator {
       for (let i = completedJobs.length; i < this.MAX_DAILY_ARTICLES && i < sortedTrends.length; i++) {
         const trend = sortedTrends[i];
 
-        // Create scheduled time for the target date (every hour starting from 00:00)
-        const scheduledTime = new Date(date + 'T00:00:00.000Z');
+        // Create scheduled time for the target date (every hour starting from 00:00 Prague time)
+        // Create a date in Prague timezone for the specific hour
         const scheduledHour = startHour + (i * intervalHours); // Every hour: 0, 1, 2, 3...
-        scheduledTime.setUTCHours(scheduledHour, 0, 0, 0); // Always at :00 minutes
+        const scheduledTime = new Date();
+        scheduledTime.setFullYear(parseInt(date.split('-')[0]), parseInt(date.split('-')[1]) - 1, parseInt(date.split('-')[2]));
+        scheduledTime.setHours(scheduledHour, 0, 0, 0); // Set to exact hour in local time
 
         const job: ArticleGenerationJob = {
           id: `job_${date}_${i + 1}_${trend.title.replace(/[^a-zA-Z0-9]/g, '_')}`,
@@ -317,7 +319,7 @@ class AutomatedArticleGenerator {
 
         // Debug log for first few jobs
         if (i < 3) {
-          console.log(`📅 Job ${i + 1}: "${trend.title}" scheduled for ${scheduledTime.toLocaleString()}`);
+          console.log(`📅 Job ${i + 1}: "${trend.title}" scheduled for ${scheduledTime.toLocaleString()} (Hour: ${scheduledHour}, Position: ${i + 1})`);
         }
 
         jobs.push(job);
@@ -356,6 +358,7 @@ class AutomatedArticleGenerator {
 
     console.log(`🕐 Current time: ${pragueTime.toLocaleString()} Prague (Hour: ${currentHour})`);
     console.log(`📋 Daily plan has ${dailyPlan.jobs.length} jobs total`);
+    console.log(`🔍 Looking for job with position ${currentHour + 1} (hour ${currentHour})`);
 
     // Find the job that should be generated for current hour
     const currentHourJob = dailyPlan.jobs.find(job =>
@@ -380,7 +383,7 @@ class AutomatedArticleGenerator {
 
     // Check if this job is scheduled for current hour
     const scheduledTime = new Date(currentHourJob.scheduledAt!);
-    const scheduledHour = scheduledTime.getUTCHours();
+    const scheduledHour = scheduledTime.getHours(); // Use local time, not UTC
 
     if (scheduledHour !== currentHour) {
       console.log(`⏰ Job #${currentHourJob.position} is scheduled for hour ${scheduledHour}, but current hour is ${currentHour}`);
@@ -1387,10 +1390,12 @@ class AutomatedArticleGenerator {
       for (let i = 0; i < maxJobs; i++) {
         const trend = uniqueTrends[i];
 
-        // Create scheduled time for the target date (every hour starting from 00:00)
-        const scheduledTime = new Date(date + 'T00:00:00.000Z');
+        // Create scheduled time for the target date (every hour starting from 00:00 Prague time)
+        // Create a date in Prague timezone for the specific hour
         const scheduledHour = startHour + (i * intervalHours); // Every hour: 0, 1, 2, 3...
-        scheduledTime.setUTCHours(scheduledHour, 0, 0, 0); // Always at :00 minutes
+        const scheduledTime = new Date();
+        scheduledTime.setFullYear(parseInt(date.split('-')[0]), parseInt(date.split('-')[1]) - 1, parseInt(date.split('-')[2]));
+        scheduledTime.setHours(scheduledHour, 0, 0, 0); // Set to exact hour in local time
 
         const job: ArticleGenerationJob = {
           id: `job_${date}_${i + 1}_${trend.title.replace(/[^a-zA-Z0-9]/g, '_')}`,
