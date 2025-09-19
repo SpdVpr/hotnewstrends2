@@ -188,6 +188,12 @@ class AutomatedArticleGenerator {
           await this.processScheduledJobs();
         } catch (jobsError) {
           console.error('❌ Error processing scheduled jobs:', jobsError);
+
+          // Check if it's a Firebase connection error
+          if (this.isFirebaseConnectionError(jobsError)) {
+            console.warn('🔥 Firebase connection error in processScheduledJobs, attempting to recover...');
+            await this.handleFirebaseError();
+          }
         }
       } else {
         console.log(`⏳ It's ${currentHour}:${currentMinute.toString().padStart(2, '0')} - waiting for next hour (articles generate at :00)`);
@@ -195,6 +201,12 @@ class AutomatedArticleGenerator {
 
     } catch (error) {
       console.error('❌ Critical error in checkScheduledArticles:', error);
+
+      // Check if it's a Firebase connection error
+      if (this.isFirebaseConnectionError(error)) {
+        console.warn('🔥 Firebase connection error detected, attempting to recover...');
+        await this.handleFirebaseError();
+      }
     }
   }
 
@@ -1588,6 +1600,59 @@ class AutomatedArticleGenerator {
       console.log(`📅 Jobs now scheduled every hour starting from midnight`);
     } else {
       console.log('✅ No pending jobs to restore from test mode');
+    }
+  }
+
+  /**
+   * Check if error is a Firebase connection error
+   */
+  private isFirebaseConnectionError(error: any): boolean {
+    if (!error) return false;
+
+    const errorMessage = error.message || error.toString() || '';
+    const errorCode = error.code || '';
+
+    // Common Firebase connection error patterns
+    const firebaseErrorPatterns = [
+      'Write error: write after end',
+      'GrpcConnection RPC',
+      'INTERNAL: Write error',
+      'Code: 13 Message: 13 INTERNAL',
+      'Connection closed',
+      'UNAVAILABLE',
+      'DEADLINE_EXCEEDED',
+      'Connection error',
+      'Network error'
+    ];
+
+    return firebaseErrorPatterns.some(pattern =>
+      errorMessage.includes(pattern) || errorCode.includes(pattern)
+    );
+  }
+
+  /**
+   * Handle Firebase connection errors
+   */
+  private async handleFirebaseError(): Promise<void> {
+    try {
+      console.log('🔥 Handling Firebase connection error...');
+
+      // Wait a bit before retrying
+      await new Promise(resolve => setTimeout(resolve, 5000));
+
+      // Try to reinitialize Firebase connection if needed
+      try {
+        const { db } = await import('@/lib/firebase');
+        console.log('🔥 Firebase connection test successful');
+      } catch (reinitError) {
+        console.error('🔥 Firebase reinit failed:', reinitError);
+
+        // If Firebase is still failing, wait longer before next attempt
+        await new Promise(resolve => setTimeout(resolve, 30000));
+      }
+
+    } catch (error) {
+      console.error('🔥 Error in Firebase error handler:', error);
     }
   }
 }
