@@ -370,7 +370,7 @@ class AutomatedArticleGenerator {
   }
 
   /**
-   * Check if all articles in daily plan are completed and create new plan if needed
+   * Check if article #24 was completed and create new plan if needed
    */
   private async checkAndRenewDailyPlan(): Promise<void> {
     try {
@@ -382,22 +382,16 @@ class AutomatedArticleGenerator {
         return;
       }
 
-      // Count completed articles
-      const completedJobs = dailyPlan.jobs.filter(job =>
-        job.status === 'completed' || job.status === 'rejected'
-      );
-      const totalJobs = dailyPlan.jobs.length;
+      // Find article #24 (position 24)
+      const article24 = dailyPlan.jobs.find(job => job.position === 24);
 
-      console.log(`📊 Daily plan progress: ${completedJobs.length}/${totalJobs} articles completed`);
-
-      // If all articles are completed, create a new daily plan
-      if (completedJobs.length >= totalJobs && totalJobs >= this.MAX_DAILY_ARTICLES) {
-        console.log('🎉 All articles in daily plan completed! Creating new daily plan...');
+      if (article24 && (article24.status === 'completed' || article24.status === 'rejected')) {
+        console.log('🎉 Article #24 completed! Creating new daily plan with fresh trends...');
 
         // Create fresh daily plan with new trends
         await this.createFreshDailyPlan(today);
 
-        console.log('✅ New daily plan created automatically after completing all articles');
+        console.log('✅ New daily plan created automatically after completing article #24');
       }
     } catch (error) {
       console.error('❌ Error checking daily plan renewal:', error);
