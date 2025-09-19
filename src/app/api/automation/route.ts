@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
         });
 
       case 'health_check':
-        const isActuallyRunning = automatedArticleGenerator.isActuallyRunning();
+        const isActuallyRunning = await automatedArticleGenerator.isActuallyRunning();
         const stats = await automatedArticleGenerator.getStats();
 
         return NextResponse.json({

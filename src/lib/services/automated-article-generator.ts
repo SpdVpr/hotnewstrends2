@@ -59,6 +59,7 @@ class AutomatedArticleGenerator {
   private readonly MAX_RETRIES = 2; // Maximum retry attempts per article
   private isRunning = false;
   private intervalId?: NodeJS.Timeout;
+  private readonly SERVICE_STATUS_DOC = 'automation_service_status';
 
   /**
    * Safe date creation with validation
@@ -93,9 +94,49 @@ class AutomatedArticleGenerator {
   }
 
   /**
+   * Store service status in Firebase (for serverless persistence)
+   */
+  private async storeServiceStatus(isRunning: boolean): Promise<void> {
+    try {
+      const statusData = {
+        isRunning,
+        lastUpdated: new Date().toISOString(),
+        environment: process.env.NODE_ENV,
+        isVercel: !!process.env.VERCEL,
+        updatedBy: 'automated-article-generator'
+      };
+
+      await this.db.collection('system').doc(this.SERVICE_STATUS_DOC).set(statusData, { merge: true });
+      console.log(`📊 Service status stored in Firebase: isRunning=${isRunning}`);
+    } catch (error) {
+      console.error('❌ Error storing service status:', error);
+    }
+  }
+
+  /**
+   * Load service status from Firebase (for serverless persistence)
+   */
+  private async loadServiceStatus(): Promise<boolean> {
+    try {
+      const doc = await this.db.collection('system').doc(this.SERVICE_STATUS_DOC).get();
+      if (doc.exists) {
+        const data = doc.data();
+        const isRunning = data?.isRunning || false;
+        console.log(`📊 Service status loaded from Firebase: isRunning=${isRunning}`);
+        return isRunning;
+      }
+      console.log('📊 No service status found in Firebase, defaulting to false');
+      return false;
+    } catch (error) {
+      console.error('❌ Error loading service status:', error);
+      return false;
+    }
+  }
+
+  /**
    * Start automated article generation - checks for scheduled articles every 10 minutes
    */
-  start(): void {
+  async start(): Promise<void> {
     if (this.isRunning) {
       console.log('⚠️ Automated article generation already running');
       return;
@@ -103,6 +144,9 @@ class AutomatedArticleGenerator {
 
     this.isRunning = true;
     console.log('🚀 Starting automated article generation...');
+
+    // Store status in Firebase for serverless persistence
+    await this.storeServiceStatus(true);
 
     // Check if we're in production (Vercel) or development
     const isProduction = process.env.NODE_ENV === 'production' && process.env.VERCEL;
@@ -147,7 +191,7 @@ class AutomatedArticleGenerator {
   /**
    * Stop automated article generation
    */
-  stop(): void {
+  async stop(): Promise<void> {
     if (!this.isRunning) {
       console.log('⚠️ Automated article generation not running');
       return;
@@ -159,6 +203,9 @@ class AutomatedArticleGenerator {
       clearInterval(this.intervalId);
       this.intervalId = undefined;
     }
+
+    // Store status in Firebase for serverless persistence
+    await this.storeServiceStatus(false);
 
     // Update stored status
     try {
@@ -188,12 +235,14 @@ class AutomatedArticleGenerator {
   /**
    * Check if the service is actually running (considers production vs development mode)
    */
-  isActuallyRunning(): boolean {
+  async isActuallyRunning(): Promise<boolean> {
     const isProduction = process.env.NODE_ENV === 'production' && process.env.VERCEL;
 
     if (isProduction) {
-      // In production, we rely on Vercel cron jobs, so only check the flag
-      return this.isRunning;
+      // In production, load status from Firebase (serverless persistence)
+      const firebaseStatus = await this.loadServiceStatus();
+      this.isRunning = firebaseStatus; // Sync local state
+      return firebaseStatus;
     } else {
       // In development, we need both flag and interval
       return this.isRunning && !!this.intervalId;
@@ -807,7 +856,7 @@ class AutomatedArticleGenerator {
     }
 
     // Check if we're actually running (considers production vs development mode)
-    const actuallyRunning = this.isActuallyRunning();
+    const actuallyRunning = await this.isActuallyRunning();
 
     // Only fix inconsistency in development mode
     const isProduction = process.env.NODE_ENV === 'production' && process.env.VERCEL;

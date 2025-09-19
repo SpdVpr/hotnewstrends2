@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     
     // Get service stats
     const stats = await automatedArticleGenerator.getStats();
-    const isActuallyRunning = automatedArticleGenerator.isActuallyRunning();
+    const isActuallyRunning = await automatedArticleGenerator.isActuallyRunning();
     const intervalId = automatedArticleGenerator.intervalIdForDebug;
     
     // Get stored state from localStorage (if available)
