@@ -25,9 +25,19 @@ export async function POST() {
     // Create jobs for each trend
     for (let i = 0; i < Math.min(24, trends.length); i++) {
       const trend = trends[i];
-      
-      // Schedule articles every 30 minutes starting now
-      const scheduledTime = new Date(Date.now() + (i * 30 * 60 * 1000));
+
+      // Schedule articles every hour starting from current hour
+      const now = new Date();
+      const currentHour = now.getHours();
+      const scheduledHour = (currentHour + i) % 24; // Start from current hour, wrap around at 24
+      const scheduledTime = new Date();
+      scheduledTime.setFullYear(now.getFullYear(), now.getMonth(), now.getDate());
+      scheduledTime.setHours(scheduledHour, 0, 0, 0); // Set to exact hour
+
+      // If the scheduled time is in the past (for today), schedule for tomorrow
+      if (scheduledTime.getTime() <= now.getTime()) {
+        scheduledTime.setDate(scheduledTime.getDate() + 1);
+      }
       
       const job = {
         id: `job_${today}_${i + 1}_${trend.title.replace(/[^a-zA-Z0-9]/g, '_')}`,

@@ -370,6 +370,41 @@ class AutomatedArticleGenerator {
   }
 
   /**
+   * Check if all articles in daily plan are completed and create new plan if needed
+   */
+  private async checkAndRenewDailyPlan(): Promise<void> {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const dailyPlan = await this.getDailyPlan(today);
+
+      if (!dailyPlan) {
+        console.log('⚠️ No daily plan found for renewal check');
+        return;
+      }
+
+      // Count completed articles
+      const completedJobs = dailyPlan.jobs.filter(job =>
+        job.status === 'completed' || job.status === 'rejected'
+      );
+      const totalJobs = dailyPlan.jobs.length;
+
+      console.log(`📊 Daily plan progress: ${completedJobs.length}/${totalJobs} articles completed`);
+
+      // If all articles are completed, create a new daily plan
+      if (completedJobs.length >= totalJobs && totalJobs >= this.MAX_DAILY_ARTICLES) {
+        console.log('🎉 All articles in daily plan completed! Creating new daily plan...');
+
+        // Create fresh daily plan with new trends
+        await this.createFreshDailyPlan(today);
+
+        console.log('✅ New daily plan created automatically after completing all articles');
+      }
+    } catch (error) {
+      console.error('❌ Error checking daily plan renewal:', error);
+    }
+  }
+
+  /**
    * Create a daily plan with 24 articles from top trends
    */
   private async createDailyPlan(date: string): Promise<DailyPlan> {
@@ -854,6 +889,9 @@ class AutomatedArticleGenerator {
         await this.updateJob(job);
 
         console.log(`✅ High-quality article generated for "${job.trend.title}": ${articleId} (Score: ${qualityScore.overall})`);
+
+        // Check if this was the last article in the daily plan
+        await this.checkAndRenewDailyPlan();
 
         // Return the article ID for further processing
         return { success: true, articleId };
