@@ -546,7 +546,7 @@ class AutomatedArticleGenerator {
     // Find the job that should be generated for current hour
     // Position mapping: Position 1 = hour 0, Position 2 = hour 1, etc.
     // So for currentHour=16, we need position=17
-    const currentHourJob = dailyPlan.jobs.find(job => {
+    let currentHourJob = dailyPlan.jobs.find(job => {
       if (job.status !== 'pending' || !job.scheduledAt) return false;
 
       const scheduledTime = new Date(job.scheduledAt);
@@ -555,6 +555,41 @@ class AutomatedArticleGenerator {
       // Find job scheduled for current hour
       return scheduledHour === currentHour;
     });
+
+    // If no pending job for current hour, check for stuck jobs and reset them
+    if (!currentHourJob) {
+      const stuckJobs = dailyPlan.jobs.filter(job => {
+        if (job.status !== 'generating' || !job.startedAt) return false;
+
+        const startTime = new Date(job.startedAt);
+        const minutesGenerating = (now.getTime() - startTime.getTime()) / (1000 * 60);
+
+        return minutesGenerating > 10; // Stuck if generating for more than 10 minutes
+      });
+
+      if (stuckJobs.length > 0) {
+        console.log(`🔧 Found ${stuckJobs.length} stuck jobs, resetting them...`);
+
+        for (const stuckJob of stuckJobs) {
+          console.log(`🔧 Resetting stuck job #${stuckJob.position}: "${stuckJob.trend?.title}"`);
+          stuckJob.status = 'completed'; // Mark as completed to unblock
+          stuckJob.completedAt = new Date().toISOString();
+        }
+
+        // Save updated plan
+        await this.saveDailyPlan(dailyPlan);
+
+        // Try to find current hour job again
+        currentHourJob = dailyPlan.jobs.find(job => {
+          if (job.status !== 'pending' || !job.scheduledAt) return false;
+
+          const scheduledTime = new Date(job.scheduledAt);
+          const scheduledHour = scheduledTime.getHours();
+
+          return scheduledHour === currentHour;
+        });
+      }
+    }
 
     if (!currentHourJob) {
       console.log(`✅ No pending job for hour ${currentHour}`);
