@@ -97,19 +97,47 @@ class AutomatedArticleGenerator {
    * Store service status in Firebase (for serverless persistence)
    */
   private async storeServiceStatus(isRunning: boolean): Promise<void> {
-    try {
-      const statusData = {
-        isRunning,
-        lastUpdated: new Date().toISOString(),
-        environment: process.env.NODE_ENV,
-        isVercel: !!process.env.VERCEL,
-        updatedBy: 'automated-article-generator'
-      };
+    const maxRetries = 3;
+    let lastError: any;
 
-      await this.db.collection('system').doc(this.SERVICE_STATUS_DOC).set(statusData, { merge: true });
-      console.log(`📊 Service status stored in Firebase: isRunning=${isRunning}`);
-    } catch (error) {
-      console.error('❌ Error storing service status:', error);
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const statusData = {
+          isRunning,
+          lastUpdated: new Date().toISOString(),
+          environment: process.env.NODE_ENV,
+          isVercel: !!process.env.VERCEL,
+          updatedBy: 'automated-article-generator'
+        };
+
+        await this.db.collection('system').doc(this.SERVICE_STATUS_DOC).set(statusData, { merge: true });
+        console.log(`📊 Service status stored in Firebase: isRunning=${isRunning} (attempt ${attempt})`);
+        return; // Success, exit retry loop
+      } catch (error) {
+        lastError = error;
+        console.warn(`⚠️ Error storing service status (attempt ${attempt}/${maxRetries}):`, error);
+
+        if (this.isFirebaseConnectionError(error) && attempt < maxRetries) {
+          console.log(`🔄 Retrying Firebase store in ${attempt * 1000}ms...`);
+          await new Promise(resolve => setTimeout(resolve, attempt * 1000));
+        }
+      }
+    }
+
+    console.error('❌ Failed to store service status after all retries:', lastError);
+
+    // Fallback: try to store in localStorage as backup
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('article_generator_firebase_status', JSON.stringify({
+          isRunning,
+          lastUpdated: new Date().toISOString(),
+          source: 'localStorage_fallback'
+        }));
+        console.log(`💾 Service status stored in localStorage fallback: isRunning=${isRunning}`);
+      }
+    } catch (fallbackError) {
+      console.error('❌ Even localStorage fallback failed:', fallbackError);
     }
   }
 
@@ -117,20 +145,48 @@ class AutomatedArticleGenerator {
    * Load service status from Firebase (for serverless persistence)
    */
   private async loadServiceStatus(): Promise<boolean> {
-    try {
-      const doc = await this.db.collection('system').doc(this.SERVICE_STATUS_DOC).get();
-      if (doc.exists) {
-        const data = doc.data();
-        const isRunning = data?.isRunning || false;
-        console.log(`📊 Service status loaded from Firebase: isRunning=${isRunning}`);
-        return isRunning;
+    const maxRetries = 3;
+    let lastError: any;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const doc = await this.db.collection('system').doc(this.SERVICE_STATUS_DOC).get();
+        if (doc.exists) {
+          const data = doc.data();
+          const isRunning = data?.isRunning || false;
+          console.log(`📊 Service status loaded from Firebase: isRunning=${isRunning} (attempt ${attempt})`);
+          return isRunning;
+        }
+        console.log(`📊 No service status found in Firebase, defaulting to false (attempt ${attempt})`);
+        return false;
+      } catch (error) {
+        lastError = error;
+        console.warn(`⚠️ Error loading service status (attempt ${attempt}/${maxRetries}):`, error);
+
+        if (this.isFirebaseConnectionError(error) && attempt < maxRetries) {
+          console.log(`🔄 Retrying Firebase load in ${attempt * 1000}ms...`);
+          await new Promise(resolve => setTimeout(resolve, attempt * 1000));
+        }
       }
-      console.log('📊 No service status found in Firebase, defaulting to false');
-      return false;
-    } catch (error) {
-      console.error('❌ Error loading service status:', error);
-      return false;
     }
+
+    console.error('❌ Failed to load service status after all retries:', lastError);
+
+    // Fallback: try to load from localStorage as backup
+    try {
+      if (typeof window !== 'undefined') {
+        const fallbackData = localStorage.getItem('article_generator_firebase_status');
+        if (fallbackData) {
+          const parsed = JSON.parse(fallbackData);
+          console.log(`💾 Service status loaded from localStorage fallback: isRunning=${parsed.isRunning}`);
+          return parsed.isRunning || false;
+        }
+      }
+    } catch (fallbackError) {
+      console.error('❌ Even localStorage fallback failed:', fallbackError);
+    }
+
+    return false; // Default to false if all retries and fallback fail
   }
 
   /**
