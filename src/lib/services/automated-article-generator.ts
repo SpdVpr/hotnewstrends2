@@ -109,10 +109,17 @@ class AutomatedArticleGenerator {
     // Run immediately to check for any pending articles
     this.checkScheduledArticles();
 
+    // Store start time for persistence
+    this.storeStartTime();
+
     // Set up interval to check for scheduled articles (NOT generate every interval!)
     this.intervalId = setInterval(async () => {
       try {
         await this.checkScheduledArticles();
+
+        // Update last activity timestamp
+        this.updateLastActivity();
+
       } catch (error) {
         console.error('❌ Error in scheduled check interval:', error);
         // Don't stop the interval, just log the error and continue
@@ -136,6 +143,16 @@ class AutomatedArticleGenerator {
     if (this.intervalId) {
       clearInterval(this.intervalId);
       this.intervalId = undefined;
+    }
+
+    // Update stored status
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('article_generator_status', 'stopped');
+        localStorage.setItem('article_generator_stop_time', new Date().toISOString());
+      }
+    } catch (error) {
+      console.warn('Failed to update stop status:', error);
     }
 
     console.log('🛑 Automated article generation stopped');
@@ -1654,6 +1671,61 @@ class AutomatedArticleGenerator {
     } catch (error) {
       console.error('🔥 Error in Firebase error handler:', error);
     }
+  }
+
+  /**
+   * Store start time for persistence tracking
+   */
+  private storeStartTime(): void {
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('article_generator_start_time', new Date().toISOString());
+        localStorage.setItem('article_generator_status', 'running');
+      }
+    } catch (error) {
+      console.warn('Failed to store start time:', error);
+    }
+  }
+
+  /**
+   * Update last activity timestamp
+   */
+  private updateLastActivity(): void {
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('article_generator_last_activity', new Date().toISOString());
+      }
+    } catch (error) {
+      console.warn('Failed to update last activity:', error);
+    }
+  }
+
+  /**
+   * Check if service should auto-restart based on stored state
+   */
+  public checkAutoRestart(): boolean {
+    try {
+      if (typeof window !== 'undefined') {
+        const status = localStorage.getItem('article_generator_status');
+        const startTime = localStorage.getItem('article_generator_start_time');
+        const lastActivity = localStorage.getItem('article_generator_last_activity');
+
+        if (status === 'running' && startTime) {
+          const startDate = new Date(startTime);
+          const now = new Date();
+          const hoursSinceStart = (now.getTime() - startDate.getTime()) / (1000 * 60 * 60);
+
+          // If it was running recently (within 24 hours) and we're not currently running
+          if (hoursSinceStart < 24 && !this.isRunning) {
+            console.log('🔄 Auto-restarting article generator based on stored state');
+            return true;
+          }
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to check auto-restart:', error);
+    }
+    return false;
   }
 }
 
