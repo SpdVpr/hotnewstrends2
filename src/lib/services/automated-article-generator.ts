@@ -1314,7 +1314,7 @@ class AutomatedArticleGenerator {
   /**
    * Create a fresh daily plan with trends needing articles (excluding processed topics)
    */
-  private async createFreshDailyPlan(date: string): Promise<DailyPlan> {
+  public async createFreshDailyPlan(date: string): Promise<DailyPlan> {
     console.log(`🔄 Creating fresh daily plan for date: ${date}`);
 
     try {
