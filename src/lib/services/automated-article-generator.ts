@@ -566,7 +566,6 @@ class AutomatedArticleGenerator {
 
     // Check if this job is ready to be processed (scheduled time has passed)
     const scheduledTime = new Date(currentHourJob.scheduledAt!);
-    const now = new Date();
 
     console.log(`🕐 Job #${currentHourJob.position} scheduled for: ${scheduledTime.toISOString()}`);
     console.log(`🕐 Current time: ${now.toISOString()}`);
