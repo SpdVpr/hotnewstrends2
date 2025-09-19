@@ -1110,18 +1110,73 @@ class AutomatedArticleGenerator {
   }
 
   /**
-   * Force refresh of daily plan (useful when trends are updated)
-   * This preserves already generated articles and only updates future ones
+   * Smart refresh of daily plan - automatically decides between refresh or fresh reset
+   * If too many processed topics are in the plan, creates a fresh plan
+   * Otherwise, preserves existing articles and updates future ones
    */
   public async refreshDailyPlan(): Promise<void> {
     const today = new Date().toISOString().split('T')[0];
-    console.log('🔄 Refreshing daily plan for', today);
-    console.log('📊 Reading latest trends from Firebase for daily plan refresh...');
+    console.log('🔄 Smart refreshing daily plan for', today);
 
-    // Update only future articles (preserve already generated ones)
-    await this.updateFutureDailyPlan(today);
+    // Check if we need a fresh reset or just an update
+    const needsFreshReset = await this.shouldCreateFreshPlan(today);
 
-    console.log('✅ Daily plan refresh completed - preserved existing articles, updated future ones');
+    if (needsFreshReset) {
+      console.log('🔄 Creating fresh daily plan (too many processed topics detected)');
+      await this.createFreshDailyPlan(today);
+      console.log('✅ Fresh daily plan created with new trends');
+    } else {
+      console.log('🔄 Updating future articles in existing daily plan');
+      await this.updateFutureDailyPlan(today);
+      console.log('✅ Daily plan refresh completed - preserved existing articles, updated future ones');
+    }
+  }
+
+  /**
+   * Check if we should create a fresh daily plan instead of updating existing one
+   * Returns true if too many processed topics are in the current plan
+   */
+  private async shouldCreateFreshPlan(date: string): Promise<boolean> {
+    try {
+      const currentPlan = await this.getDailyPlan(date);
+      if (!currentPlan || currentPlan.jobs.length === 0) {
+        console.log('📝 No existing daily plan found, will create fresh one');
+        return true;
+      }
+
+      // Check how many jobs contain processed topics
+      const { firebaseProcessedTopicsService } = await import('./firebase-processed-topics');
+      let processedTopicsCount = 0;
+
+      for (const job of currentPlan.jobs) {
+        if (job.trend?.title) {
+          const isProcessed = await firebaseProcessedTopicsService.isTopicProcessed(job.trend.title);
+          if (isProcessed) {
+            processedTopicsCount++;
+          }
+        }
+      }
+
+      const processedPercentage = (processedTopicsCount / currentPlan.jobs.length) * 100;
+      console.log(`📊 Daily plan analysis: ${processedTopicsCount}/${currentPlan.jobs.length} jobs are processed topics (${processedPercentage.toFixed(1)}%)`);
+
+      // If more than 30% of jobs are processed topics, create fresh plan
+      const threshold = 30;
+      const needsFresh = processedPercentage > threshold;
+
+      if (needsFresh) {
+        console.log(`🔄 ${processedPercentage.toFixed(1)}% processed topics > ${threshold}% threshold - will create fresh plan`);
+      } else {
+        console.log(`✅ ${processedPercentage.toFixed(1)}% processed topics <= ${threshold}% threshold - will update existing plan`);
+      }
+
+      return needsFresh;
+
+    } catch (error) {
+      console.error('❌ Error checking if fresh plan needed:', error);
+      // On error, default to updating existing plan
+      return false;
+    }
   }
 
   /**
@@ -1188,10 +1243,10 @@ class AutomatedArticleGenerator {
 
       console.log(`📊 Preserving ${preservedJobs.length} past/current jobs, updating ${futureJobs.length} future jobs`);
 
-      // Get latest trends from Firebase for future jobs
+      // Get trends needing articles from Firebase for future jobs (excluding processed topics)
       const { firebaseTrendsService } = await import('./firebase-trends');
-      const firebaseTrends = await firebaseTrendsService.getLatestTrends(50);
-      console.log(`📊 Retrieved ${firebaseTrends.length} latest trends from Firebase`);
+      const firebaseTrends = await firebaseTrendsService.getTrendsNeedingArticles(50);
+      console.log(`📊 Retrieved ${firebaseTrends.length} trends needing articles from Firebase`);
 
       // Convert and sort trends
       const allTrends = firebaseTrends.map((fbTrend: any) => ({
