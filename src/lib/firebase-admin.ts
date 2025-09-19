@@ -3,7 +3,10 @@
  * This file should only be imported on the server-side
  */
 
-import 'server-only';
+// Check if running on client-side and throw error
+if (typeof window !== 'undefined') {
+  throw new Error('firebase-admin.ts should only be imported on server-side');
+}
 
 let adminInstance: any = null;
 let dbInstance: any = null;
