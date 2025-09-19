@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/automation/cron",
-      "schedule": "* * * * *"
+      "schedule": "*/10 * * * *"
     },
     {
       "path": "/api/manual-trends-update",
