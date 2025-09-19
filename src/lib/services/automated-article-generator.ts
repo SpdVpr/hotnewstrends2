@@ -54,8 +54,8 @@ class AutomatedArticleGenerator {
   private readonly STORAGE_KEY = 'article_generation_jobs';
   private readonly DAILY_PLAN_KEY = 'daily_article_plan';
   private readonly MAX_DAILY_ARTICLES = 24; // 24 articles per day
-  private readonly GENERATION_INTERVAL = 5 * 60 * 1000; // Check every 5 minutes
-  private readonly MIN_QUALITY_SCORE = 60; // Minimum quality threshold (lowered for testing)
+  private readonly CHECK_INTERVAL = 10 * 60 * 1000; // Check every 10 minutes (not generation interval!)
+  private readonly MIN_QUALITY_SCORE = 60; // Minimum quality threshold
   private readonly MAX_RETRIES = 2; // Maximum retry attempts per article
   private isRunning = false;
   private intervalId?: NodeJS.Timeout;
@@ -68,7 +68,7 @@ class AutomatedArticleGenerator {
   }
 
   /**
-   * Start automated article generation
+   * Start automated article generation - checks for scheduled articles every 10 minutes
    */
   start(): void {
     if (this.isRunning) {
@@ -78,16 +78,18 @@ class AutomatedArticleGenerator {
 
     this.isRunning = true;
     console.log('🚀 Starting automated article generation...');
+    console.log('📅 System will check for scheduled articles every 10 minutes');
+    console.log('⏰ Articles are scheduled hourly (00:00, 01:00, 02:00, etc.)');
 
-    // Run immediately
-    this.processNewTrends();
+    // Run immediately to check for any pending articles
+    this.checkScheduledArticles();
 
-    // Set up interval
+    // Set up interval to check for scheduled articles (NOT generate every interval!)
     this.intervalId = setInterval(() => {
-      this.processNewTrends();
-    }, this.GENERATION_INTERVAL);
+      this.checkScheduledArticles();
+    }, this.CHECK_INTERVAL);
 
-    console.log(`✅ Automated generation started (every ${this.GENERATION_INTERVAL / 60000} minutes)`);
+    console.log(`✅ Article scheduler started (checking every ${this.CHECK_INTERVAL / 60000} minutes)`);
   }
 
   /**
@@ -110,31 +112,40 @@ class AutomatedArticleGenerator {
   }
 
   /**
-   * Process scheduled articles and generate them at the right time
+   * Check for scheduled articles that should be generated now (hourly scheduling)
    */
-  private async processNewTrends(): Promise<void> {
+  private async checkScheduledArticles(): Promise<void> {
     try {
-      console.log('🔍 Checking scheduled articles and daily plan...');
+      const now = new Date();
+      const pragueTime = new Date(now.toLocaleString("en-US", {timeZone: "Europe/Prague"}));
+      const currentHour = pragueTime.getHours();
+      const currentMinute = pragueTime.getMinutes();
+
+      console.log(`🔍 Checking scheduled articles at ${currentHour.toString().padStart(2, '0')}:${currentMinute.toString().padStart(2, '0')} Prague time`);
 
       // Ensure we have a daily plan
       try {
         await this.ensureDailyPlan();
       } catch (planError) {
         console.error('❌ Error ensuring daily plan:', planError);
-        // Continue with processing even if daily plan fails
+        return;
       }
 
-      // Check for articles that should be generated now
-      try {
-        await this.processScheduledJobs();
-      } catch (jobsError) {
-        console.error('❌ Error processing scheduled jobs:', jobsError);
-        // Continue running even if job processing fails
+      // Only process articles if we're at the start of an hour (within first 10 minutes)
+      if (currentMinute <= 10) {
+        console.log(`⏰ It's ${currentHour}:${currentMinute.toString().padStart(2, '0')} - checking for article #${currentHour + 1} to generate`);
+
+        try {
+          await this.processScheduledJobs();
+        } catch (jobsError) {
+          console.error('❌ Error processing scheduled jobs:', jobsError);
+        }
+      } else {
+        console.log(`⏳ It's ${currentHour}:${currentMinute.toString().padStart(2, '0')} - waiting for next hour (articles generate at :00)`);
       }
 
     } catch (error) {
-      console.error('❌ Critical error in processNewTrends:', error);
-      // Don't stop the service for errors - just log them
+      console.error('❌ Critical error in checkScheduledArticles:', error);
     }
   }
 
@@ -306,7 +317,7 @@ class AutomatedArticleGenerator {
   }
 
   /**
-   * Process jobs that are scheduled to run now
+   * Process jobs that are scheduled to run now - ONLY ONE ARTICLE PER HOUR
    */
   private async processScheduledJobs(): Promise<void> {
     const today = new Date().toISOString().split('T')[0];
@@ -315,56 +326,43 @@ class AutomatedArticleGenerator {
     if (!dailyPlan) return;
 
     const now = new Date();
-    console.log(`🕐 Current time: ${now.toLocaleString()} (${now.toISOString()})`);
+    const pragueTime = new Date(now.toLocaleString("en-US", {timeZone: "Europe/Prague"}));
+    const currentHour = pragueTime.getHours();
+
+    console.log(`🕐 Current time: ${pragueTime.toLocaleString()} Prague (Hour: ${currentHour})`);
     console.log(`📋 Daily plan has ${dailyPlan.jobs.length} jobs total`);
 
-    // Debug: Show all jobs with their scheduled times
-    console.log('📅 All jobs in daily plan:');
-    dailyPlan.jobs.forEach(job => {
-      const scheduledTime = job.scheduledAt ? new Date(job.scheduledAt) : null;
-      const isReady = scheduledTime ? scheduledTime <= now : false;
-      console.log(`  #${job.position}: "${job.trend.title}" - Status: ${job.status} - Scheduled: ${scheduledTime?.toLocaleString() || 'N/A'} ${isReady ? '✅ READY' : '⏰ WAITING'}`);
-    });
-
-    const pendingJobs = dailyPlan.jobs.filter(job =>
-      job.status === 'pending' &&
-      job.scheduledAt &&
-      new Date(job.scheduledAt) <= now
+    // Find the job that should be generated for current hour
+    const currentHourJob = dailyPlan.jobs.find(job =>
+      job.position === currentHour + 1 && // Position 1 = hour 0, position 2 = hour 1, etc.
+      job.status === 'pending'
     );
 
-    console.log(`🎯 Found ${pendingJobs.length} pending jobs ready to process`);
+    if (!currentHourJob) {
+      console.log(`✅ No pending job for hour ${currentHour} (position ${currentHour + 1})`);
 
-    // CRITICAL FIX: Sort pending jobs by scheduledAt (oldest first)
-    pendingJobs.sort((a, b) => new Date(a.scheduledAt!).getTime() - new Date(b.scheduledAt!).getTime());
-
-    // Debug: Show pending jobs in order
-    if (pendingJobs.length > 0) {
-      console.log('📅 Pending jobs (sorted by time):');
-      pendingJobs.forEach(job => {
-        const scheduledTime = new Date(job.scheduledAt!);
-        console.log(`  #${job.position}: "${job.trend.title}" at ${scheduledTime.toLocaleString()} ✅ READY`);
-      });
-    }
-
-    // Debug: Show next few scheduled jobs
-    const nextJobs = dailyPlan.jobs
-      .filter(job => job.status === 'pending' && job.scheduledAt)
-      .sort((a, b) => new Date(a.scheduledAt!).getTime() - new Date(b.scheduledAt!).getTime())
-      .slice(0, 3);
-
-    if (nextJobs.length > 0) {
-      console.log('📅 Next scheduled jobs:');
-      nextJobs.forEach(job => {
-        const scheduledTime = new Date(job.scheduledAt!);
-        const isReady = scheduledTime <= now;
-        console.log(`  ${job.position}. "${job.trend.title}" at ${scheduledTime.toLocaleString()} ${isReady ? '✅ READY' : '⏰ WAITING'}`);
-      });
-    }
-
-    if (pendingJobs.length === 0) {
-      console.log('✅ No jobs scheduled for now');
+      // Show what jobs are available
+      const pendingJobs = dailyPlan.jobs.filter(job => job.status === 'pending');
+      if (pendingJobs.length > 0) {
+        console.log('📅 Available pending jobs:');
+        pendingJobs.slice(0, 5).forEach(job => {
+          const scheduledTime = job.scheduledAt ? new Date(job.scheduledAt) : null;
+          console.log(`  #${job.position}: "${job.trend.title}" - Scheduled: ${scheduledTime?.toLocaleString() || 'N/A'}`);
+        });
+      }
       return;
     }
+
+    // Check if this job is scheduled for current hour
+    const scheduledTime = new Date(currentHourJob.scheduledAt!);
+    const scheduledHour = scheduledTime.getUTCHours();
+
+    if (scheduledHour !== currentHour) {
+      console.log(`⏰ Job #${currentHourJob.position} is scheduled for hour ${scheduledHour}, but current hour is ${currentHour}`);
+      return;
+    }
+
+    console.log(`🎯 Found job for current hour ${currentHour}: #${currentHourJob.position} "${currentHourJob.trend.title}"`);
 
     // Check SerpApi rate limits
     if (!serpApiMonitor.canMakeCall()) {
@@ -372,11 +370,9 @@ class AutomatedArticleGenerator {
       return;
     }
 
-    // Process the OLDEST pending job (first in sorted array)
-    const job = pendingJobs[0];
-    console.log(`🚀 Processing OLDEST scheduled job: ${job.trend.title} (position ${job.position}) scheduled for ${new Date(job.scheduledAt!).toLocaleString()}`);
-
-    await this.processGenerationJob(job);
+    // Process the job for current hour
+    console.log(`🚀 Generating article #${currentHourJob.position} for hour ${currentHour}: "${currentHourJob.trend.title}"`);
+    await this.processGenerationJob(currentHourJob);
   }
 
   /**
@@ -1412,39 +1408,9 @@ class AutomatedArticleGenerator {
   }
 
   /**
-   * Enable test mode - reschedule all pending jobs to start now with 5-minute intervals
+   * REMOVED: Test mode functionality - articles now generate hourly as designed
+   * Use reset functionality if you need to restart the daily plan
    */
-  public async enableTestMode(): Promise<void> {
-    const today = new Date().toISOString().split('T')[0];
-    const dailyPlan = await this.getDailyPlan(today);
-
-    if (!dailyPlan) {
-      console.log('⚠️ No daily plan found for test mode');
-      return;
-    }
-
-    const now = new Date();
-    let testCount = 0;
-
-    dailyPlan.jobs.forEach((job, index) => {
-      if (job.status === 'pending') {
-        // Schedule jobs every 5 minutes starting now
-        const testTime = new Date(now.getTime() + (testCount * 5 * 60 * 1000));
-        job.scheduledAt = testTime.toISOString();
-        testCount++;
-      }
-    });
-
-    if (testCount > 0) {
-      dailyPlan.updatedAt = new Date().toISOString();
-      await this.storeDailyPlan(dailyPlan);
-      console.log(`🧪 Test mode enabled: ${testCount} jobs rescheduled with 5-minute intervals`);
-      console.log(`🧪 First job will start at: ${new Date(now.getTime() + 0).toLocaleString()}`);
-      console.log(`🧪 Last job will start at: ${new Date(now.getTime() + ((testCount - 1) * 5 * 60 * 1000)).toLocaleString()}`);
-    } else {
-      console.log('✅ No pending jobs to reschedule for test mode');
-    }
-  }
 
   /**
    * Disable test mode - restore normal scheduling (6:00-22:00, ~40min intervals)

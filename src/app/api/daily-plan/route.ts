@@ -64,23 +64,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    if (action === 'test-mode') {
-      await automatedArticleGenerator.enableTestMode();
-
-      return NextResponse.json({
-        success: true,
-        message: 'Test mode enabled - articles will generate every 5 minutes'
-      });
-    }
-
-    if (action === 'disable-test-mode') {
-      await automatedArticleGenerator.disableTestMode();
-
-      return NextResponse.json({
-        success: true,
-        message: 'Test mode disabled - restored normal scheduling (6:00-22:00)'
-      });
-    }
+    // Test mode removed - articles now generate hourly as designed
 
     return NextResponse.json({
       success: false,
