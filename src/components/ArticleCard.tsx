@@ -3,6 +3,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Card, CardContent, CardFooter } from '@/components/ui/Card';
 import { Badge, TrendingBadge, CategoryBadge } from '@/components/ui/Badge';
+import { SafeImage } from '@/components/SafeImage';
 import { cn, formatRelativeTime, getImagePlaceholder } from '@/lib/utils';
 import { Article } from '@/types';
 
@@ -46,7 +47,7 @@ const ArticleCard: React.FC<ArticleCardProps> = ({
         {/* Article Image */}
         <div className="aspect-video bg-surface relative overflow-hidden">
           {image ? (
-            <Image
+            <SafeImage
               src={image}
               alt={imageAlt || title}
               fill
@@ -54,8 +55,13 @@ const ArticleCard: React.FC<ArticleCardProps> = ({
               sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 378px"
               priority={priority}
               quality={85}
-              placeholder="blur"
-              blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
+              fallbackContent={
+                <div className="w-full h-full bg-gradient-to-br from-primary/20 to-orange/20 flex items-center justify-center">
+                  <span className="text-text-secondary text-sm">
+                    {title.slice(0, 20)}...
+                  </span>
+                </div>
+              }
             />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-primary/20 to-orange/20 flex items-center justify-center">
@@ -176,12 +182,15 @@ const CompactArticleCard: React.FC<CompactArticleCardProps> = ({
           {showImage && (
             <div className="flex-shrink-0 w-16 h-16 bg-surface rounded-lg overflow-hidden relative">
               {image ? (
-                <Image
+                <SafeImage
                   src={image}
                   alt={imageAlt || title}
                   fill
                   className="object-cover"
                   sizes="64px"
+                  fallbackContent={
+                    <div className="w-full h-full bg-gradient-to-br from-primary/20 to-orange/20" />
+                  }
                 />
               ) : (
                 <div className="w-full h-full bg-gradient-to-br from-primary/20 to-orange/20" />
