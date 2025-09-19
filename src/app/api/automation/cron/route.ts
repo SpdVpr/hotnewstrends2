@@ -26,39 +26,55 @@ export async function GET(request: NextRequest) {
 
     console.log(`⏰ Cron check at ${currentHour.toString().padStart(2, '0')}:${currentMinute.toString().padStart(2, '0')} Prague time`);
 
-    // Process articles for current hour (remove minute restriction for testing)
-    console.log(`🎯 Processing articles for hour ${currentHour}`);
+    // Only process articles at the start of each hour (within first 10 minutes)
+    if (currentMinute <= 10) {
+      console.log(`🎯 Processing articles for hour ${currentHour}`);
 
-    try {
-      // Ensure we have a daily plan
-      await automatedArticleGenerator.ensureDailyPlan();
+      try {
+        // Ensure we have a daily plan
+        await automatedArticleGenerator.ensureDailyPlan();
 
-      // Process scheduled jobs for current hour
-      await automatedArticleGenerator.processScheduledJobs();
+        // Process scheduled jobs for current hour
+        await automatedArticleGenerator.processScheduledJobs();
 
+        const result = {
+          success: true,
+          timestamp: new Date().toISOString(),
+          pragueTime: pragueTime.toISOString(),
+          currentHour,
+          currentMinute,
+          action: 'processed_scheduled_jobs',
+          message: `Processed scheduled jobs for hour ${currentHour}`
+        };
+
+        console.log('✅ Cron job completed successfully:', result);
+        return NextResponse.json(result);
+
+      } catch (error) {
+        console.error('❌ Error in cron job processing:', error);
+        return NextResponse.json({
+          success: false,
+          error: error instanceof Error ? error.message : 'Unknown error',
+          timestamp: new Date().toISOString(),
+          pragueTime: pragueTime.toISOString(),
+          currentHour,
+          currentMinute
+        }, { status: 500 });
+      }
+
+    } else {
       const result = {
         success: true,
         timestamp: new Date().toISOString(),
         pragueTime: pragueTime.toISOString(),
         currentHour,
         currentMinute,
-        action: 'processed_scheduled_jobs',
-        message: `Processed scheduled jobs for hour ${currentHour}`
+        action: 'waiting',
+        message: `Waiting for next hour (current: ${currentHour}:${currentMinute.toString().padStart(2, '0')})`
       };
 
-      console.log('✅ Cron job completed successfully:', result);
+      console.log('⏳ Cron job - waiting for next hour:', result);
       return NextResponse.json(result);
-
-    } catch (error) {
-      console.error('❌ Error in cron job processing:', error);
-      return NextResponse.json({
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-        timestamp: new Date().toISOString(),
-        pragueTime: pragueTime.toISOString(),
-        currentHour,
-        currentMinute
-      }, { status: 500 });
     }
 
   } catch (error) {
