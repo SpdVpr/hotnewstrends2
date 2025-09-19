@@ -90,17 +90,19 @@ export async function GET(request: NextRequest) {
         const { automatedArticleGenerator } = await import('@/lib/services/automated-article-generator');
 
         // Get stats before refresh
-        const statsBefore = automatedArticleGenerator.getStats();
+        const statsBefore = await automatedArticleGenerator.getStats();
         console.log('📊 Daily Plan BEFORE refresh:', {
           totalJobs: statsBefore.totalJobs,
           pendingJobs: statsBefore.pendingJobs,
           completedJobs: statsBefore.completedJobs
         });
 
+        console.log('🔄 Calling refreshDailyPlan()...');
         await automatedArticleGenerator.refreshDailyPlan();
+        console.log('✅ refreshDailyPlan() completed');
 
         // Get stats after refresh
-        const statsAfter = automatedArticleGenerator.getStats();
+        const statsAfter = await automatedArticleGenerator.getStats();
         console.log('📊 Daily Plan AFTER refresh:', {
           totalJobs: statsAfter.totalJobs,
           pendingJobs: statsAfter.pendingJobs,

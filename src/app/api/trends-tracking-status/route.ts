@@ -105,11 +105,13 @@ export async function GET(request: NextRequest) {
         // Check if update actually happened (within 2 hours of scheduled time)
         if (lastUpdateInfo) {
           const updateTime = new Date(lastUpdateInfo.timestamp);
-          const updateHour = updateTime.getUTCHours();
-          const updateMinute = updateTime.getUTCMinutes();
-          const updateTimeMinutes = updateHour * 60 + updateMinute;
+          // Convert update time to Prague time for comparison
+          const updatePragueTime = new Date(updateTime.toLocaleString("en-US", {timeZone: "Europe/Prague"}));
+          const updatePragueHour = updatePragueTime.getHours();
+          const updatePragueMinute = updatePragueTime.getMinutes();
+          const updateTimeMinutes = updatePragueHour * 60 + updatePragueMinute;
 
-          // If last update was within 2 hours of this scheduled time
+          // If last update was within 2 hours of this scheduled time (in Prague time)
           const timeDiff = Math.abs(updateTimeMinutes - scheduleTimeMinutes);
           if (timeDiff <= 120) { // Within 2 hours
             status = 'completed';

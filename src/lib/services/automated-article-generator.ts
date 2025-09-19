@@ -258,18 +258,16 @@ class AutomatedArticleGenerator {
 
       // Create jobs for remaining slots
       const jobs: ArticleGenerationJob[] = [...completedJobs];
-      const startHour = 6; // Start at 6:00 AM
-      const endHour = 22; // End at 10:00 PM
-      const intervalMinutes = (endHour - startHour) * 60 / this.MAX_DAILY_ARTICLES; // ~40 minutes apart
+      const startHour = 0; // Start at midnight (00:00)
+      const intervalHours = 1; // Generate every 1 hour
 
       for (let i = completedJobs.length; i < this.MAX_DAILY_ARTICLES && i < sortedTrends.length; i++) {
         const trend = sortedTrends[i];
 
-        // Create scheduled time for the target date
+        // Create scheduled time for the target date (every hour starting from 00:00)
         const scheduledTime = new Date(date + 'T00:00:00.000Z');
-        const scheduledHour = startHour + Math.floor(i * intervalMinutes / 60);
-        const scheduledMinute = Math.floor(i * intervalMinutes) % 60;
-        scheduledTime.setUTCHours(scheduledHour, scheduledMinute, 0, 0);
+        const scheduledHour = startHour + (i * intervalHours); // Every hour: 0, 1, 2, 3...
+        scheduledTime.setUTCHours(scheduledHour, 0, 0, 0); // Always at :00 minutes
 
         const job: ArticleGenerationJob = {
           id: `job_${date}_${i + 1}_${trend.title.replace(/[^a-zA-Z0-9]/g, '_')}`,
@@ -662,6 +660,27 @@ class AutomatedArticleGenerator {
       .filter(job => job.status === 'pending' && job.scheduledAt)
       .sort((a, b) => new Date(a.scheduledAt!).getTime() - new Date(b.scheduledAt!).getTime())[0];
 
+    // Calculate time until next article
+    let timeUntilNext = null;
+    let nextArticleInfo = null;
+    if (nextScheduledJob) {
+      const now = new Date();
+      const nextTime = new Date(nextScheduledJob.scheduledAt!);
+      const diffMs = nextTime.getTime() - now.getTime();
+
+      if (diffMs > 0) {
+        const hours = Math.floor(diffMs / (1000 * 60 * 60));
+        const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+        timeUntilNext = `${hours}h ${minutes}m`;
+        nextArticleInfo = {
+          position: nextScheduledJob.position,
+          title: nextScheduledJob.trend.title,
+          scheduledAt: nextScheduledJob.scheduledAt,
+          timeUntil: timeUntilNext
+        };
+      }
+    }
+
     return {
       totalJobs: jobs.length,
       pendingJobs: jobs.filter(j => j.status === 'pending').length,
@@ -674,7 +693,8 @@ class AutomatedArticleGenerator {
       lastRun: jobs.length > 0 ? jobs[jobs.length - 1].createdAt : undefined,
       nextRun: this.isRunning ? new Date(Date.now() + this.GENERATION_INTERVAL).toISOString() : undefined,
       dailyPlan,
-      nextScheduledJob
+      nextScheduledJob,
+      nextArticleInfo
     };
   }
 
@@ -1317,18 +1337,16 @@ class AutomatedArticleGenerator {
       // Create jobs for top unique trends
       const jobs: ArticleGenerationJob[] = [];
       const maxJobs = Math.min(this.MAX_DAILY_ARTICLES, uniqueTrends.length);
-      const startHour = 6; // Start at 6:00 AM
-      const endHour = 22; // End at 10:00 PM
-      const intervalMinutes = (endHour - startHour) * 60 / this.MAX_DAILY_ARTICLES; // ~40 minutes apart
+      const startHour = 0; // Start at midnight (00:00)
+      const intervalHours = 1; // Generate every 1 hour
 
       for (let i = 0; i < maxJobs; i++) {
         const trend = uniqueTrends[i];
 
-        // Create scheduled time for the target date
+        // Create scheduled time for the target date (every hour starting from 00:00)
         const scheduledTime = new Date(date + 'T00:00:00.000Z');
-        const scheduledHour = startHour + Math.floor(i * intervalMinutes / 60);
-        const scheduledMinute = Math.floor(i * intervalMinutes) % 60;
-        scheduledTime.setUTCHours(scheduledHour, scheduledMinute, 0, 0);
+        const scheduledHour = startHour + (i * intervalHours); // Every hour: 0, 1, 2, 3...
+        scheduledTime.setUTCHours(scheduledHour, 0, 0, 0); // Always at :00 minutes
 
         const job: ArticleGenerationJob = {
           id: `job_${date}_${i + 1}_${trend.title.replace(/[^a-zA-Z0-9]/g, '_')}`,
@@ -1440,20 +1458,18 @@ class AutomatedArticleGenerator {
       return;
     }
 
-    console.log('🔄 Disabling test mode - restoring normal scheduling...');
+    console.log('🔄 Disabling test mode - restoring hourly scheduling...');
 
-    const startHour = 6; // Start at 6:00 AM
-    const endHour = 22; // End at 10:00 PM
-    const intervalMinutes = (endHour - startHour) * 60 / this.MAX_DAILY_ARTICLES; // ~40 minutes apart
+    const startHour = 0; // Start at midnight (00:00)
+    const intervalHours = 1; // Generate every 1 hour
     let restoredCount = 0;
 
     dailyPlan.jobs.forEach((job, index) => {
       if (job.status === 'pending') {
-        // Restore normal scheduling
+        // Restore hourly scheduling
         const scheduledTime = new Date(today + 'T00:00:00.000Z');
-        const scheduledHour = startHour + Math.floor((job.position - 1) * intervalMinutes / 60);
-        const scheduledMinute = Math.floor((job.position - 1) * intervalMinutes) % 60;
-        scheduledTime.setUTCHours(scheduledHour, scheduledMinute, 0, 0);
+        const scheduledHour = startHour + ((job.position - 1) * intervalHours); // Every hour: 0, 1, 2, 3...
+        scheduledTime.setUTCHours(scheduledHour, 0, 0, 0); // Always at :00 minutes
 
         job.scheduledAt = scheduledTime.toISOString();
         restoredCount++;
@@ -1463,8 +1479,8 @@ class AutomatedArticleGenerator {
     if (restoredCount > 0) {
       dailyPlan.updatedAt = new Date().toISOString();
       await this.storeDailyPlan(dailyPlan);
-      console.log(`✅ Test mode disabled: ${restoredCount} jobs restored to normal scheduling (6:00-22:00)`);
-      console.log(`📅 Jobs now scheduled from 6:00 AM to 10:00 PM with ~40 minute intervals`);
+      console.log(`✅ Test mode disabled: ${restoredCount} jobs restored to hourly scheduling (00:00-23:00)`);
+      console.log(`📅 Jobs now scheduled every hour starting from midnight`);
     } else {
       console.log('✅ No pending jobs to restore from test mode');
     }
