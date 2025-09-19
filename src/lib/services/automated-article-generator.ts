@@ -1248,12 +1248,11 @@ class AutomatedArticleGenerator {
           let scheduledAt = job.scheduledAt;
           if (!scheduledAt) {
             console.warn(`⚠️ Job #${job.position} missing scheduledAt, creating new one`);
-            const startHour = 6; // Start at 6:00 AM
-            const intervalMinutes = (22 - 6) * 60 / 24; // ~40 minutes apart
-            const scheduledTime = new Date(date + 'T00:00:00.000Z');
-            const scheduledHour = startHour + Math.floor((job.position - 1) * intervalMinutes / 60);
-            const scheduledMinute = Math.floor((job.position - 1) * intervalMinutes) % 60;
-            scheduledTime.setUTCHours(scheduledHour, scheduledMinute, 0, 0);
+            // Create scheduled time for hourly generation (0:00, 1:00, 2:00, etc.)
+            const scheduledHour = (job.position - 1) % 24; // Position 1 = hour 0, position 2 = hour 1, etc.
+            const scheduledTime = new Date();
+            scheduledTime.setFullYear(parseInt(date.split('-')[0]), parseInt(date.split('-')[1]) - 1, parseInt(date.split('-')[2]));
+            scheduledTime.setHours(scheduledHour, 0, 0, 0); // Set to exact hour in local time
             scheduledAt = scheduledTime.toISOString();
           }
 
@@ -1270,12 +1269,11 @@ class AutomatedArticleGenerator {
           let scheduledAt = job.scheduledAt;
           if (!scheduledAt) {
             console.warn(`⚠️ Job #${job.position} missing scheduledAt, creating new one`);
-            const startHour = 6;
-            const intervalMinutes = (22 - 6) * 60 / 24;
-            const scheduledTime = new Date(date + 'T00:00:00.000Z');
-            const scheduledHour = startHour + Math.floor((job.position - 1) * intervalMinutes / 60);
-            const scheduledMinute = Math.floor((job.position - 1) * intervalMinutes) % 60;
-            scheduledTime.setUTCHours(scheduledHour, scheduledMinute, 0, 0);
+            // Create scheduled time for hourly generation (0:00, 1:00, 2:00, etc.)
+            const scheduledHour = (job.position - 1) % 24; // Position 1 = hour 0, position 2 = hour 1, etc.
+            const scheduledTime = new Date();
+            scheduledTime.setFullYear(parseInt(date.split('-')[0]), parseInt(date.split('-')[1]) - 1, parseInt(date.split('-')[2]));
+            scheduledTime.setHours(scheduledHour, 0, 0, 0); // Set to exact hour in local time
             scheduledAt = scheduledTime.toISOString();
           }
 
