@@ -19,6 +19,7 @@ export async function GET(request: NextRequest) {
     const timeframe = searchParams.get('timeframe') || 'now 1-d';
     const source = searchParams.get('source') || 'google'; // 'google' or 'mock'
     const forceRefresh = searchParams.get('refresh') === 'true';
+    const limit = parseInt(searchParams.get('limit') || '50');
 
     console.log(`🔍 Fetching trends for region: ${region}, category: ${category}, source: ${source}`);
 
