@@ -26,8 +26,8 @@ export async function GET(request: NextRequest) {
 
     console.log(`⏰ Cron check at ${currentHour.toString().padStart(2, '0')}:${currentMinute.toString().padStart(2, '0')} Prague time`);
 
-    // Only process articles at the start of each hour (within first 10 minutes)
-    if (currentMinute <= 10) {
+    // Only process articles at the start of each hour (within first 15 minutes)
+    if (currentMinute <= 15) {
       console.log(`🎯 Processing articles for hour ${currentHour}`);
 
       try {

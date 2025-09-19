@@ -325,8 +325,8 @@ class AutomatedArticleGenerator {
         return;
       }
 
-      // Only process articles if we're at the start of an hour (within first 10 minutes)
-      if (currentMinute <= 10) {
+      // Only process articles if we're at the start of an hour (within first 15 minutes)
+      if (currentMinute <= 15) {
         console.log(`⏰ It's ${currentHour}:${currentMinute.toString().padStart(2, '0')} - checking for article #${currentHour + 1} to generate`);
 
         try {
@@ -579,8 +579,8 @@ class AutomatedArticleGenerator {
     console.log(`🕐 Current time: ${now.toISOString()}`);
     console.log(`🕐 Time difference: ${Math.round((now.getTime() - scheduledTime.getTime()) / (1000 * 60))} minutes`);
 
-    // Check if scheduled time has passed (with 5 minute buffer for processing delays)
-    const bufferMs = 5 * 60 * 1000; // 5 minutes
+    // Check if scheduled time has passed (with 15 minute buffer for processing delays)
+    const bufferMs = 15 * 60 * 1000; // 15 minutes
     if (now.getTime() < (scheduledTime.getTime() - bufferMs)) {
       const minutesUntilScheduled = Math.round((scheduledTime.getTime() - now.getTime()) / (1000 * 60));
       console.log(`⏰ Job #${currentHourJob.position} is scheduled for ${scheduledTime.toLocaleString()}, but it's ${minutesUntilScheduled} minutes too early`);
