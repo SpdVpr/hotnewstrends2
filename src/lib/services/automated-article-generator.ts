@@ -60,82 +60,7 @@ class AutomatedArticleGenerator {
   private isRunning = false;
   private intervalId?: NodeJS.Timeout;
   private readonly SERVICE_STATUS_DOC = 'article_generator_service_status';
-  private db: any = null; // Firebase Admin Firestore instance
-  private firebaseInitialized = false;
 
-  /**
-   * Lazy initialize Firebase Admin SDK only when needed and only on server-side
-   */
-  private async ensureFirebaseAdmin(): Promise<boolean> {
-    // Skip on client-side
-    if (typeof window !== 'undefined') {
-      return false;
-    }
-
-    // Return cached result if already attempted
-    if (this.firebaseInitialized) {
-      return this.db !== null;
-    }
-
-    try {
-      console.log('🔥 Lazy initializing Firebase Admin SDK...');
-
-      // Dynamic import to avoid bundling issues
-      const admin = await import('firebase-admin');
-
-      // Check if already initialized
-      if (admin.apps.length > 0) {
-        console.log('🔥 Firebase Admin already initialized, using existing instance');
-        this.db = admin.firestore();
-        this.firebaseInitialized = true;
-        return true;
-      }
-
-      // Get service account key from environment
-      const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
-
-      if (!serviceAccountKey) {
-        console.error('❌ FIREBASE_SERVICE_ACCOUNT_KEY environment variable not found');
-        console.error('❌ Firebase Admin initialization failed - service account key missing');
-        this.firebaseInitialized = true;
-        return false;
-      }
-
-      console.log('🔍 Parsing Firebase service account key...');
-      let serviceAccount;
-      try {
-        serviceAccount = JSON.parse(serviceAccountKey);
-        console.log('✅ Service account key parsed successfully');
-        console.log(`📧 Client email: ${serviceAccount.client_email}`);
-        console.log(`🆔 Project ID: ${serviceAccount.project_id}`);
-      } catch (parseError) {
-        console.error('❌ Failed to parse FIREBASE_SERVICE_ACCOUNT_KEY:', parseError);
-        console.error('❌ Make sure the environment variable contains valid JSON');
-        this.firebaseInitialized = true;
-        return false;
-      }
-
-      // Initialize Firebase Admin
-      console.log('🔥 Initializing Firebase Admin with service account...');
-      admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount),
-        projectId: serviceAccount.project_id
-      });
-
-      this.db = admin.firestore();
-      this.firebaseInitialized = true;
-      console.log('✅ Firebase Admin SDK initialized successfully');
-      console.log('✅ Firestore database connection established');
-      return true;
-
-    } catch (error) {
-      console.error('❌ Firebase Admin initialization failed:', error);
-      console.error('❌ Stack trace:', error.stack);
-      this.db = null;
-      this.firebaseInitialized = true;
-      return false;
-    }
-  }
 
   /**
    * Safe date creation with validation
@@ -173,43 +98,37 @@ class AutomatedArticleGenerator {
    * Store service status in Firebase (for serverless persistence)
    */
   private async storeServiceStatus(isRunning: boolean): Promise<void> {
-    // Ensure Firebase Admin is initialized
-    const firebaseReady = await this.ensureFirebaseAdmin();
-    if (!firebaseReady || !this.db) {
-      console.error('❌ Firebase not initialized, cannot store service status');
-      // Fallback to localStorage immediately
+    // Skip on client-side
+    if (typeof window !== 'undefined') {
+      console.log('📦 Client-side: storing in localStorage');
       try {
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('article_generator_firebase_status', JSON.stringify({
-            isRunning,
-            lastUpdated: new Date().toISOString(),
-            source: 'localStorage_fallback_no_firebase'
-          }));
-          console.log(`💾 Service status stored in localStorage (no Firebase): isRunning=${isRunning}`);
-        }
-      } catch (fallbackError) {
-        console.error('❌ Even localStorage fallback failed:', fallbackError);
+        localStorage.setItem('article_generator_firebase_status', JSON.stringify({
+          isRunning,
+          lastUpdated: new Date().toISOString(),
+          source: 'localStorage_client_side'
+        }));
+      } catch (error) {
+        console.error('❌ localStorage failed:', error);
       }
       return;
     }
 
+    // Server-side: use Firebase Admin
     const maxRetries = 3;
     let lastError: any;
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        const admin = await import('firebase-admin');
-        const statusData = {
-          isRunning,
-          lastUpdated: admin.firestore.FieldValue.serverTimestamp(),
-          environment: process.env.NODE_ENV,
-          isVercel: !!process.env.VERCEL,
-          updatedBy: 'automated-article-generator'
-        };
+        // Dynamic import Firebase Admin module
+        const { storeServiceStatus } = await import('@/lib/firebase-admin');
+        const success = await storeServiceStatus(isRunning);
 
-        await this.db.collection('system').doc(this.SERVICE_STATUS_DOC).set(statusData, { merge: true });
-        console.log(`📊 Service status stored in Firebase: isRunning=${isRunning} (attempt ${attempt})`);
-        return; // Success, exit retry loop
+        if (success) {
+          console.log(`📊 Service status stored in Firebase: isRunning=${isRunning} (attempt ${attempt})`);
+          return; // Success
+        } else {
+          throw new Error('Firebase Admin storeServiceStatus returned false');
+        }
       } catch (error) {
         lastError = error;
         console.warn(`⚠️ Error storing service status (attempt ${attempt}/${maxRetries}):`, error);
@@ -222,60 +141,39 @@ class AutomatedArticleGenerator {
     }
 
     console.error('❌ Failed to store service status after all retries:', lastError);
-
-    // Fallback: try to store in localStorage as backup
-    try {
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('article_generator_firebase_status', JSON.stringify({
-          isRunning,
-          lastUpdated: new Date().toISOString(),
-          source: 'localStorage_fallback'
-        }));
-        console.log(`💾 Service status stored in localStorage fallback: isRunning=${isRunning}`);
-      }
-    } catch (fallbackError) {
-      console.error('❌ Even localStorage fallback failed:', fallbackError);
-    }
   }
 
   /**
    * Load service status from Firebase (for serverless persistence)
    */
   private async loadServiceStatus(): Promise<boolean> {
-    // Ensure Firebase Admin is initialized
-    const firebaseReady = await this.ensureFirebaseAdmin();
-    if (!firebaseReady || !this.db) {
-      console.error('❌ Firebase not initialized, cannot load service status');
-      // Fallback to localStorage immediately
+    // Skip on client-side
+    if (typeof window !== 'undefined') {
+      console.log('📦 Client-side: loading from localStorage');
       try {
-        if (typeof window !== 'undefined') {
-          const fallbackData = localStorage.getItem('article_generator_firebase_status');
-          if (fallbackData) {
-            const parsed = JSON.parse(fallbackData);
-            console.log(`💾 Service status loaded from localStorage (no Firebase): isRunning=${parsed.isRunning}`);
-            return parsed.isRunning || false;
-          }
+        const fallbackData = localStorage.getItem('article_generator_firebase_status');
+        if (fallbackData) {
+          const parsed = JSON.parse(fallbackData);
+          console.log(`💾 Service status loaded from localStorage: isRunning=${parsed.isRunning}`);
+          return parsed.isRunning || false;
         }
-      } catch (fallbackError) {
-        console.error('❌ Even localStorage fallback failed:', fallbackError);
+      } catch (error) {
+        console.error('❌ localStorage failed:', error);
       }
       return false;
     }
 
+    // Server-side: use Firebase Admin
     const maxRetries = 3;
     let lastError: any;
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        const doc = await this.db.collection('system').doc(this.SERVICE_STATUS_DOC).get();
-        if (doc.exists) {
-          const data = doc.data();
-          const isRunning = data?.isRunning || false;
-          console.log(`📊 Service status loaded from Firebase: isRunning=${isRunning} (attempt ${attempt})`);
-          return isRunning;
-        }
-        console.log(`📊 No service status found in Firebase, defaulting to false (attempt ${attempt})`);
-        return false;
+        // Dynamic import Firebase Admin module
+        const { loadServiceStatus } = await import('@/lib/firebase-admin');
+        const isRunning = await loadServiceStatus();
+        console.log(`📊 Service status loaded from Firebase: isRunning=${isRunning} (attempt ${attempt})`);
+        return isRunning;
       } catch (error) {
         lastError = error;
         console.warn(`⚠️ Error loading service status (attempt ${attempt}/${maxRetries}):`, error);
@@ -288,22 +186,7 @@ class AutomatedArticleGenerator {
     }
 
     console.error('❌ Failed to load service status after all retries:', lastError);
-
-    // Fallback: try to load from localStorage as backup
-    try {
-      if (typeof window !== 'undefined') {
-        const fallbackData = localStorage.getItem('article_generator_firebase_status');
-        if (fallbackData) {
-          const parsed = JSON.parse(fallbackData);
-          console.log(`💾 Service status loaded from localStorage fallback: isRunning=${parsed.isRunning}`);
-          return parsed.isRunning || false;
-        }
-      }
-    } catch (fallbackError) {
-      console.error('❌ Even localStorage fallback failed:', fallbackError);
-    }
-
-    return false; // Default to false if all retries and fallback fail
+    return false; // Default to false if all retries fail
   }
 
   /**
