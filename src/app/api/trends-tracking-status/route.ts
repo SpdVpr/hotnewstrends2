@@ -5,7 +5,7 @@ export async function GET(request: NextRequest) {
   try {
     console.log('📊 Checking trends tracking status...');
     
-    // Define the exact schedule (7 times daily)
+    // Define the exact schedule (7 times daily) - UTC times from vercel.json
     const updateSchedule = [
       { time: '07:00', description: 'First update (before first article at 08:00)' },
       { time: '09:20', description: 'Second update' },
@@ -59,16 +59,28 @@ export async function GET(request: NextRequest) {
     // Get latest trends from Firebase to check last update
     const { firebaseTrendsService } = await import('@/lib/services/firebase-trends');
     const latestTrends = await firebaseTrendsService.getLatestTrends(10);
-    
+
     // Analyze last update time
     let lastUpdateInfo = null;
     if (latestTrends.length > 0) {
       const newestTrend = latestTrends[0];
-      const lastUpdateTime = new Date(newestTrend.createdAt);
+
+      // Handle different date formats from Firebase
+      let lastUpdateTime;
+      if (newestTrend.createdAt && typeof newestTrend.createdAt === 'object' && newestTrend.createdAt.toDate) {
+        // Firebase Timestamp
+        lastUpdateTime = newestTrend.createdAt.toDate();
+      } else if (newestTrend.createdAt) {
+        // ISO string or other format
+        lastUpdateTime = new Date(newestTrend.createdAt);
+      } else {
+        lastUpdateTime = new Date();
+      }
+
       const minutesSinceUpdate = Math.floor((now.getTime() - lastUpdateTime.getTime()) / (1000 * 60));
-      
+
       lastUpdateInfo = {
-        timestamp: newestTrend.createdAt,
+        timestamp: lastUpdateTime.toISOString(),
         minutesAgo: minutesSinceUpdate,
         hoursAgo: Math.floor(minutesSinceUpdate / 60),
         trend: {
@@ -79,6 +91,39 @@ export async function GET(request: NextRequest) {
       };
     }
     
+    // Get today's trend batches to check which updates actually happened
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+
+    // Get trends from today to analyze update patterns
+    const todayTrends = latestTrends.filter(trend => {
+      let trendDate;
+      if (trend.createdAt && typeof trend.createdAt === 'object' && trend.createdAt.toDate) {
+        trendDate = trend.createdAt.toDate();
+      } else {
+        trendDate = new Date(trend.createdAt);
+      }
+      return trendDate >= todayStart && trendDate <= todayEnd;
+    });
+
+    // Group trends by hour to detect update batches
+    const updateBatches = new Map();
+    todayTrends.forEach(trend => {
+      let trendDate;
+      if (trend.createdAt && typeof trend.createdAt === 'object' && trend.createdAt.toDate) {
+        trendDate = trend.createdAt.toDate();
+      } else {
+        trendDate = new Date(trend.createdAt);
+      }
+      const hour = trendDate.getUTCHours();
+      if (!updateBatches.has(hour)) {
+        updateBatches.set(hour, []);
+      }
+      updateBatches.get(hour).push(trend);
+    });
+
     // Determine update status for each scheduled time
     const scheduleWithStatus = updateSchedule.map(schedule => {
       const [utcHours, utcMinutes] = schedule.time.split(':').map(Number);
@@ -89,9 +134,9 @@ export async function GET(request: NextRequest) {
       const pragueScheduleTime = new Date(utcScheduleTime.toLocaleString("en-US", {timeZone: "Europe/Prague"}));
       const pragueHours = pragueScheduleTime.getHours();
       const pragueMinutes = pragueScheduleTime.getMinutes();
-      const scheduleTimeMinutes = pragueHours * 60 + pragueMinutes; // Use Prague time for comparison
+      const scheduleTimeMinutes = pragueHours * 60 + pragueMinutes;
 
-      // Check if this update should have happened today (using Prague time)
+      // Check if this update should have happened today
       const isPast = scheduleTimeMinutes < currentTimeMinutes;
       const isCurrent = Math.abs(scheduleTimeMinutes - currentTimeMinutes) <= 30; // Within 30 minutes
       const isNext = schedule === nextUpdate;
@@ -102,26 +147,15 @@ export async function GET(request: NextRequest) {
       let statusText = 'Pending';
 
       if (isPast) {
-        // Check if update actually happened (within 2 hours of scheduled time)
-        if (lastUpdateInfo) {
-          const updateTime = new Date(lastUpdateInfo.timestamp);
-          // Convert update time to Prague time for comparison
-          const updatePragueTime = new Date(updateTime.toLocaleString("en-US", {timeZone: "Europe/Prague"}));
-          const updatePragueHour = updatePragueTime.getHours();
-          const updatePragueMinute = updatePragueTime.getMinutes();
-          const updateTimeMinutes = updatePragueHour * 60 + updatePragueMinute;
+        // Check if we have trends from around this scheduled time (within 2 hours)
+        const hasUpdateBatch = updateBatches.has(utcHours) ||
+                              updateBatches.has(utcHours - 1) ||
+                              updateBatches.has(utcHours + 1);
 
-          // If last update was within 2 hours of this scheduled time (in Prague time)
-          const timeDiff = Math.abs(updateTimeMinutes - scheduleTimeMinutes);
-          if (timeDiff <= 120) { // Within 2 hours
-            status = 'completed';
-            indicator = '✅';
-            statusText = `Completed (${Math.floor(timeDiff)} min ${timeDiff > scheduleTimeMinutes ? 'late' : 'early'})`;
-          } else {
-            status = 'missed';
-            indicator = '❌';
-            statusText = 'Missed';
-          }
+        if (hasUpdateBatch) {
+          status = 'completed';
+          indicator = '✅';
+          statusText = 'Completed';
         } else {
           status = 'missed';
           indicator = '❌';

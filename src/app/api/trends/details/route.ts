@@ -16,11 +16,43 @@ export async function POST(request: NextRequest) {
 
     console.log(`📊 Getting detailed analysis for: ${keyword}`);
 
+    // Check SerpAPI rate limits before making calls (this endpoint uses 2 calls)
+    const { serpApiMonitor } = await import('@/lib/utils/serpapi-monitor');
+
+    if (!serpApiMonitor.canMakeCall()) {
+      console.warn('🚫 SerpAPI rate limit reached for trends details');
+      return NextResponse.json({
+        success: false,
+        error: 'SerpAPI rate limit reached. Please try again later.',
+        rateLimitInfo: serpApiMonitor.getUsageStats()
+      }, { status: 429 });
+    }
+
+    // Check if we have enough quota for 2 calls
+    const stats = serpApiMonitor.getUsageStats();
+    if (stats.today.count >= stats.today.limit - 1) {
+      console.warn('🚫 Not enough SerpAPI quota for trends details (needs 2 calls)');
+      return NextResponse.json({
+        success: false,
+        error: 'Not enough SerpAPI quota remaining for detailed analysis (requires 2 calls)',
+        rateLimitInfo: stats
+      }, { status: 429 });
+    }
+
+    console.log(`📊 SerpAPI quota check passed: ${stats.today.count}/${stats.today.limit} used today`);
+
     // Get multiple data points in parallel
     const [interestOverTime, relatedQueries] = await Promise.allSettled([
       googleTrendsService.getInterestOverTime(keyword, timeframe, region),
       googleTrendsService.getRelatedQueries(keyword, region)
     ]);
+
+    // Log SerpAPI usage for this endpoint (2 calls made)
+    let successfulCalls = 0;
+    if (interestOverTime.status === 'fulfilled') successfulCalls++;
+    if (relatedQueries.status === 'fulfilled') successfulCalls++;
+
+    console.log(`📊 Trends details completed: ${successfulCalls}/2 SerpAPI calls successful for "${keyword}"`);
 
     const result = {
       keyword,

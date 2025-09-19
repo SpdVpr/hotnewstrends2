@@ -27,42 +27,136 @@ export const googleTrendsService = {
   },
 
   async getInterestOverTime(keyword: string, timeframe: string, region: string) {
+    const startTime = Date.now();
+
     try {
       const serpApiKey = process.env.SERPAPI_KEY;
       if (!serpApiKey) {
         console.warn('⚠️ SERPAPI_KEY not found, returning empty data');
+
+        // Log failed call
+        const { serpApiLogger } = await import('@/lib/utils/serpapi-logger');
+        serpApiLogger.logCall({
+          timestamp: new Date().toISOString(),
+          endpoint: '/api/trends/details (getInterestOverTime)',
+          keyword,
+          region,
+          engine: 'google_trends',
+          success: false,
+          error: 'SERPAPI_KEY not found',
+          responseTime: Date.now() - startTime
+        });
+
         return { data: [] };
       }
 
       const response = await fetch(`https://serpapi.com/search?engine=google_trends&q=${encodeURIComponent(keyword)}&geo=${region}&api_key=${serpApiKey}`);
       const data = await response.json();
 
+      const responseTime = Date.now() - startTime;
+      const success = response.ok && !data.error;
+
+      // Log the call
+      const { serpApiLogger } = await import('@/lib/utils/serpapi-logger');
+      serpApiLogger.logCall({
+        timestamp: new Date().toISOString(),
+        endpoint: '/api/trends/details (getInterestOverTime)',
+        keyword,
+        region,
+        engine: 'google_trends',
+        success,
+        error: data.error || (!response.ok ? `HTTP ${response.status}` : undefined),
+        responseTime
+      });
+
       return { data: data.interest_over_time?.timeline_data || [] };
     } catch (error) {
       console.error('Error fetching interest over time:', error);
+
+      // Log failed call
+      const { serpApiLogger } = await import('@/lib/utils/serpapi-logger');
+      serpApiLogger.logCall({
+        timestamp: new Date().toISOString(),
+        endpoint: '/api/trends/details (getInterestOverTime)',
+        keyword,
+        region,
+        engine: 'google_trends',
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        responseTime: Date.now() - startTime
+      });
+
       return { data: [] };
     }
   },
 
   async getRelatedQueries(keyword: string, region: string) {
+    const startTime = Date.now();
+
     try {
       const serpApiKey = process.env.SERPAPI_KEY;
       if (!serpApiKey) {
         console.warn('⚠️ SERPAPI_KEY not found, returning empty data');
+
+        // Log failed call
+        const { serpApiLogger } = await import('@/lib/utils/serpapi-logger');
+        serpApiLogger.logCall({
+          timestamp: new Date().toISOString(),
+          endpoint: '/api/trends/details (getRelatedQueries)',
+          keyword,
+          region,
+          engine: 'google_trends',
+          success: false,
+          error: 'SERPAPI_KEY not found',
+          responseTime: Date.now() - startTime
+        });
+
         return { queries: [] };
       }
 
       const response = await fetch(`https://serpapi.com/search?engine=google_trends&q=${encodeURIComponent(keyword)}&geo=${region}&api_key=${serpApiKey}`);
       const data = await response.json();
 
+      const responseTime = Date.now() - startTime;
+      const success = response.ok && !data.error;
+
+      // Log the call
+      const { serpApiLogger } = await import('@/lib/utils/serpapi-logger');
+      serpApiLogger.logCall({
+        timestamp: new Date().toISOString(),
+        endpoint: '/api/trends/details (getRelatedQueries)',
+        keyword,
+        region,
+        engine: 'google_trends',
+        success,
+        error: data.error || (!response.ok ? `HTTP ${response.status}` : undefined),
+        responseTime
+      });
+
       return { queries: data.related_queries?.top || [] };
     } catch (error) {
       console.error('Error fetching related queries:', error);
+
+      // Log failed call
+      const { serpApiLogger } = await import('@/lib/utils/serpapi-logger');
+      serpApiLogger.logCall({
+        timestamp: new Date().toISOString(),
+        endpoint: '/api/trends/details (getRelatedQueries)',
+        keyword,
+        region,
+        engine: 'google_trends',
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        responseTime: Date.now() - startTime
+      });
+
       return { queries: [] };
     }
   },
 
   async getDailyTrends(region: string) {
+    const startTime = Date.now();
+
     try {
       console.log(`🔍 Fetching daily trends for region: ${region}`);
 
@@ -74,7 +168,22 @@ export const googleTrendsService = {
           const response = await fetch(`https://serpapi.com/search?engine=google_trends_trending_now&geo=${region}&api_key=${serpApiKey}`);
           const data = await response.json();
 
-          // Record successful SerpAPI call
+          const responseTime = Date.now() - startTime;
+          const success = response.ok && !data.error && data.trending_searches;
+
+          // Log the call with detailed info
+          const { serpApiLogger } = await import('@/lib/utils/serpapi-logger');
+          serpApiLogger.logCall({
+            timestamp: new Date().toISOString(),
+            endpoint: 'getDailyTrends',
+            region,
+            engine: 'google_trends_trending_now',
+            success,
+            error: data.error || (!response.ok ? `HTTP ${response.status}` : (!data.trending_searches ? 'No trending_searches in response' : undefined)),
+            responseTime
+          });
+
+          // Record successful SerpAPI call (legacy system)
           try {
             const baseUrl = process.env.VERCEL_URL
               ? `https://${process.env.VERCEL_URL}`
