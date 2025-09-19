@@ -53,9 +53,31 @@ export async function POST(request: NextRequest) {
           message: 'FORCE STOP: Automated article generator stopped'
         });
 
+      case 'restart':
+        console.log('🔄 Restarting automated article generator...');
+        automatedArticleGenerator.restart();
+        return NextResponse.json({
+          success: true,
+          message: 'Automated article generator restarted'
+        });
+
+      case 'health_check':
+        const isActuallyRunning = automatedArticleGenerator.isActuallyRunning();
+        const stats = await automatedArticleGenerator.getStats();
+
+        return NextResponse.json({
+          success: true,
+          data: {
+            isActuallyRunning,
+            stats,
+            hasInterval: !!automatedArticleGenerator.intervalIdForDebug,
+            intervalId: automatedArticleGenerator.intervalIdForDebug ? 'ACTIVE' : 'NONE'
+          }
+        });
+
       default:
         return NextResponse.json(
-          { success: false, error: 'Invalid action' },
+          { success: false, error: 'Invalid action. Available: start, stop, force_stop, restart, health_check' },
           { status: 400 }
         );
     }

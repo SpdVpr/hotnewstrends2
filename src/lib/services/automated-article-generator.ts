@@ -110,8 +110,13 @@ class AutomatedArticleGenerator {
     this.checkScheduledArticles();
 
     // Set up interval to check for scheduled articles (NOT generate every interval!)
-    this.intervalId = setInterval(() => {
-      this.checkScheduledArticles();
+    this.intervalId = setInterval(async () => {
+      try {
+        await this.checkScheduledArticles();
+      } catch (error) {
+        console.error('❌ Error in scheduled check interval:', error);
+        // Don't stop the interval, just log the error and continue
+      }
     }, this.CHECK_INTERVAL);
 
     console.log(`✅ Article scheduler started (checking every ${this.CHECK_INTERVAL / 60000} minutes)`);
@@ -127,13 +132,32 @@ class AutomatedArticleGenerator {
     }
 
     this.isRunning = false;
-    
+
     if (this.intervalId) {
       clearInterval(this.intervalId);
       this.intervalId = undefined;
     }
 
     console.log('🛑 Automated article generation stopped');
+  }
+
+  /**
+   * Restart automated article generation (useful for recovery)
+   */
+  restart(): void {
+    console.log('🔄 Restarting automated article generation...');
+    this.stop();
+    // Small delay to ensure cleanup
+    setTimeout(() => {
+      this.start();
+    }, 1000);
+  }
+
+  /**
+   * Check if the service is actually running (both flag and interval)
+   */
+  isActuallyRunning(): boolean {
+    return this.isRunning && !!this.intervalId;
   }
 
   /**
@@ -728,6 +752,15 @@ class AutomatedArticleGenerator {
       }
     }
 
+    // Check if we're actually running (both flag and interval must be active)
+    const actuallyRunning = this.isRunning && !!this.intervalId;
+
+    // If flag says running but no interval, fix the inconsistency
+    if (this.isRunning && !this.intervalId) {
+      console.warn('⚠️ Inconsistent state detected: isRunning=true but no intervalId. Fixing...');
+      this.isRunning = false;
+    }
+
     return {
       totalJobs: jobs.length,
       pendingJobs: jobs.filter(j => j.status === 'pending').length,
@@ -736,9 +769,9 @@ class AutomatedArticleGenerator {
       failedJobs: jobs.filter(j => j.status === 'failed').length,
       rejectedJobs: jobs.filter(j => j.status === 'rejected').length,
       todayJobs,
-      isRunning: this.isRunning,
+      isRunning: actuallyRunning,
       lastRun: jobs.length > 0 ? jobs[jobs.length - 1].createdAt : undefined,
-      nextRun: this.isRunning ? new Date(Date.now() + this.CHECK_INTERVAL).toISOString() : undefined,
+      nextRun: actuallyRunning ? new Date(Date.now() + this.CHECK_INTERVAL).toISOString() : undefined,
       dailyPlan,
       nextScheduledJob,
       nextArticleInfo

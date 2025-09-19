@@ -136,16 +136,35 @@ export default function AdminPage() {
 
   const fetchData = async () => {
     try {
-      const [statsRes, jobsRes, schedulerRes, dailyPlanRes] = await Promise.all([
+      const [statsRes, jobsRes, schedulerRes, dailyPlanRes, healthRes] = await Promise.all([
         fetch('/api/automation'),
         fetch('/api/automation/jobs?limit=20'),
         fetch('/api/trends/scheduler'),
-        fetch('/api/daily-plan')
+        fetch('/api/daily-plan'),
+        fetch('/api/automation', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'health_check' })
+        })
       ]);
 
       if (statsRes.ok) {
         const statsData = await statsRes.json();
         setStats(statsData.data);
+      }
+
+      // Process health check data
+      if (healthRes.ok) {
+        const healthData = await healthRes.json();
+        console.log('🔍 Health Check:', healthData.data);
+
+        // If health check shows inconsistent state, update stats
+        if (healthData.data && healthData.data.isActuallyRunning !== undefined) {
+          setStats(prev => prev ? {
+            ...prev,
+            isRunning: healthData.data.isActuallyRunning
+          } : prev);
+        }
       }
 
       if (jobsRes.ok) {
@@ -382,19 +401,52 @@ export default function AdminPage() {
                       )}
                     </Button>
 
-                    <Button
-                      onClick={handleForceStop}
-                      disabled={actionLoading === 'force-stop'}
-                      variant="destructive"
-                      size="sm"
-                      className="w-full"
-                    >
-                      {actionLoading === 'force-stop' ? (
-                        <LoadingSpinner size="sm" />
-                      ) : (
-                        '🛑 FORCE STOP ALL'
-                      )}
-                    </Button>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button
+                        onClick={() => handleAutomationAction('restart')}
+                        disabled={actionLoading === 'restart'}
+                        variant="outline"
+                        size="sm"
+                      >
+                        {actionLoading === 'restart' ? (
+                          <LoadingSpinner size="sm" />
+                        ) : (
+                          '🔄 Restart'
+                        )}
+                      </Button>
+
+                      <Button
+                        onClick={handleForceStop}
+                        disabled={actionLoading === 'force-stop'}
+                        variant="destructive"
+                        size="sm"
+                      >
+                        {actionLoading === 'force-stop' ? (
+                          <LoadingSpinner size="sm" />
+                        ) : (
+                          '🛑 FORCE STOP'
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* System Status */}
+                  <div className="bg-gray-50 p-3 rounded-lg">
+                    <div className="text-xs font-medium text-gray-600 mb-2">System Status</div>
+                    <div className="space-y-1 text-xs">
+                      <div className="flex justify-between">
+                        <span>Service Status:</span>
+                        <span className={`font-medium ${stats?.isRunning ? 'text-green-600' : 'text-red-600'}`}>
+                          {stats?.isRunning ? '🟢 Running' : '🔴 Stopped'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Last Check:</span>
+                        <span className="font-medium text-gray-700">
+                          {new Date().toLocaleTimeString()}
+                        </span>
+                      </div>
+                    </div>
                   </div>
 
                   {/* Article Status */}
