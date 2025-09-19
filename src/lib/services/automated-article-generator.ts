@@ -61,31 +61,34 @@ class AutomatedArticleGenerator {
   private intervalId?: NodeJS.Timeout;
   private readonly SERVICE_STATUS_DOC = 'article_generator_service_status';
   private db: any = null; // Firebase Admin Firestore instance
-
-  constructor() {
-    this.initializeFirebaseAdmin();
-  }
+  private firebaseInitialized = false;
 
   /**
-   * Initialize Firebase Admin SDK for server-side operations
+   * Lazy initialize Firebase Admin SDK only when needed and only on server-side
    */
-  private async initializeFirebaseAdmin(): Promise<void> {
+  private async ensureFirebaseAdmin(): Promise<boolean> {
+    // Skip on client-side
+    if (typeof window !== 'undefined') {
+      return false;
+    }
+
+    // Return cached result if already attempted
+    if (this.firebaseInitialized) {
+      return this.db !== null;
+    }
+
     try {
-      // Only initialize on server-side
-      if (typeof window !== 'undefined') {
-        console.log('🔥 Skipping Firebase Admin initialization on client-side');
-        return;
-      }
+      console.log('🔥 Lazy initializing Firebase Admin SDK...');
 
-      console.log('🔥 Initializing Firebase Admin SDK...');
-
+      // Dynamic import to avoid bundling issues
       const admin = await import('firebase-admin');
 
       // Check if already initialized
       if (admin.apps.length > 0) {
         console.log('🔥 Firebase Admin already initialized, using existing instance');
         this.db = admin.firestore();
-        return;
+        this.firebaseInitialized = true;
+        return true;
       }
 
       // Get service account key from environment
@@ -94,7 +97,8 @@ class AutomatedArticleGenerator {
       if (!serviceAccountKey) {
         console.error('❌ FIREBASE_SERVICE_ACCOUNT_KEY environment variable not found');
         console.error('❌ Firebase Admin initialization failed - service account key missing');
-        return;
+        this.firebaseInitialized = true;
+        return false;
       }
 
       console.log('🔍 Parsing Firebase service account key...');
@@ -107,7 +111,8 @@ class AutomatedArticleGenerator {
       } catch (parseError) {
         console.error('❌ Failed to parse FIREBASE_SERVICE_ACCOUNT_KEY:', parseError);
         console.error('❌ Make sure the environment variable contains valid JSON');
-        return;
+        this.firebaseInitialized = true;
+        return false;
       }
 
       // Initialize Firebase Admin
@@ -118,13 +123,17 @@ class AutomatedArticleGenerator {
       });
 
       this.db = admin.firestore();
+      this.firebaseInitialized = true;
       console.log('✅ Firebase Admin SDK initialized successfully');
       console.log('✅ Firestore database connection established');
+      return true;
 
     } catch (error) {
       console.error('❌ Firebase Admin initialization failed:', error);
       console.error('❌ Stack trace:', error.stack);
       this.db = null;
+      this.firebaseInitialized = true;
+      return false;
     }
   }
 
@@ -164,8 +173,9 @@ class AutomatedArticleGenerator {
    * Store service status in Firebase (for serverless persistence)
    */
   private async storeServiceStatus(isRunning: boolean): Promise<void> {
-    // Check if Firebase is initialized
-    if (!this.db) {
+    // Ensure Firebase Admin is initialized
+    const firebaseReady = await this.ensureFirebaseAdmin();
+    if (!firebaseReady || !this.db) {
       console.error('❌ Firebase not initialized, cannot store service status');
       // Fallback to localStorage immediately
       try {
@@ -232,8 +242,9 @@ class AutomatedArticleGenerator {
    * Load service status from Firebase (for serverless persistence)
    */
   private async loadServiceStatus(): Promise<boolean> {
-    // Check if Firebase is initialized
-    if (!this.db) {
+    // Ensure Firebase Admin is initialized
+    const firebaseReady = await this.ensureFirebaseAdmin();
+    if (!firebaseReady || !this.db) {
       console.error('❌ Firebase not initialized, cannot load service status');
       // Fallback to localStorage immediately
       try {
