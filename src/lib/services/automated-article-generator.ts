@@ -325,23 +325,19 @@ class AutomatedArticleGenerator {
         return;
       }
 
-      // Only process articles if we're at the start of an hour (within first 10 minutes)
-      if (currentMinute <= 10) {
-        console.log(`⏰ It's ${currentHour}:${currentMinute.toString().padStart(2, '0')} - checking for article #${currentHour + 1} to generate`);
+      // Process articles for current hour (remove minute restriction for testing)
+      console.log(`⏰ It's ${currentHour}:${currentMinute.toString().padStart(2, '0')} - checking for article #${currentHour + 1} to generate`);
 
-        try {
-          await this.processScheduledJobs();
-        } catch (jobsError) {
-          console.error('❌ Error processing scheduled jobs:', jobsError);
+      try {
+        await this.processScheduledJobs();
+      } catch (jobsError) {
+        console.error('❌ Error processing scheduled jobs:', jobsError);
 
-          // Check if it's a Firebase connection error
-          if (this.isFirebaseConnectionError(jobsError)) {
-            console.warn('🔥 Firebase connection error in processScheduledJobs, attempting to recover...');
-            await this.handleFirebaseError();
-          }
+        // Check if it's a Firebase connection error
+        if (this.isFirebaseConnectionError(jobsError)) {
+          console.warn('🔥 Firebase connection error in processScheduledJobs, attempting to recover...');
+          await this.handleFirebaseError();
         }
-      } else {
-        console.log(`⏳ It's ${currentHour}:${currentMinute.toString().padStart(2, '0')} - waiting for next hour (articles generate at :00)`);
       }
 
     } catch (error) {
