@@ -61,6 +61,31 @@ class AutomatedArticleGenerator {
   private intervalId?: NodeJS.Timeout;
 
   /**
+   * Safe date creation with validation
+   */
+  private createSafeDate(dateInput: any): Date | null {
+    try {
+      const date = new Date(dateInput);
+      if (isNaN(date.getTime())) {
+        console.warn('⚠️ Invalid date input:', dateInput);
+        return null;
+      }
+      return date;
+    } catch (error) {
+      console.warn('⚠️ Error creating date from:', dateInput, error);
+      return null;
+    }
+  }
+
+  /**
+   * Safe ISO string creation
+   */
+  private createSafeISOString(dateInput: any): string {
+    const date = this.createSafeDate(dateInput);
+    return date ? date.toISOString() : new Date().toISOString();
+  }
+
+  /**
    * Get interval ID for debugging
    */
   get intervalIdForDebug(): NodeJS.Timeout | undefined {
@@ -651,29 +676,52 @@ class AutomatedArticleGenerator {
     const todayJobs = this.getTodayJobCount();
     const dailyPlan = await this.getCurrentDailyPlan();
 
-    // Find next scheduled job
+    // Find next scheduled job (with safe date parsing)
     const nextScheduledJob = dailyPlan?.jobs
-      .filter(job => job.status === 'pending' && job.scheduledAt)
-      .sort((a, b) => new Date(a.scheduledAt!).getTime() - new Date(b.scheduledAt!).getTime())[0];
+      .filter(job => {
+        if (job.status !== 'pending' || !job.scheduledAt) return false;
+        // Validate scheduledAt is a valid date string
+        try {
+          const testDate = new Date(job.scheduledAt);
+          return !isNaN(testDate.getTime());
+        } catch {
+          return false;
+        }
+      })
+      .sort((a, b) => {
+        try {
+          return new Date(a.scheduledAt!).getTime() - new Date(b.scheduledAt!).getTime();
+        } catch {
+          return 0;
+        }
+      })[0];
 
-    // Calculate time until next article
+    // Calculate time until next article (with safe date parsing)
     let timeUntilNext = null;
     let nextArticleInfo = null;
-    if (nextScheduledJob) {
-      const now = new Date();
-      const nextTime = new Date(nextScheduledJob.scheduledAt!);
-      const diffMs = nextTime.getTime() - now.getTime();
+    if (nextScheduledJob && nextScheduledJob.scheduledAt) {
+      try {
+        const now = new Date();
+        const nextTime = new Date(nextScheduledJob.scheduledAt);
 
-      if (diffMs > 0) {
-        const hours = Math.floor(diffMs / (1000 * 60 * 60));
-        const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-        timeUntilNext = `${hours}h ${minutes}m`;
-        nextArticleInfo = {
-          position: nextScheduledJob.position,
-          title: nextScheduledJob.trend.title,
-          scheduledAt: nextScheduledJob.scheduledAt,
-          timeUntil: timeUntilNext
-        };
+        // Validate the date is valid
+        if (!isNaN(nextTime.getTime())) {
+          const diffMs = nextTime.getTime() - now.getTime();
+
+          if (diffMs > 0) {
+            const hours = Math.floor(diffMs / (1000 * 60 * 60));
+            const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+            timeUntilNext = `${hours}h ${minutes}m`;
+            nextArticleInfo = {
+              position: nextScheduledJob.position,
+              title: nextScheduledJob.trend.title,
+              scheduledAt: nextScheduledJob.scheduledAt,
+              timeUntil: timeUntilNext
+            };
+          }
+        }
+      } catch (error) {
+        console.warn('⚠️ Error calculating time until next article:', error);
       }
     }
 
@@ -687,7 +735,7 @@ class AutomatedArticleGenerator {
       todayJobs,
       isRunning: this.isRunning,
       lastRun: jobs.length > 0 ? jobs[jobs.length - 1].createdAt : undefined,
-      nextRun: this.isRunning ? new Date(Date.now() + this.GENERATION_INTERVAL).toISOString() : undefined,
+      nextRun: this.isRunning ? new Date(Date.now() + this.CHECK_INTERVAL).toISOString() : undefined,
       dailyPlan,
       nextScheduledJob,
       nextArticleInfo
