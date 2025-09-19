@@ -564,12 +564,19 @@ class AutomatedArticleGenerator {
       return;
     }
 
-    // Check if this job is scheduled for current hour
+    // Check if this job is ready to be processed (scheduled time has passed)
     const scheduledTime = new Date(currentHourJob.scheduledAt!);
-    const scheduledHour = scheduledTime.getHours(); // Use local time, not UTC
+    const now = new Date();
 
-    if (scheduledHour !== currentHour) {
-      console.log(`⏰ Job #${currentHourJob.position} is scheduled for hour ${scheduledHour}, but current hour is ${currentHour}`);
+    console.log(`🕐 Job #${currentHourJob.position} scheduled for: ${scheduledTime.toISOString()}`);
+    console.log(`🕐 Current time: ${now.toISOString()}`);
+    console.log(`🕐 Time difference: ${Math.round((now.getTime() - scheduledTime.getTime()) / (1000 * 60))} minutes`);
+
+    // Check if scheduled time has passed (with 5 minute buffer for processing delays)
+    const bufferMs = 5 * 60 * 1000; // 5 minutes
+    if (now.getTime() < (scheduledTime.getTime() - bufferMs)) {
+      const minutesUntilScheduled = Math.round((scheduledTime.getTime() - now.getTime()) / (1000 * 60));
+      console.log(`⏰ Job #${currentHourJob.position} is scheduled for ${scheduledTime.toLocaleString()}, but it's ${minutesUntilScheduled} minutes too early`);
       return;
     }
 
