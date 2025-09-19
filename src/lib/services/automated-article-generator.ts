@@ -186,10 +186,18 @@ class AutomatedArticleGenerator {
   }
 
   /**
-   * Check if the service is actually running (both flag and interval)
+   * Check if the service is actually running (considers production vs development mode)
    */
   isActuallyRunning(): boolean {
-    return this.isRunning && !!this.intervalId;
+    const isProduction = process.env.NODE_ENV === 'production' && process.env.VERCEL;
+
+    if (isProduction) {
+      // In production, we rely on Vercel cron jobs, so only check the flag
+      return this.isRunning;
+    } else {
+      // In development, we need both flag and interval
+      return this.isRunning && !!this.intervalId;
+    }
   }
 
   /**
@@ -798,12 +806,13 @@ class AutomatedArticleGenerator {
       }
     }
 
-    // Check if we're actually running (both flag and interval must be active)
-    const actuallyRunning = this.isRunning && !!this.intervalId;
+    // Check if we're actually running (considers production vs development mode)
+    const actuallyRunning = this.isActuallyRunning();
 
-    // If flag says running but no interval, fix the inconsistency
-    if (this.isRunning && !this.intervalId) {
-      console.warn('⚠️ Inconsistent state detected: isRunning=true but no intervalId. Fixing...');
+    // Only fix inconsistency in development mode
+    const isProduction = process.env.NODE_ENV === 'production' && process.env.VERCEL;
+    if (!isProduction && this.isRunning && !this.intervalId) {
+      console.warn('⚠️ Inconsistent state detected in development: isRunning=true but no intervalId. Fixing...');
       this.isRunning = false;
     }
 
