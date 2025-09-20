@@ -1452,14 +1452,27 @@ class AutomatedArticleGenerator {
       const processedPercentage = (processedTopicsCount / currentPlan.jobs.length) * 100;
       console.log(`📊 Daily plan analysis: ${processedTopicsCount}/${currentPlan.jobs.length} jobs are processed topics (${processedPercentage.toFixed(1)}%)`);
 
-      // If more than 30% of jobs are processed topics, create fresh plan
-      const threshold = 30;
-      const needsFresh = processedPercentage > threshold;
+      // Check how many jobs are completed/rejected (not just processed topics)
+      const completedJobs = currentPlan.jobs.filter(job =>
+        job.status === 'completed' || job.status === 'rejected'
+      ).length;
+      const completedPercentage = (completedJobs / currentPlan.jobs.length) * 100;
+
+      console.log(`📊 Daily plan status: ${completedJobs}/${currentPlan.jobs.length} jobs completed (${completedPercentage.toFixed(1)}%)`);
+      console.log(`📊 Processed topics: ${processedTopicsCount}/${currentPlan.jobs.length} (${processedPercentage.toFixed(1)}%)`);
+
+      // If more than 80% of jobs are completed OR more than 50% are processed topics, create fresh plan
+      const completedThreshold = 80;
+      const processedThreshold = 50;
+      const needsFresh = completedPercentage > completedThreshold || processedPercentage > processedThreshold;
 
       if (needsFresh) {
-        console.log(`🔄 ${processedPercentage.toFixed(1)}% processed topics > ${threshold}% threshold - will create fresh plan`);
+        const reason = completedPercentage > completedThreshold ?
+          `${completedPercentage.toFixed(1)}% completed > ${completedThreshold}%` :
+          `${processedPercentage.toFixed(1)}% processed topics > ${processedThreshold}%`;
+        console.log(`🔄 ${reason} - will create fresh plan`);
       } else {
-        console.log(`✅ ${processedPercentage.toFixed(1)}% processed topics <= ${threshold}% threshold - will update existing plan`);
+        console.log(`✅ ${completedPercentage.toFixed(1)}% completed <= ${completedThreshold}% AND ${processedPercentage.toFixed(1)}% processed <= ${processedThreshold}% - will update existing plan`);
       }
 
       return needsFresh;
@@ -1487,11 +1500,14 @@ class AutomatedArticleGenerator {
 
       console.log(`📋 Found existing daily plan with ${currentPlan.jobs.length} jobs`);
 
-      // Determine current time and which articles are already generated
+      // Determine current Prague time and which articles are already generated
       const now = new Date();
-      const currentHour = now.getHours();
-      const currentMinute = now.getMinutes();
+      const pragueTime = new Date(now.toLocaleString("en-US", {timeZone: "Europe/Prague"}));
+      const currentHour = pragueTime.getHours();
+      const currentMinute = pragueTime.getMinutes();
       const currentTimeMinutes = currentHour * 60 + currentMinute;
+
+      console.log(`🕐 Current Prague time: ${pragueTime.toLocaleString()} (${currentHour}:${currentMinute.toString().padStart(2, '0')})`);
 
       // Find articles that are already generated (past their scheduled time)
       const preservedJobs = [];
@@ -1507,7 +1523,7 @@ class AutomatedArticleGenerator {
         }
 
         try {
-          // Parse ISO timestamp to get time
+          // Parse ISO timestamp and convert to Prague time
           const scheduledTime = new Date(job.scheduledAt);
           if (isNaN(scheduledTime.getTime())) {
             console.warn(`⚠️ Job #${job.position} has invalid scheduledAt format: "${job.scheduledAt}"`);
@@ -1515,16 +1531,18 @@ class AutomatedArticleGenerator {
             continue;
           }
 
-          const jobTimeMinutes = scheduledTime.getHours() * 60 + scheduledTime.getMinutes();
+          // Convert UTC scheduled time to Prague time for comparison
+          const scheduledPragueTime = new Date(scheduledTime.getTime() + (2 * 60 * 60 * 1000));
+          const jobTimeMinutes = scheduledPragueTime.getHours() * 60 + scheduledPragueTime.getMinutes();
 
           if (jobTimeMinutes <= currentTimeMinutes) {
             // This article should already be generated or is being generated now
             preservedJobs.push(job);
-            console.log(`✅ Preserving job #${job.position}: "${job.trend?.title || 'Unknown'}" (${scheduledTime.toLocaleTimeString()})`);
+            console.log(`✅ Preserving job #${job.position}: "${job.trend?.title || 'Unknown'}" (Prague: ${scheduledPragueTime.toLocaleTimeString()})`);
           } else {
             // This article is in the future - will be updated
             futureJobs.push(job);
-            console.log(`🔄 Will update job #${job.position}: "${job.trend?.title || 'Unknown'}" (${scheduledTime.toLocaleTimeString()})`);
+            console.log(`🔄 Will update job #${job.position}: "${job.trend?.title || 'Unknown'}" (Prague: ${scheduledPragueTime.toLocaleTimeString()})`);
           }
         } catch (error) {
           console.error(`❌ Error parsing scheduledTime for job #${job.position}:`, error);
