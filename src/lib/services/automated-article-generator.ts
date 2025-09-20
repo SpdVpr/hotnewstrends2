@@ -514,9 +514,16 @@ class AutomatedArticleGenerator {
         // Create scheduled time for the target date (every hour starting from 00:00 Prague time)
         // Create a date in Prague timezone for the specific hour
         const scheduledHour = startHour + (i * intervalHours); // Every hour: 0, 1, 2, 3...
+
+        // Create UTC time that corresponds to Prague time
+        // If we want 00:00 Prague time, we need 22:00 UTC (Prague is UTC+2)
+        const [year, month, day] = date.split('-').map(Number);
+        const pragueOffset = 2; // Prague is UTC+2
+
+        // Create UTC time that will be the desired Prague time
         const scheduledTime = new Date();
-        scheduledTime.setFullYear(parseInt(date.split('-')[0]), parseInt(date.split('-')[1]) - 1, parseInt(date.split('-')[2]));
-        scheduledTime.setHours(scheduledHour, 0, 0, 0); // Set to exact hour in local time
+        scheduledTime.setUTCFullYear(year, month - 1, day);
+        scheduledTime.setUTCHours(scheduledHour - pragueOffset, 0, 0, 0);
 
         const job: ArticleGenerationJob = {
           id: `job_${date}_${i + 1}_${trend.title.replace(/[^a-zA-Z0-9]/g, '_')}`,
@@ -1579,9 +1586,15 @@ class AutomatedArticleGenerator {
             console.warn(`⚠️ Job #${job.position} missing scheduledAt, creating new one`);
             // Create scheduled time for hourly generation (0:00, 1:00, 2:00, etc.)
             const scheduledHour = (job.position - 1) % 24; // Position 1 = hour 0, position 2 = hour 1, etc.
+
+            // Create UTC time that corresponds to Prague time
+            const [year, month, day] = date.split('-').map(Number);
+            const pragueOffset = 2; // Prague is UTC+2
+
+            // Create UTC time that will be the desired Prague time
             const scheduledTime = new Date();
-            scheduledTime.setFullYear(parseInt(date.split('-')[0]), parseInt(date.split('-')[1]) - 1, parseInt(date.split('-')[2]));
-            scheduledTime.setHours(scheduledHour, 0, 0, 0); // Set to exact hour in local time
+            scheduledTime.setUTCFullYear(year, month - 1, day);
+            scheduledTime.setUTCHours(scheduledHour - pragueOffset, 0, 0, 0);
             scheduledAt = scheduledTime.toISOString();
           }
 
@@ -1600,9 +1613,15 @@ class AutomatedArticleGenerator {
             console.warn(`⚠️ Job #${job.position} missing scheduledAt, creating new one`);
             // Create scheduled time for hourly generation (0:00, 1:00, 2:00, etc.)
             const scheduledHour = (job.position - 1) % 24; // Position 1 = hour 0, position 2 = hour 1, etc.
+
+            // Create UTC time that corresponds to Prague time
+            const [year, month, day] = date.split('-').map(Number);
+            const pragueOffset = 2; // Prague is UTC+2
+
+            // Create UTC time that will be the desired Prague time
             const scheduledTime = new Date();
-            scheduledTime.setFullYear(parseInt(date.split('-')[0]), parseInt(date.split('-')[1]) - 1, parseInt(date.split('-')[2]));
-            scheduledTime.setHours(scheduledHour, 0, 0, 0); // Set to exact hour in local time
+            scheduledTime.setUTCFullYear(year, month - 1, day);
+            scheduledTime.setUTCHours(scheduledHour - pragueOffset, 0, 0, 0);
             scheduledAt = scheduledTime.toISOString();
           }
 
@@ -1720,9 +1739,15 @@ class AutomatedArticleGenerator {
         // Create scheduled time for the target date (every hour starting from 00:00 Prague time)
         // Create a date in Prague timezone for the specific hour
         const scheduledHour = startHour + (i * intervalHours); // Every hour: 0, 1, 2, 3...
+
+        // Create UTC time that corresponds to Prague time
+        const [year, month, day] = date.split('-').map(Number);
+        const pragueOffset = 2; // Prague is UTC+2
+
+        // Create UTC time that will be the desired Prague time
         const scheduledTime = new Date();
-        scheduledTime.setFullYear(parseInt(date.split('-')[0]), parseInt(date.split('-')[1]) - 1, parseInt(date.split('-')[2]));
-        scheduledTime.setHours(scheduledHour, 0, 0, 0); // Set to exact hour in local time
+        scheduledTime.setUTCFullYear(year, month - 1, day);
+        scheduledTime.setUTCHours(scheduledHour - pragueOffset, 0, 0, 0);
 
         const job: ArticleGenerationJob = {
           id: `job_${date}_${i + 1}_${trend.title.replace(/[^a-zA-Z0-9]/g, '_')}`,
