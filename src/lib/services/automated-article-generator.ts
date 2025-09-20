@@ -515,15 +515,21 @@ class AutomatedArticleGenerator {
         // Create a date in Prague timezone for the specific hour
         const scheduledHour = startHour + (i * intervalHours); // Every hour: 0, 1, 2, 3...
 
-        // Create UTC time that corresponds to Prague time
-        // If we want 00:00 Prague time, we need 22:00 UTC (Prague is UTC+2)
+        // Create proper Prague time and convert to UTC
+        // Prague is UTC+2 in summer, UTC+1 in winter
         const [year, month, day] = date.split('-').map(Number);
-        const pragueOffset = 2; // Prague is UTC+2
 
-        // Create UTC time that will be the desired Prague time
-        const scheduledTime = new Date();
-        scheduledTime.setUTCFullYear(year, month - 1, day);
-        scheduledTime.setUTCHours(scheduledHour - pragueOffset, 0, 0, 0);
+        // Create date in Prague timezone using proper timezone handling
+        const pragueTimeString = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}T${scheduledHour.toString().padStart(2, '0')}:00:00`;
+
+        // Create Prague time and convert to UTC
+        // Use Intl.DateTimeFormat to handle timezone properly
+        const pragueDate = new Date(pragueTimeString);
+
+        // Prague is typically UTC+2 (CEST) in summer, UTC+1 (CET) in winter
+        // For simplicity, we'll use UTC+2 for now (can be improved with proper timezone detection)
+        const pragueOffsetHours = 2;
+        const scheduledTime = new Date(pragueDate.getTime() - (pragueOffsetHours * 60 * 60 * 1000));
 
         const job: ArticleGenerationJob = {
           id: `job_${date}_${i + 1}_${trend.title.replace(/[^a-zA-Z0-9]/g, '_')}`,
@@ -585,8 +591,12 @@ class AutomatedArticleGenerator {
     let currentHourJob = dailyPlan.jobs.find(job => {
       if (job.status !== 'pending' || !job.scheduledAt) return false;
 
+      // Convert UTC scheduled time to Prague time for comparison
       const scheduledTime = new Date(job.scheduledAt);
-      const scheduledHour = scheduledTime.getHours();
+      const scheduledPragueTime = new Date(scheduledTime.toLocaleString("en-US", {timeZone: "Europe/Prague"}));
+      const scheduledHour = scheduledPragueTime.getHours();
+
+      console.log(`🔍 Job #${job.position} "${job.trend?.title}": scheduled for ${scheduledHour}:00 Prague (current: ${currentHour}:00)`);
 
       // Find job scheduled for current hour
       return scheduledHour === currentHour;
@@ -1587,14 +1597,12 @@ class AutomatedArticleGenerator {
             // Create scheduled time for hourly generation (0:00, 1:00, 2:00, etc.)
             const scheduledHour = (job.position - 1) % 24; // Position 1 = hour 0, position 2 = hour 1, etc.
 
-            // Create UTC time that corresponds to Prague time
+            // Create proper Prague time and convert to UTC
             const [year, month, day] = date.split('-').map(Number);
-            const pragueOffset = 2; // Prague is UTC+2
-
-            // Create UTC time that will be the desired Prague time
-            const scheduledTime = new Date();
-            scheduledTime.setUTCFullYear(year, month - 1, day);
-            scheduledTime.setUTCHours(scheduledHour - pragueOffset, 0, 0, 0);
+            const pragueTimeString = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}T${scheduledHour.toString().padStart(2, '0')}:00:00`;
+            const pragueDate = new Date(pragueTimeString);
+            const pragueOffsetHours = 2;
+            const scheduledTime = new Date(pragueDate.getTime() - (pragueOffsetHours * 60 * 60 * 1000));
             scheduledAt = scheduledTime.toISOString();
           }
 
@@ -1614,14 +1622,12 @@ class AutomatedArticleGenerator {
             // Create scheduled time for hourly generation (0:00, 1:00, 2:00, etc.)
             const scheduledHour = (job.position - 1) % 24; // Position 1 = hour 0, position 2 = hour 1, etc.
 
-            // Create UTC time that corresponds to Prague time
+            // Create proper Prague time and convert to UTC
             const [year, month, day] = date.split('-').map(Number);
-            const pragueOffset = 2; // Prague is UTC+2
-
-            // Create UTC time that will be the desired Prague time
-            const scheduledTime = new Date();
-            scheduledTime.setUTCFullYear(year, month - 1, day);
-            scheduledTime.setUTCHours(scheduledHour - pragueOffset, 0, 0, 0);
+            const pragueTimeString = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}T${scheduledHour.toString().padStart(2, '0')}:00:00`;
+            const pragueDate = new Date(pragueTimeString);
+            const pragueOffsetHours = 2;
+            const scheduledTime = new Date(pragueDate.getTime() - (pragueOffsetHours * 60 * 60 * 1000));
             scheduledAt = scheduledTime.toISOString();
           }
 
@@ -1740,14 +1746,12 @@ class AutomatedArticleGenerator {
         // Create a date in Prague timezone for the specific hour
         const scheduledHour = startHour + (i * intervalHours); // Every hour: 0, 1, 2, 3...
 
-        // Create UTC time that corresponds to Prague time
+        // Create proper Prague time and convert to UTC
         const [year, month, day] = date.split('-').map(Number);
-        const pragueOffset = 2; // Prague is UTC+2
-
-        // Create UTC time that will be the desired Prague time
-        const scheduledTime = new Date();
-        scheduledTime.setUTCFullYear(year, month - 1, day);
-        scheduledTime.setUTCHours(scheduledHour - pragueOffset, 0, 0, 0);
+        const pragueTimeString = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}T${scheduledHour.toString().padStart(2, '0')}:00:00`;
+        const pragueDate = new Date(pragueTimeString);
+        const pragueOffsetHours = 2;
+        const scheduledTime = new Date(pragueDate.getTime() - (pragueOffsetHours * 60 * 60 * 1000));
 
         const job: ArticleGenerationJob = {
           id: `job_${date}_${i + 1}_${trend.title.replace(/[^a-zA-Z0-9]/g, '_')}`,

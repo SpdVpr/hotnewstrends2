@@ -31,11 +31,13 @@ export async function GET(request: NextRequest) {
       console.log(`🎯 Processing articles for hour ${currentHour}`);
 
       try {
-        // Ensure we have a daily plan
+        console.log('🔄 Cron Step 1: Ensuring daily plan exists...');
         await automatedArticleGenerator.ensureDailyPlan();
+        console.log('✅ Cron Step 1 completed: Daily plan ensured');
 
-        // Process scheduled jobs for current hour
+        console.log('🔄 Cron Step 2: Processing scheduled jobs...');
         await automatedArticleGenerator.processScheduledJobs();
+        console.log('✅ Cron Step 2 completed: Scheduled jobs processed');
 
         const result = {
           success: true,
@@ -104,9 +106,14 @@ export async function POST(request: NextRequest) {
       console.log(`🎯 Force processing articles for hour ${currentHour}`);
       
       try {
+        console.log('🔄 Step 1: Ensuring daily plan exists...');
         await automatedArticleGenerator.ensureDailyPlan();
+        console.log('✅ Step 1 completed: Daily plan ensured');
+
+        console.log('🔄 Step 2: Processing scheduled jobs...');
         await automatedArticleGenerator.processScheduledJobs();
-        
+        console.log('✅ Step 2 completed: Scheduled jobs processed');
+
         return NextResponse.json({
           success: true,
           timestamp: new Date().toISOString(),
@@ -119,10 +126,14 @@ export async function POST(request: NextRequest) {
 
       } catch (error) {
         console.error('❌ Error in manual cron processing:', error);
+        console.error('❌ Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+
         return NextResponse.json({
           success: false,
           error: error instanceof Error ? error.message : 'Unknown error',
-          timestamp: new Date().toISOString()
+          stack: error instanceof Error ? error.stack : undefined,
+          timestamp: new Date().toISOString(),
+          step: 'manual_cron_processing'
         }, { status: 500 });
       }
 
