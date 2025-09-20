@@ -591,12 +591,13 @@ class AutomatedArticleGenerator {
     let currentHourJob = dailyPlan.jobs.find(job => {
       if (job.status !== 'pending' || !job.scheduledAt) return false;
 
-      // Convert UTC scheduled time to Prague time for comparison
+      // Convert scheduled UTC time to Prague time for comparison
       const scheduledTime = new Date(job.scheduledAt);
-      const scheduledPragueTime = new Date(scheduledTime.toLocaleString("en-US", {timeZone: "Europe/Prague"}));
+      // Add 2 hours to UTC to get Prague time (UTC+2)
+      const scheduledPragueTime = new Date(scheduledTime.getTime() + (2 * 60 * 60 * 1000));
       const scheduledHour = scheduledPragueTime.getHours();
 
-      console.log(`🔍 Job #${job.position} "${job.trend?.title}": scheduled for ${scheduledHour}:00 Prague (current: ${currentHour}:00)`);
+      console.log(`🔍 Job #${job.position} "${job.trend?.title}": scheduled UTC ${scheduledTime.toISOString()}, Prague ${scheduledHour}:00 (current: ${currentHour}:00)`);
 
       // Find job scheduled for current hour
       return scheduledHour === currentHour;
