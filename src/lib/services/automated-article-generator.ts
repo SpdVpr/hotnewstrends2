@@ -1408,20 +1408,13 @@ class AutomatedArticleGenerator {
    */
   public async refreshDailyPlan(): Promise<void> {
     const today = new Date().toISOString().split('T')[0];
-    console.log('🔄 Smart refreshing daily plan for', today);
+    console.log('🔄 Refreshing daily plan with fresh trends for', today);
 
-    // Check if we need a fresh reset or just an update
-    const needsFreshReset = await this.shouldCreateFreshPlan(today);
-
-    if (needsFreshReset) {
-      console.log('🔄 Creating fresh daily plan (too many processed topics detected)');
-      await this.createFreshDailyPlan(today);
-      console.log('✅ Fresh daily plan created with new trends');
-    } else {
-      console.log('🔄 Updating future articles in existing daily plan');
-      await this.updateFutureDailyPlan(today);
-      console.log('✅ Daily plan refresh completed - preserved existing articles, updated future ones');
-    }
+    // Always update future articles with fresh trends when new data arrives
+    // This ensures the plan stays current with latest trending topics
+    console.log('🔄 Updating future articles with fresh trends from Firebase');
+    await this.updateFutureDailyPlan(today);
+    console.log('✅ Daily plan refreshed - preserved completed articles, updated pending ones with fresh trends');
   }
 
   /**
@@ -1461,9 +1454,9 @@ class AutomatedArticleGenerator {
       console.log(`📊 Daily plan status: ${completedJobs}/${currentPlan.jobs.length} jobs completed (${completedPercentage.toFixed(1)}%)`);
       console.log(`📊 Processed topics: ${processedTopicsCount}/${currentPlan.jobs.length} (${processedPercentage.toFixed(1)}%)`);
 
-      // If more than 80% of jobs are completed OR more than 50% are processed topics, create fresh plan
-      const completedThreshold = 80;
-      const processedThreshold = 50;
+      // Always update with fresh trends when new data arrives - lower thresholds for more frequent updates
+      const completedThreshold = 30; // Lowered from 80% to 30%
+      const processedThreshold = 20; // Lowered from 50% to 20%
       const needsFresh = completedPercentage > completedThreshold || processedPercentage > processedThreshold;
 
       if (needsFresh) {
@@ -1509,49 +1502,27 @@ class AutomatedArticleGenerator {
 
       console.log(`🕐 Current Prague time: ${pragueTime.toLocaleString()} (${currentHour}:${currentMinute.toString().padStart(2, '0')})`);
 
-      // Find articles that are already generated (past their scheduled time)
+      // Separate jobs by status: preserve completed/generating jobs, update pending ones
       const preservedJobs = [];
-      const futureJobs = [];
+      const jobsToUpdate = [];
 
       for (const job of currentPlan.jobs) {
-        // Safety check for scheduledAt (ISO timestamp)
-        if (!job.scheduledAt || typeof job.scheduledAt !== 'string') {
-          console.warn(`⚠️ Job #${job.position} has invalid scheduledAt:`, job.scheduledAt);
-          // Assume it's a future job if scheduledAt is invalid
-          futureJobs.push(job);
-          continue;
-        }
+        // Check job status to determine if it should be preserved or updated
+        const isCompleted = job.status === 'completed' || job.status === 'rejected';
+        const isInProgress = job.status === 'generating' || job.status === 'quality_check';
 
-        try {
-          // Parse ISO timestamp and convert to Prague time
-          const scheduledTime = new Date(job.scheduledAt);
-          if (isNaN(scheduledTime.getTime())) {
-            console.warn(`⚠️ Job #${job.position} has invalid scheduledAt format: "${job.scheduledAt}"`);
-            futureJobs.push(job);
-            continue;
-          }
-
-          // Convert UTC scheduled time to Prague time for comparison
-          const scheduledPragueTime = new Date(scheduledTime.getTime() + (2 * 60 * 60 * 1000));
-          const jobTimeMinutes = scheduledPragueTime.getHours() * 60 + scheduledPragueTime.getMinutes();
-
-          if (jobTimeMinutes <= currentTimeMinutes) {
-            // This article should already be generated or is being generated now
-            preservedJobs.push(job);
-            console.log(`✅ Preserving job #${job.position}: "${job.trend?.title || 'Unknown'}" (Prague: ${scheduledPragueTime.toLocaleTimeString()})`);
-          } else {
-            // This article is in the future - will be updated
-            futureJobs.push(job);
-            console.log(`🔄 Will update job #${job.position}: "${job.trend?.title || 'Unknown'}" (Prague: ${scheduledPragueTime.toLocaleTimeString()})`);
-          }
-        } catch (error) {
-          console.error(`❌ Error parsing scheduledTime for job #${job.position}:`, error);
-          // Assume it's a future job if parsing fails
-          futureJobs.push(job);
+        if (isCompleted || isInProgress) {
+          // Preserve jobs that are completed or currently being processed
+          preservedJobs.push(job);
+          console.log(`✅ Preserving job #${job.position}: "${job.trend?.title || 'Unknown'}" (status: ${job.status})`);
+        } else {
+          // Update pending/failed jobs with fresh trends
+          jobsToUpdate.push(job);
+          console.log(`🔄 Will update job #${job.position}: "${job.trend?.title || 'Unknown'}" (status: ${job.status})`);
         }
       }
 
-      console.log(`📊 Preserving ${preservedJobs.length} past/current jobs, updating ${futureJobs.length} future jobs`);
+      console.log(`📊 Preserving ${preservedJobs.length} completed/in-progress jobs, updating ${jobsToUpdate.length} pending jobs with fresh trends`);
 
       // Get trends needing articles from Firebase for future jobs (excluding processed topics)
       const { firebaseTrendsService } = await import('./firebase-trends');
@@ -1601,10 +1572,10 @@ class AutomatedArticleGenerator {
         }
       }
 
-      console.log(`📊 Found ${availableTrends.length} available trends for future jobs`);
+      console.log(`📊 Found ${availableTrends.length} available trends for pending jobs`);
 
-      // Update future jobs with new trends
-      const updatedFutureJobs = futureJobs.map((job, index) => {
+      // Update pending jobs with new trends
+      const updatedJobs = jobsToUpdate.map((job, index) => {
         if (index < availableTrends.length) {
           const newTrend = availableTrends[index];
           console.log(`🔄 Updating job #${job.position}: "${job.trend.title}" → "${newTrend.title}" (${newTrend.searchVolume} searches)`);
@@ -1659,7 +1630,7 @@ class AutomatedArticleGenerator {
       });
 
       // Combine preserved and updated jobs
-      const allJobs = [...preservedJobs, ...updatedFutureJobs];
+      const allJobs = [...preservedJobs, ...updatedJobs];
       allJobs.sort((a, b) => a.position - b.position);
 
       // Create updated daily plan
@@ -1674,7 +1645,7 @@ class AutomatedArticleGenerator {
 
       // Save updated plan
       await this.storeDailyPlan(updatedPlan);
-      console.log(`✅ Updated daily plan saved with ${preservedJobs.length} preserved + ${updatedFutureJobs.length} updated jobs`);
+      console.log(`✅ Updated daily plan saved with ${preservedJobs.length} preserved + ${updatedJobs.length} updated jobs`);
 
       return updatedPlan;
 
