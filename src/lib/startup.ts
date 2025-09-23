@@ -3,7 +3,22 @@
  * Initializes services when the application starts
  */
 
-import { trendsScheduler } from './services/trends-scheduler';
+// Only import server-side modules on server
+let trendsScheduler: any = null;
+
+// Dynamic import for server-side only
+async function getTrendsScheduler() {
+  if (typeof window !== 'undefined') {
+    return null; // Skip on client-side
+  }
+
+  if (!trendsScheduler) {
+    const module = await import('./services/trends-scheduler');
+    trendsScheduler = module.trendsScheduler;
+  }
+
+  return trendsScheduler;
+}
 
 class StartupService {
   private initialized = false;
@@ -17,21 +32,31 @@ class StartupService {
       return;
     }
 
-    console.log('🚀 Initializing application services...');
+    // Skip initialization on client-side
+    if (typeof window !== 'undefined') {
+      console.log('🚀 Client-side startup - skipping server services');
+      this.initialized = true;
+      return;
+    }
+
+    console.log('🚀 Initializing server-side application services...');
 
     try {
       // Start trends scheduler automatically for continuous trend updates
       console.log('🚀 Starting trends scheduler for automatic trend updates...');
       try {
-        trendsScheduler.start();
-        console.log('✅ Trends scheduler started successfully');
+        const scheduler = await getTrendsScheduler();
+        if (scheduler) {
+          scheduler.start();
+          console.log('✅ Trends scheduler started successfully');
+        }
       } catch (schedulerError) {
         console.error('❌ Failed to start trends scheduler:', schedulerError);
         console.log('⚠️ Trends scheduler can be started manually from admin panel');
       }
 
       this.initialized = true;
-      console.log('🎉 Application startup complete with trends scheduler');
+      console.log('🎉 Server-side application startup complete');
     } catch (error) {
       console.error('❌ Error during application startup:', error);
     }

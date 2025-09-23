@@ -152,17 +152,33 @@ const nextConfig: NextConfig = {
 
     return headers;
   },
+  // Webpack configuration for Firebase Admin SDK
+  webpack: (config: any, { isServer }: { isServer: boolean }) => {
+    if (!isServer) {
+      // Don't resolve 'fs', 'net', 'tls' modules on the client-side
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        net: false,
+        tls: false,
+        crypto: false,
+        path: false,
+        os: false,
+        stream: false,
+        util: false,
+        url: false,
+        querystring: false,
+        http: false,
+        https: false,
+        zlib: false,
+      };
+    }
+    return config;
+  },
+
   // Performance optimizations
   experimental: {
     optimizePackageImports: ['lucide-react'],
-    turbo: {
-      rules: {
-        '*.svg': {
-          loaders: ['@svgr/webpack'],
-          as: '*.js',
-        },
-      },
-    },
   },
   // Compiler optimizations
   compiler: {

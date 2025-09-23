@@ -16,6 +16,7 @@ import TrendTrackingStatusPanel from '@/components/admin/TrendTrackingStatusPane
 import SerpApiMonitor from '@/components/admin/SerpApiMonitor';
 import ArticleQualityPanel from '@/components/admin/ArticleQualityPanel';
 import TrendsSchedulerPanel from '@/components/admin/TrendsSchedulerPanel';
+import XShareManager from '@/components/admin/XShareManager';
 
 interface AutomationStats {
   totalJobs: number;
@@ -83,7 +84,7 @@ export default function AdminPage() {
   const [dailyPlan, setDailyPlan] = useState<DailyPlan | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'trends' | 'articles' | 'settings' | 'serpapi' | 'trend-tracking'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'trends' | 'articles' | 'settings' | 'serpapi' | 'trend-tracking' | 'x-share'>('overview');
   const [nextUpdateCountdown, setNextUpdateCountdown] = useState<string>('Calculating...');
 
   // Manual generation form
@@ -350,6 +351,7 @@ export default function AdminPage() {
             { key: 'trends', label: '📈 Trends', icon: '📈' },
             { key: 'trend-tracking', label: '📊 Trend Tracking', icon: '📊' },
             { key: 'articles', label: '📝 Articles', icon: '📝' },
+            { key: 'x-share', label: '🐦 X Share', icon: '🐦' },
             { key: 'settings', label: '⚙️ Settings', icon: '⚙️' },
             { key: 'serpapi', label: '🔍 SerpApi Monitor', icon: '🔍' }
           ].map((tab) => (
@@ -714,6 +716,9 @@ export default function AdminPage() {
 
         {/* Articles Tab */}
         {activeTab === 'articles' && <ArticlesManager />}
+
+        {/* X Share Tab */}
+        {activeTab === 'x-share' && <XShareManager />}
 
         {/* Settings Tab */}
         {activeTab === 'settings' && <AutomationSettings />}

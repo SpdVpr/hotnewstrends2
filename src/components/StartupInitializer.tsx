@@ -1,23 +1,29 @@
 'use client';
 
 import { useEffect } from 'react';
-import { startupService } from '@/lib/startup';
 
 /**
  * Client-side startup initializer
- * Runs startup services when the app loads
+ * Triggers server-side startup services via API
  */
 export function StartupInitializer() {
   useEffect(() => {
-    console.log('🚀 StartupInitializer: Initializing services...');
+    console.log('🚀 StartupInitializer: Triggering server-side initialization...');
 
-    // Initialize startup services
-    startupService.initialize()
-      .then(() => {
-        console.log('✅ StartupInitializer: Services initialized successfully');
+    // Call server-side startup API
+    fetch('/api/startup', {
+      method: 'POST',
+    })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          console.log('✅ StartupInitializer: Server services initialized successfully');
+        } else {
+          console.error('❌ StartupInitializer: Server initialization failed:', data.error);
+        }
       })
       .catch(error => {
-        console.error('❌ StartupInitializer: Initialization failed:', error);
+        console.error('❌ StartupInitializer: Failed to call startup API:', error);
       });
   }, []);
 

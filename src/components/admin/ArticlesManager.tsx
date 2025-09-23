@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { LoadingSpinner } from '@/components/ui/Loading';
 import { Input } from '@/components/ui/Input';
+import { Share } from 'lucide-react';
 import ArticleEditor from './ArticleEditor';
 
 interface Article {
@@ -41,6 +42,10 @@ interface Article {
     generatedBy: string;
     confidence: number;
   };
+  // X (Twitter) share data
+  xShared?: boolean;
+  xSharedAt?: string;
+  xTweetId?: string;
 }
 
 interface ArticlesData {
@@ -55,6 +60,7 @@ export function ArticlesManager() {
   const [articlesData, setArticlesData] = useState<ArticlesData | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [xShareLoading, setXShareLoading] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
@@ -122,6 +128,33 @@ export function ArticlesManager() {
       console.error('Error deleting article:', error);
     } finally {
       setActionLoading(null);
+    }
+  };
+
+  const handleXShare = async (articleId: string, articleTitle: string) => {
+    if (!confirm(`Share "${articleTitle}" on X (Twitter)?`)) return;
+
+    setXShareLoading(articleId);
+    try {
+      const response = await fetch('/api/x-share-article', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ articleId })
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        alert(`✅ Article shared successfully on X!\nTweet ID: ${result.tweetId}`);
+        await fetchArticles(); // Refresh to show updated share status
+      } else {
+        alert(`❌ Failed to share on X: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Error sharing article on X:', error);
+      alert('❌ Error sharing article on X. Please try again.');
+    } finally {
+      setXShareLoading(null);
     }
   };
 
@@ -246,6 +279,12 @@ export function ArticlesManager() {
                     <div className="flex items-center gap-3 mb-2">
                       <h3 className="font-medium text-text">{article.title}</h3>
                       {getStatusBadge(article.status)}
+                      {/* X Share Status Badge */}
+                      {article.xShared && (
+                        <Badge variant="success" title={`Shared on X at ${new Date(article.xSharedAt || '').toLocaleString()}`}>
+                          🐦 Shared
+                        </Badge>
+                      )}
                       {/* Safe category access */}
                       {article.category && (
                         <Badge
@@ -316,6 +355,30 @@ export function ArticlesManager() {
                       disabled={actionLoading === article.id}
                     >
                       Edit
+                    </Button>
+
+                    {/* X Share Button */}
+                    <Button
+                      variant={article.xShared ? "success" : "primary"}
+                      size="sm"
+                      onClick={() => handleXShare(article.id, article.title)}
+                      disabled={xShareLoading === article.id || article.xShared || article.status !== 'published'}
+                      title={
+                        article.xShared
+                          ? `Already shared on X at ${new Date(article.xSharedAt || '').toLocaleString()}`
+                          : article.status !== 'published'
+                          ? 'Only published articles can be shared'
+                          : 'Share this article on X (Twitter)'
+                      }
+                    >
+                      {xShareLoading === article.id ? (
+                        <LoadingSpinner size="sm" />
+                      ) : (
+                        <>
+                          <Share className="w-3 h-3 mr-1" />
+                          {article.xShared ? 'Shared' : 'Share'}
+                        </>
+                      )}
                     </Button>
 
                     <select
