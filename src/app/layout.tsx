@@ -72,6 +72,7 @@ export default function RootLayout({
       <head>
         <meta name="theme-color" content="#007AFF" />
         <meta name="msapplication-TileColor" content="#007AFF" />
+        <meta name="indexnow" content="3957EC21751DB8BB623C0E6FC4D2FD115374788C96C91D3D79E7F1A86B946A94" />
 
         {/* Preconnect to essential external domains only */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
