@@ -6,7 +6,7 @@ async function getArticles() {
     // Try to get articles from API
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
     const response = await fetch(`${baseUrl}/api/articles?limit=1000`, {
-      next: { revalidate: 3600 } // Cache for 1 hour
+      next: { revalidate: 300 } // Cache for 5 minutes - faster indexing of new articles
     });
 
     if (response.ok) {

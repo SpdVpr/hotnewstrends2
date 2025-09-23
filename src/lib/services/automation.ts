@@ -619,6 +619,28 @@ class AutomationService {
 
           const articleId = await firebaseArticlesService.createArticle(firebaseArticle);
           console.log('✅ Article saved to Firebase with ID:', articleId);
+
+          // Notify search engines about new article
+          try {
+            const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://hotnewstrends.com';
+            const pingResponse = await fetch(`${baseUrl}/api/sitemap/ping`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                articleSlug: article.slug,
+                action: 'new'
+              })
+            });
+
+            if (pingResponse.ok) {
+              console.log(`🔔 Search engines notified about new article: ${article.slug}`);
+            } else {
+              console.warn(`⚠️ Failed to notify search engines: ${pingResponse.status}`);
+            }
+          } catch (pingError) {
+            console.warn('⚠️ Could not ping search engines:', pingError);
+          }
+
           return;
         } catch (firebaseError) {
           console.warn('⚠️ Firebase save failed:', firebaseError);

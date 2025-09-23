@@ -197,9 +197,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+
     const article = await firebaseArticlesService.createArticle({
       title,
-      slug: title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
+      slug,
       content,
       excerpt: excerpt || content.substring(0, 200) + '...',
       author: 'TrendyBlogger',
@@ -223,6 +225,29 @@ export async function POST(request: NextRequest) {
         confidence: 100
       }
     });
+
+    // Notify search engines about new article if published
+    if (status === 'published') {
+      try {
+        const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://hotnewstrends.com';
+        const pingResponse = await fetch(`${baseUrl}/api/sitemap/ping`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            articleSlug: slug,
+            action: 'new'
+          })
+        });
+
+        if (pingResponse.ok) {
+          console.log(`🔔 Search engines notified about new article: ${slug}`);
+        } else {
+          console.warn(`⚠️ Failed to notify search engines: ${pingResponse.status}`);
+        }
+      } catch (pingError) {
+        console.warn('⚠️ Could not ping search engines:', pingError);
+      }
+    }
 
     return NextResponse.json({
       success: true,

@@ -1318,6 +1318,27 @@ class AutomatedArticleGenerator {
       console.log(`✅ Article saved directly to Firebase: ${docRef.id}`);
       console.log(`🔗 Article should be available at: /article/${finalArticleData.slug}`);
 
+      // Notify search engines about new article
+      try {
+        const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://hotnewstrends.com';
+        const pingResponse = await fetch(`${baseUrl}/api/sitemap/ping`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            articleSlug: finalArticleData.slug,
+            action: 'new'
+          })
+        });
+
+        if (pingResponse.ok) {
+          console.log(`🔔 Search engines notified about new article: ${finalArticleData.slug}`);
+        } else {
+          console.warn(`⚠️ Failed to notify search engines: ${pingResponse.status}`);
+        }
+      } catch (pingError) {
+        console.warn('⚠️ Could not ping search engines:', pingError);
+      }
+
       return docRef.id;
 
     } catch (error) {
