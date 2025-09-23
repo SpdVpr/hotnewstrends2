@@ -58,6 +58,13 @@ const mockCategories: Category[] = [
     color: '#FF2D92',
     description: 'Movies, TV shows, celebrities, and pop culture news.'
   },
+  {
+    id: 'sports',
+    name: 'Sports',
+    slug: 'sports',
+    color: '#FF9500',
+    description: 'Sports news, scores, and athletic achievements.'
+  },
 ];
 
 const mockArticles: Article[] = [
@@ -85,13 +92,37 @@ const mockArticles: Article[] = [
     tags: ['Quantum', 'Computing', 'Science'],
     views: 890,
   },
+  {
+    id: 'sports-1',
+    title: "Championship Finals Draw Record-Breaking Viewership",
+    excerpt: "The latest championship finals attracted millions of viewers worldwide, setting new records for sports broadcasting.",
+    category: mockCategories.find(c => c.slug === 'sports')!,
+    readTime: "3 min read",
+    trending: true,
+    publishedAt: new Date(Date.now() - 1000 * 60 * 45),
+    slug: "championship-finals-record-viewership",
+    tags: ['Sports', 'Championship', 'Broadcasting'],
+    views: 2150,
+  },
+  {
+    id: 'sports-2',
+    title: "Olympic Training Methods Revolutionize Athletic Performance",
+    excerpt: "New training techniques developed for Olympic athletes are now being adopted by professional sports teams worldwide.",
+    category: mockCategories.find(c => c.slug === 'sports')!,
+    readTime: "4 min read",
+    trending: false,
+    publishedAt: new Date(Date.now() - 1000 * 60 * 60 * 3),
+    slug: "olympic-training-methods-athletic-performance",
+    tags: ['Olympics', 'Training', 'Performance'],
+    views: 1680,
+  },
   // Add more mock articles for different categories
 ];
 
 async function getCategory(slug: string): Promise<Category | null> {
   try {
     // First try to get from API - use correct URL
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3001';
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
     const response = await fetch(`${baseUrl}/api/categories`, {
       next: { revalidate: 3600 } // Cache for 1 hour
     });
@@ -120,7 +151,7 @@ async function getCategory(slug: string): Promise<Category | null> {
 async function getCategoryArticles(categorySlug: string): Promise<Article[]> {
   try {
     // Try to get from API first - use correct port and URL
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3001';
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
     const response = await fetch(`${baseUrl}/api/articles?category=${categorySlug}&limit=50`, {
       next: { revalidate: 300 } // Cache for 5 minutes
     });
