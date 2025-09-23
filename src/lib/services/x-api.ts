@@ -117,7 +117,7 @@ class XApiService {
   private generateHashtags(category: string, title: string, content?: string, tags?: string[]): string[] {
     const hashtags = new Set<string>();
 
-    // Smart hashtag detection from title and content
+    // Smart hashtag detection from title and content (prioritize these)
     const smartTags = this.extractSmartHashtags(title, content);
     smartTags.forEach(tag => hashtags.add(tag));
 
@@ -127,16 +127,19 @@ class XApiService {
       'news': ['Breaking', 'NewsAlert', 'WorldNews'],
       'business': ['Business', 'Finance', 'Markets'],
       'sports': ['Sports', 'Game', 'Athletics'],
-      'entertainment': ['Entertainment', 'Celebrity', 'Hollywood'],
+      'entertainment': ['Entertainment', 'Celebrity', 'ShowBiz'],
       'health': ['Health', 'Wellness', 'Healthcare'],
       'science': ['Science', 'Research', 'Discovery'],
       'general': ['News', 'Update', 'Alert']
     };
 
-    // Add category hashtags
+    // Add category hashtags (but only if we don't have enough smart tags)
     const categoryKey = category.toLowerCase();
     const categoryTags = categoryMap[categoryKey] || categoryMap['general'];
-    categoryTags.slice(0, 2).forEach(tag => hashtags.add(tag));
+
+    // Fill remaining slots with category tags
+    const remainingSlots = Math.max(0, 4 - hashtags.size); // Leave 1 slot for brand
+    categoryTags.slice(0, remainingSlots).forEach(tag => hashtags.add(tag));
 
     // Always add our brand
     hashtags.add('HotNewsTrends');
@@ -145,27 +148,51 @@ class XApiService {
   }
 
   /**
-   * Extract smart hashtags from content
+   * Extract smart hashtags from content with better context awareness
    */
   private extractSmartHashtags(title: string, content?: string): string[] {
     const text = `${title} ${content || ''}`.toLowerCase();
     const smartTags: string[] = [];
 
-    // Natural disasters
-    if (text.includes('earthquake') || text.includes('tsunami')) smartTags.push('Earthquake', 'Tsunami');
-    if (text.includes('hurricane') || text.includes('storm')) smartTags.push('Hurricane', 'Weather');
+    // Natural disasters (only if clearly about disasters)
+    if ((text.includes('earthquake') || text.includes('tsunami')) &&
+        (text.includes('magnitude') || text.includes('seismic') || text.includes('disaster'))) {
+      smartTags.push('Earthquake');
+    }
+    if ((text.includes('hurricane') || text.includes('storm')) &&
+        (text.includes('weather') || text.includes('wind') || text.includes('flooding'))) {
+      smartTags.push('Hurricane', 'Weather');
+    }
 
-    // Sports
-    if (text.includes('nfl') || text.includes('football')) smartTags.push('NFL');
-    if (text.includes('nba') || text.includes('basketball')) smartTags.push('NBA');
+    // Sports (only if clearly about sports)
+    if (text.includes('nfl') && (text.includes('game') || text.includes('season') || text.includes('team'))) {
+      smartTags.push('NFL');
+    }
+    if (text.includes('nba') && (text.includes('basketball') || text.includes('game') || text.includes('season'))) {
+      smartTags.push('NBA');
+    }
 
-    // Technology
-    if (text.includes('ai') || text.includes('artificial intelligence')) smartTags.push('AI');
-    if (text.includes('crypto') || text.includes('bitcoin')) smartTags.push('Crypto');
+    // Technology (only if clearly about tech)
+    if ((text.includes(' ai ') || text.includes('artificial intelligence')) &&
+        (text.includes('technology') || text.includes('machine learning') || text.includes('robot'))) {
+      smartTags.push('AI');
+    }
+    if ((text.includes('crypto') || text.includes('bitcoin')) &&
+        (text.includes('currency') || text.includes('blockchain') || text.includes('trading'))) {
+      smartTags.push('Crypto');
+    }
 
-    // Politics
-    if (text.includes('election') || text.includes('vote')) smartTags.push('Election');
-    if (text.includes('ukraine') || text.includes('russia')) smartTags.push('Ukraine');
+    // Politics (only if clearly political)
+    if ((text.includes('election') || text.includes('vote')) &&
+        (text.includes('candidate') || text.includes('campaign') || text.includes('ballot'))) {
+      smartTags.push('Election');
+    }
+
+    // Celebrity/Entertainment specific
+    if (text.includes('presley') || text.includes('elvis')) smartTags.push('Elvis', 'Music');
+    if (text.includes('hollywood') || text.includes('actor') || text.includes('actress')) smartTags.push('Hollywood');
+    if (text.includes('memoir') || text.includes('book') || text.includes('author')) smartTags.push('Memoir', 'Books');
+    if (text.includes('music') || text.includes('singer') || text.includes('album')) smartTags.push('Music');
 
     return smartTags.slice(0, 2); // Max 2 smart tags
   }
