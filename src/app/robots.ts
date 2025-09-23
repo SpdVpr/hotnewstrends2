@@ -1,6 +1,8 @@
 import { MetadataRoute } from 'next';
 
 export default function robots(): MetadataRoute.Robots {
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://hotnewstrends.com';
+
   return {
     rules: [
       {
@@ -11,7 +13,10 @@ export default function robots(): MetadataRoute.Robots {
           '/admin/',
           '/_next/',
           '/private/',
+          '/*.json$',
+          '/temp/',
         ],
+        crawlDelay: 1, // Be respectful to servers
       },
       {
         userAgent: 'Googlebot',
@@ -60,7 +65,7 @@ export default function robots(): MetadataRoute.Robots {
         ],
       },
     ],
-    sitemap: 'https://hotnewstrends.com/sitemap.xml',
-    host: 'https://hotnewstrends.com',
+    sitemap: `${baseUrl}/sitemap.xml`,
+    host: baseUrl,
   };
 }
