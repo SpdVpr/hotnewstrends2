@@ -82,10 +82,21 @@ export async function GET(request: NextRequest) {
       const batchId = await firebaseTrendsService.saveTrendsBatch(trendsData.topics);
       
       console.log(`✅ Trends saved to Firebase with batch ID: ${batchId}`);
-      
+
+      // Refresh daily plan with new trends
+      try {
+        console.log('🔄 Refreshing daily plan after trends import...');
+        const { automatedArticleGenerator } = await import('@/lib/services/automated-article-generator');
+        await automatedArticleGenerator.refreshDailyPlan();
+        console.log('✅ Daily plan refreshed after trends import');
+      } catch (refreshError) {
+        console.error('❌ Failed to refresh daily plan after trends import:', refreshError);
+        // Don't fail the whole import if refresh fails
+      }
+
       // Get updated usage stats
       const updatedStats = serpApiMonitor.getUsageStats();
-      
+
       return NextResponse.json({
         success: true,
         action: 'imported',

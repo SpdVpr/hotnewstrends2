@@ -485,14 +485,21 @@ class AutomatedArticleGenerator {
         .sort((a, b) => (b.searchVolume || 0) - (a.searchVolume || 0))
         .slice(0, this.MAX_DAILY_ARTICLES);
 
-      console.log(`📊 Sorted trends for daily plan: ${sortedTrends.length} trends`);
+      console.log(`📊 Sorted trends for daily plan: ${sortedTrends.length}/${this.MAX_DAILY_ARTICLES} trends`);
+
+      if (sortedTrends.length < this.MAX_DAILY_ARTICLES) {
+        console.warn(`⚠️ WARNING: Only ${sortedTrends.length} trends available, need ${this.MAX_DAILY_ARTICLES} for full daily plan!`);
+        console.warn(`⚠️ This will result in a daily plan with only ${sortedTrends.length} articles instead of ${this.MAX_DAILY_ARTICLES}`);
+        console.warn(`⚠️ Consider: 1) Importing more trends, 2) Cleaning up processed_topics collection, 3) Lowering articleGenerated filter`);
+      }
+
       if (sortedTrends.length > 0) {
         console.log('📊 Top 3 trends by search volume:');
         sortedTrends.slice(0, 3).forEach((trend, i) => {
           console.log(`  ${i + 1}. "${trend.title}" - searchVolume: ${trend.searchVolume} searches`);
         });
       } else {
-        console.warn('⚠️ No sorted trends available for daily plan!');
+        console.error('❌ CRITICAL: No sorted trends available for daily plan!');
       }
 
       // Get existing plan to preserve completed jobs
@@ -1726,7 +1733,12 @@ class AutomatedArticleGenerator {
       // Sort by search volume (highest first)
       const sortedTrends = allTrends.sort((a, b) => (b.searchVolume || 0) - (a.searchVolume || 0));
       console.log(`📊 Sorted ${sortedTrends.length} trends by search volume`);
-      console.log(`🔍 Top trend: "${sortedTrends[0]?.title}" (${sortedTrends[0]?.searchVolume} searches, source: ${sortedTrends[0]?.source})`);
+
+      if (sortedTrends.length > 0) {
+        console.log(`🔍 Top trend: "${sortedTrends[0]?.title}" (${sortedTrends[0]?.searchVolume} searches, source: ${sortedTrends[0]?.source})`);
+      } else {
+        console.error('❌ CRITICAL: No trends available after sorting!');
+      }
 
       // Remove duplicates by title (keep highest search volume)
       const uniqueTrends = [];
@@ -1743,6 +1755,11 @@ class AutomatedArticleGenerator {
       }
 
       console.log(`✅ Deduplication: ${sortedTrends.length} → ${uniqueTrends.length} unique trends`);
+
+      if (uniqueTrends.length < this.MAX_DAILY_ARTICLES) {
+        console.warn(`⚠️ WARNING: Only ${uniqueTrends.length} unique trends available, need ${this.MAX_DAILY_ARTICLES} for full daily plan!`);
+        console.warn(`⚠️ This will result in a daily plan with only ${uniqueTrends.length} articles instead of ${this.MAX_DAILY_ARTICLES}`);
+      }
 
       // Create jobs for top unique trends
       const jobs: ArticleGenerationJob[] = [];

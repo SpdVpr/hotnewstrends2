@@ -123,12 +123,13 @@ class FirebaseTrendsService {
       console.log(`📋 Found ${processedKeywords.size} processed topics to exclude`);
 
       // Step 2: Get trends that need articles
+      // Increase multiplier to ensure we get enough trends after filtering
       const trendsCollection = collection(db, this.COLLECTION_NAME);
       const q = query(
         trendsCollection,
         where('articleGenerated', '==', false),
         orderBy('searchVolume', 'desc'), // Prioritize high-traffic trends
-        limit(limitCount * 2) // Get more to filter out processed ones
+        limit(limitCount * 5) // Increased from 2x to 5x to ensure enough trends after filtering
       );
 
       const snapshot = await getDocs(q);
@@ -162,7 +163,11 @@ class FirebaseTrendsService {
       // Limit to requested count
       const filteredTrends = trends.slice(0, limitCount);
 
-      console.log(`📝 Found ${filteredTrends.length} trends needing articles (after filtering ${processedKeywords.size} processed topics)`);
+      console.log(`📝 Found ${filteredTrends.length}/${limitCount} trends needing articles (fetched ${snapshot.size} from Firebase, filtered ${processedKeywords.size} processed topics)`);
+
+      if (filteredTrends.length < limitCount) {
+        console.warn(`⚠️ Only found ${filteredTrends.length} trends, requested ${limitCount}. May need to import more trends or clean up processed_topics collection.`);
+      }
 
       if (filteredTrends.length > 0) {
         console.log('📊 Sample unprocessed trends:');
