@@ -496,18 +496,48 @@ class FirebaseArticlesService {
 
       console.log(`🔍 Getting articles with options:`, { limitCount, offset, category, status, search });
 
-      // Použijeme pouze createdAt řazení bez where klauzulí pro vyhnuti se composite indexům
-      let q = query(this.articlesCollection, orderBy('createdAt', 'desc'));
+      // Build query based on filters
+      let q = query(this.articlesCollection);
+      let useCategoryFilter = false;
+      let querySnapshot;
+      let fetchLimit;
 
-      // Apply pagination - načteme více článků kvůli client-side filtrování
-      // Pro velké limity (např. sitemap s 1000+) načteme ještě více
-      const fetchLimit = limitCount >= 500
-        ? Math.max(limitCount * 2, 2000) // Pro sitemap a velké dotazy
-        : Math.max(limitCount * 3, 50);   // Pro běžné dotazy
-      q = query(q, limit(fetchLimit));
-      // Offset se aplikuje client-side po filtrování
+      // Try to use Firebase query for category if index is available
+      if (category && category !== 'all') {
+        try {
+          q = query(q, where('category.slug', '==', category.toLowerCase()), orderBy('createdAt', 'desc'));
 
-      const querySnapshot = await getDocs(q);
+          // Apply pagination
+          fetchLimit = Math.max(limitCount * 2, 50);  // Category filtered - need less overhead
+          q = query(q, limit(fetchLimit));
+
+          querySnapshot = await getDocs(q);
+          useCategoryFilter = true;
+          console.log(`✅ Using Firebase category filter for "${category}"`);
+        } catch (error: any) {
+          // Index not ready yet, fall back to client-side filtering
+          if (error?.code === 'failed-precondition') {
+            console.log(`⚠️ Category index not ready yet, using client-side filtering`);
+            q = query(this.articlesCollection, orderBy('createdAt', 'desc'));
+            fetchLimit = Math.max(limitCount * 3, 50);   // No filter - need overhead for client-side filtering
+            q = query(q, limit(fetchLimit));
+            querySnapshot = await getDocs(q);
+          } else {
+            throw error;
+          }
+        }
+      } else {
+        // No category filter, just order by createdAt
+        q = query(q, orderBy('createdAt', 'desc'));
+
+        // Apply pagination
+        fetchLimit = limitCount >= 500
+          ? Math.max(limitCount * 2, 2000) // Sitemap - need lots
+          : Math.max(limitCount * 3, 50);   // No filter - need overhead for client-side filtering
+
+        q = query(q, limit(fetchLimit));
+        querySnapshot = await getDocs(q);
+      }
       console.log(`📊 Found ${querySnapshot.docs.length} articles in Firebase (requested limit: ${limitCount}, fetch limit: ${fetchLimit})`);
 
       let articles = querySnapshot.docs.map(doc => {
@@ -534,16 +564,30 @@ class FirebaseArticlesService {
         } as FirebaseArticle;
       });
 
+      console.log(`🔍 Before filtering: ${articles.length} articles`);
+      if (articles.length > 0) {
+        console.log(`📄 First article before filtering:`, {
+          title: articles[0].title,
+          status: articles[0].status,
+          published: articles[0].published,
+          category: articles[0].category
+        });
+      }
+
       // Apply status filter client-side to avoid composite index
       if (status && status !== 'all') {
         articles = articles.filter(article => article.status === status);
+        console.log(`🔍 After status filter (${status}): ${articles.length} articles`);
       } else if (!status) {
         // Pokud není specifikován status, zobraz pouze publikované články
+        const beforeCount = articles.length;
         articles = articles.filter(article => article.status === 'published' || article.published === true);
+        console.log(`🔍 After default status filter (published): ${articles.length} articles (was ${beforeCount})`);
       }
 
-      // Apply category filter client-side
-      if (category && category !== 'all') {
+      // Apply category filter client-side if not already filtered by Firebase
+      if (category && category !== 'all' && !useCategoryFilter) {
+        const beforeCount = articles.length;
         articles = articles.filter(article => {
           // Podporujeme jak starý formát (objekt) tak nový (string)
           if (typeof article.category === 'object' && article.category?.slug) {
@@ -553,6 +597,7 @@ class FirebaseArticlesService {
           }
           return false;
         });
+        console.log(`🔍 After client-side category filter (${category}): ${articles.length} articles (was ${beforeCount})`);
       }
 
       // Apply search filter (client-side for simplicity)
