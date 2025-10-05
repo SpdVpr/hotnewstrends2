@@ -167,16 +167,11 @@ function formatArticleContent(content: string): string {
 
 async function getArticle(slug: string): Promise<Article | null> {
   try {
-    // Try to get article from Firebase by slug - get more articles to find the right one
-    const articles = await firebaseArticlesService.getArticles({
-      limit: 50, // Get more articles to ensure we find the right slug
-      status: 'published'
-    });
-
+    // Use getArticleBySlug to fetch article directly by slug (efficient indexed query)
     console.log(`🔍 Looking for article with slug: "${slug}"`);
-    console.log(`📊 Available slugs: [${articles.map(a => `"${a.slug}"`).join(', ')}]`);
 
-    const article = articles.find(a => a.slug === slug);
+    const article = await firebaseArticlesService.getArticleBySlug(slug);
+
     if (article) {
       console.log(`✅ Found article: "${article.title}" with slug: "${article.slug}"`);
       console.log(`📅 Article dates:`, {
@@ -185,12 +180,7 @@ async function getArticle(slug: string): Promise<Article | null> {
         publishedAtType: typeof article.publishedAt,
         createdAtType: typeof article.createdAt
       });
-    } else {
-      console.log(`❌ Article not found in Firebase for slug: ${slug}`);
-      console.log(`📋 Available slugs:`, articles.map(a => a.slug));
-    }
 
-    if (article) {
       // Convert Firebase article to Article type
       return {
         id: article.id,
@@ -215,8 +205,7 @@ async function getArticle(slug: string): Promise<Article | null> {
       };
     }
 
-    console.log(`Article not found in Firebase for slug: ${slug}`);
-    console.log('Available slugs:', articles.map(a => a.slug));
+    console.log(`❌ Article not found in Firebase for slug: ${slug}`);
 
     // Fallback to mock data if not found in Firebase
     const mockArticle = mockArticles.find(a => a.slug === slug);

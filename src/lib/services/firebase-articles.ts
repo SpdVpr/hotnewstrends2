@@ -102,23 +102,48 @@ class FirebaseArticlesService {
   // Get article by slug
   async getArticleBySlug(slug: string): Promise<FirebaseArticle | null> {
     try {
+      // Use only slug filter to avoid composite index requirement
+      // Filter by status client-side
       const q = query(
         this.articlesCollection,
         where('slug', '==', slug),
-        where('status', '==', 'published'),
-        limit(1)
+        limit(5) // Get a few in case there are duplicates
       );
-      
+
       const querySnapshot = await getDocs(q);
-      
+
       if (!querySnapshot.empty) {
-        const doc = querySnapshot.docs[0];
-        return {
-          id: doc.id,
-          ...doc.data()
-        } as FirebaseArticle;
+        // Find first published article
+        for (const doc of querySnapshot.docs) {
+          const data = doc.data();
+
+          // Skip non-published articles
+          if (data.status !== 'published' && data.published !== true) {
+            continue;
+          }
+
+          // Generate fallback slug if missing
+          let articleSlug = data.slug;
+          if (!articleSlug && data.title) {
+            articleSlug = data.title
+              .toLowerCase()
+              .replace(/[^a-z0-9]+/g, '-')
+              .replace(/(^-|-$)/g, '');
+            console.log(`🔧 Generated fallback slug for "${data.title}": "${articleSlug}"`);
+          }
+
+          return {
+            id: doc.id,
+            ...data,
+            slug: articleSlug || `article-${doc.id}`, // Fallback slug
+            author: data.author || 'Trendy Blogger', // Fallback author
+            publishedAt: data.publishedAt?.toDate?.() || new Date(data.publishedAt),
+            createdAt: data.createdAt?.toDate?.() || new Date(data.createdAt),
+            updatedAt: data.updatedAt?.toDate?.() || new Date(data.updatedAt),
+          } as FirebaseArticle;
+        }
       }
-      
+
       return null;
     } catch (error) {
       console.error('❌ Error getting article by slug:', error);
@@ -475,12 +500,15 @@ class FirebaseArticlesService {
       let q = query(this.articlesCollection, orderBy('createdAt', 'desc'));
 
       // Apply pagination - načteme více článků kvůli client-side filtrování
-      const fetchLimit = Math.max(limitCount * 3, 50); // Načteme 3x více pro filtrování
+      // Pro velké limity (např. sitemap s 1000+) načteme ještě více
+      const fetchLimit = limitCount >= 500
+        ? Math.max(limitCount * 2, 2000) // Pro sitemap a velké dotazy
+        : Math.max(limitCount * 3, 50);   // Pro běžné dotazy
       q = query(q, limit(fetchLimit));
       // Offset se aplikuje client-side po filtrování
 
       const querySnapshot = await getDocs(q);
-      console.log(`📊 Found ${querySnapshot.docs.length} articles in Firebase`);
+      console.log(`📊 Found ${querySnapshot.docs.length} articles in Firebase (requested limit: ${limitCount}, fetch limit: ${fetchLimit})`);
 
       let articles = querySnapshot.docs.map(doc => {
         const data = doc.data();
