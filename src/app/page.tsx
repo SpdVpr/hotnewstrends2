@@ -12,6 +12,10 @@ export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [total, setTotal] = useState(0);
   const [trendingTopics, setTrendingTopics] = useState<string[]>([]);
   const [currentTrendIndex, setCurrentTrendIndex] = useState(0);
 
@@ -20,42 +24,10 @@ export default function Home() {
     { id: 'news', name: 'News', slug: 'news', color: '#FF3B30' },
     { id: 'technology', name: 'Technology', slug: 'technology', color: '#007AFF' },
     { id: 'business', name: 'Business', slug: 'business', color: '#34C759' },
-    { id: 'science', name: 'Science', slug: 'science', color: '#5856D6' },
-    { id: 'health', name: 'Health', slug: 'health', color: '#FF9500' },
+    { id: 'sports', name: 'Sports', slug: 'sports', color: '#FF9500' },
+    { id: 'health', name: 'Health', slug: 'health', color: '#5856D6' },
     { id: 'entertainment', name: 'Entertainment', slug: 'entertainment', color: '#FF2D92' },
   ];
-
-  // Helper function to match categories (handles both string and object formats)
-  const matchesCategory = (articleCategory: any, selectedCategory: string): boolean => {
-    if (selectedCategory === 'all') return true;
-
-    console.log('🔍 matchesCategory:', { articleCategory, selectedCategory, type: typeof articleCategory });
-
-    if (typeof articleCategory === 'string') {
-      // Direct string comparison (case-insensitive)
-      const matches = articleCategory.toLowerCase() === selectedCategory.toLowerCase();
-      console.log('📝 String match:', { articleCategory, selectedCategory, matches });
-      return matches;
-    } else if (articleCategory && typeof articleCategory === 'object') {
-      // Object comparison - check slug, id, and name
-      const slugMatch = articleCategory.slug?.toLowerCase() === selectedCategory.toLowerCase();
-      const idMatch = articleCategory.id?.toLowerCase() === selectedCategory.toLowerCase();
-      const nameMatch = articleCategory.name?.toLowerCase() === selectedCategory.toLowerCase();
-      const matches = slugMatch || idMatch || nameMatch;
-
-      console.log('📝 Object match:', {
-        slug: articleCategory.slug,
-        id: articleCategory.id,
-        name: articleCategory.name,
-        selectedCategory,
-        slugMatch, idMatch, nameMatch, matches
-      });
-      return matches;
-    }
-
-    console.log('❌ No match - unknown category type');
-    return false;
-  };
 
   // Fetch trending topics from Firebase
   const fetchTrendingTopics = async () => {
@@ -73,50 +45,82 @@ export default function Home() {
   };
 
   // Fetch articles from API
-  const fetchArticles = async () => {
+  const fetchArticles = async (pageNum: number = 1, append: boolean = false) => {
     try {
-      setLoading(true);
+      if (append) {
+        setLoadingMore(true);
+      } else {
+        setLoading(true);
+      }
 
-      // Always fetch all published articles and filter client-side for better reliability
+      // Fetch articles with pagination
       const params = new URLSearchParams({
-        limit: '50', // Fetch more articles for client-side filtering
+        limit: '24', // 24 articles per page (same as categories)
+        page: pageNum.toString(),
         status: 'published'
-        // Remove category from API call - we'll filter client-side
       });
 
-      console.log('🌐 API call params:', { selectedCategory, params: params.toString() });
+      // Add category filter if not 'all'
+      if (selectedCategory !== 'all') {
+        params.append('category', selectedCategory);
+      }
+
+      console.log('🌐 API call params:', { selectedCategory, page: pageNum, params: params.toString() });
       const response = await fetch(`/api/articles?${params}`);
       if (response.ok) {
         const data = await response.json();
 
-        // API returns { success: true, data: { articles: [], total: 0, ... } }
-        const articles = data.data?.articles || data.data || [];
-        console.log('📦 API returned articles:', articles.length);
+        // API returns { success: true, data: { articles: [], total: 0, totalPages: 0, ... } }
+        const newArticles = data.data?.articles || data.data || [];
+        const totalCount = data.data?.total || 0;
+        const totalPages = data.data?.totalPages || 1;
 
-        if (articles.length > 0) {
-          console.log('📄 Sample article categories:', articles.slice(0, 3).map(a => ({
-            title: a.title?.substring(0, 50) + '...',
-            category: a.category,
-            categoryType: typeof a.category
-          })));
+        console.log('📦 API returned:', {
+          articles: newArticles.length,
+          total: totalCount,
+          page: pageNum,
+          totalPages
+        });
+
+        if (append) {
+          setArticles(prev => [...prev, ...newArticles]);
+        } else {
+          setArticles(Array.isArray(newArticles) ? newArticles : []);
         }
 
-        setArticles(Array.isArray(articles) ? articles : []);
+        setTotal(totalCount);
+        setHasMore(pageNum < totalPages);
+        setPage(pageNum);
       } else {
         console.error('Failed to fetch articles:', response.statusText);
-        setArticles([]);
+        if (!append) {
+          setArticles([]);
+        }
       }
     } catch (error) {
       console.error('Error fetching articles:', error);
-      setArticles([]);
+      if (!append) {
+        setArticles([]);
+      }
     } finally {
       setLoading(false);
+      setLoadingMore(false);
+    }
+  };
+
+  // Load more articles
+  const loadMore = () => {
+    if (!loadingMore && hasMore) {
+      fetchArticles(page + 1, true);
     }
   };
 
   // Fetch articles on component mount and when category changes
   useEffect(() => {
-    fetchArticles();
+    // Reset to page 1 when category changes
+    setPage(1);
+    setHasMore(true);
+    fetchArticles(1, false);
   }, [selectedCategory]);
 
   // Fetch trending topics on component mount
@@ -137,35 +141,8 @@ export default function Home() {
     }
   }, [trendingTopics.length]);
 
-  // Filter articles based on selected category (client-side backup)
-  const filteredArticles = selectedCategory === 'all'
-    ? (Array.isArray(articles) ? articles : [])
-    : (Array.isArray(articles) ? articles.filter(article => {
-        console.log('🔍 Filtering article:', {
-          title: article.title,
-          category: article.category,
-          categoryType: typeof article.category,
-          categorySlug: article.category?.slug,
-          categoryId: article.category?.id,
-          selectedCategory: selectedCategory
-        });
-
-        const matches = matchesCategory(article.category, selectedCategory);
-
-        console.log('🎯 Match result:', matches);
-        return matches;
-      }) : []);
-
-  // Debug effect to track articles and filtering changes
-  useEffect(() => {
-    console.log('📊 Category filtering results:', {
-      selectedCategory,
-      totalArticles: Array.isArray(articles) ? articles.length : 0,
-      filteredArticles: filteredArticles.length,
-      availableCategories: Array.isArray(articles) ?
-        [...new Set(articles.map(a => typeof a.category === 'string' ? a.category : a.category?.slug || a.category?.id || a.category?.name).filter(Boolean))] : []
-    });
-  }, [articles, selectedCategory, filteredArticles.length]);
+  // No need for client-side filtering anymore - API handles it
+  const displayArticles = Array.isArray(articles) ? articles : [];
 
   return (
     <div className="min-h-screen bg-background">
@@ -264,17 +241,17 @@ export default function Home() {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredArticles.map((article, index) => (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+                {displayArticles.map((article, index) => (
                   <ArticleCard
                     key={article.id}
                     article={article}
-                    priority={index < 3} // First 3 articles get priority loading
+                    priority={index < 6} // First 6 articles get priority loading
                   />
                 ))}
               </div>
 
-              {!loading && filteredArticles.length === 0 && (
+              {!loading && displayArticles.length === 0 && (
                 <div className="text-center py-12">
                   <p className="text-text-secondary text-lg">
                     {selectedCategory === 'all'
@@ -293,18 +270,26 @@ export default function Home() {
                   )}
                 </div>
               )}
+
+              {/* Load More Button */}
+              {!loading && displayArticles.length > 0 && hasMore && (
+                <div className="text-center">
+                  <p className="text-sm text-text-secondary mb-4">
+                    Showing {displayArticles.length} of {total} articles
+                  </p>
+                  <Button
+                    variant="primary"
+                    size="lg"
+                    onClick={loadMore}
+                    disabled={loadingMore}
+                  >
+                    {loadingMore ? 'Loading...' : 'Load More Articles'}
+                  </Button>
+                </div>
+              )}
             </>
           )}
         </section>
-
-        {/* Load More Button - only show if we have articles and not loading */}
-        {!loading && filteredArticles.length > 0 && (
-          <div className="text-center mt-12">
-            <Button variant="primary" size="lg">
-              Load More Articles
-            </Button>
-          </div>
-        )}
       </main>
 
       {/* Footer */}
