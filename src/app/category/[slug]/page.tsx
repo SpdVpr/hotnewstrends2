@@ -2,10 +2,10 @@ import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { Navigation } from '@/components/Navigation';
-import { ArticleCard } from '@/components/ArticleCard';
 import { CategoryBadge } from '@/components/ui/Badge';
 import { StructuredData } from '@/components/StructuredData';
 import { Button } from '@/components/ui/Button';
+import { CategoryArticlesGrid } from '@/components/CategoryArticlesGrid';
 import { Article, Category } from '@/types';
 
 interface CategoryPageProps {
@@ -148,19 +148,23 @@ async function getCategory(slug: string): Promise<Category | null> {
   return category || null;
 }
 
-async function getCategoryArticles(categorySlug: string): Promise<Article[]> {
+async function getCategoryArticles(categorySlug: string, page: number = 1, limit: number = 24): Promise<{ articles: Article[], total: number, hasMore: boolean }> {
   try {
     // Try to get from API first - use correct port and URL
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
-    const response = await fetch(`${baseUrl}/api/articles?category=${categorySlug}&limit=50`, {
+    const response = await fetch(`${baseUrl}/api/articles?category=${categorySlug}&limit=${limit}&page=${page}`, {
       next: { revalidate: 300 } // Cache for 5 minutes
     });
 
     if (response.ok) {
       const data = await response.json();
       const articles = data.data?.articles || data.data || [];
-      console.log(`📊 Found ${articles.length} articles for category: ${categorySlug}`);
-      return articles;
+      const total = data.data?.total || articles.length;
+      const totalPages = data.data?.totalPages || 1;
+      const hasMore = page < totalPages;
+
+      console.log(`📊 Found ${articles.length} articles for category: ${categorySlug} (page ${page}/${totalPages})`);
+      return { articles, total, hasMore };
     } else {
       console.error(`❌ API error for category ${categorySlug}:`, response.status, response.statusText);
     }
@@ -170,7 +174,12 @@ async function getCategoryArticles(categorySlug: string): Promise<Article[]> {
 
   // Fallback to mock data
   console.log(`🔄 Using mock data for category: ${categorySlug}`);
-  return mockArticles.filter(a => a.category.slug === categorySlug);
+  const mockCategoryArticles = mockArticles.filter(a => a.category.slug === categorySlug);
+  return {
+    articles: mockCategoryArticles,
+    total: mockCategoryArticles.length,
+    hasMore: false
+  };
 }
 
 export async function generateMetadata({ params }: CategoryPageProps): Promise<Metadata> {
@@ -212,18 +221,18 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
 export default async function CategoryPage({ params }: CategoryPageProps) {
   const { slug } = await params;
   const category = await getCategory(slug);
-  
+
   if (!category) {
     notFound();
   }
 
-  const articles = await getCategoryArticles(category.slug);
+  const { articles, total, hasMore } = await getCategoryArticles(category.slug, 1, 24);
 
   return (
     <div className="min-h-screen bg-background">
       <StructuredData type="category" category={category.name} />
       <Navigation />
-      
+
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Breadcrumb */}
         <nav className="flex items-center space-x-2 text-sm text-text-secondary mb-8">
@@ -242,18 +251,18 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
               {category.name}
             </h1>
           </div>
-          
+
           {category.description && (
             <p className="text-lg text-text-secondary max-w-3xl">
               {category.description}
             </p>
           )}
-          
+
           <div className="mt-6 flex items-center justify-between">
             <p className="text-sm text-text-secondary">
-              {articles.length} article{articles.length !== 1 ? 's' : ''} found
+              {total} article{total !== 1 ? 's' : ''} found
             </p>
-            
+
             {/* Sort/Filter Options */}
             <div className="flex items-center gap-4">
               <select className="px-3 py-2 border border-gray-light rounded-lg text-sm bg-white text-text focus:outline-none focus:ring-2 focus:ring-primary">
@@ -269,22 +278,12 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
         {/* Articles Grid */}
         {articles.length > 0 ? (
           <section>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-              {articles.map((article, index) => (
-                <ArticleCard
-                  key={article.id}
-                  article={article}
-                  priority={index < 6} // First 6 articles get priority loading
-                />
-              ))}
-            </div>
-            
-            {/* Load More Button */}
-            <div className="text-center">
-              <Button variant="primary" size="lg">
-                Load More Articles
-              </Button>
-            </div>
+            <CategoryArticlesGrid
+              initialArticles={articles}
+              categorySlug={category.slug}
+              total={total}
+              initialHasMore={hasMore}
+            />
           </section>
         ) : (
           /* Empty State */

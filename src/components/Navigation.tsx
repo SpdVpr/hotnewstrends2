@@ -21,7 +21,7 @@ const Navigation: React.FC<NavigationProps> = ({ className }) => {
     { name: 'News', href: '/category/news', current: false },
     { name: 'Business', href: '/category/business', current: false },
     { name: 'Entertainment', href: '/category/entertainment', current: false },
-    { name: 'Science', href: '/category/science', current: false },
+    { name: 'Sports', href: '/category/sports', current: false },
     { name: 'Health', href: '/category/health', current: false },
   ];
 
