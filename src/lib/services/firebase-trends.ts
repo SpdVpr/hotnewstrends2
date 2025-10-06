@@ -128,7 +128,6 @@ class FirebaseTrendsService {
       const q = query(
         trendsCollection,
         where('articleGenerated', '==', false),
-        orderBy('searchVolume', 'desc'), // Prioritize high-traffic trends
         limit(limitCount * 5) // Increased from 2x to 5x to ensure enough trends after filtering
       );
 
@@ -158,6 +157,13 @@ class FirebaseTrendsService {
           id: doc.id,
           ...trendData
         } as FirebaseTrend);
+      });
+
+      // Sort by searchVolume in memory (since we can't use orderBy with where on different fields without composite index)
+      trends.sort((a, b) => {
+        const aVolume = typeof a.searchVolume === 'number' ? a.searchVolume : 0;
+        const bVolume = typeof b.searchVolume === 'number' ? b.searchVolume : 0;
+        return bVolume - aVolume; // Descending order
       });
 
       // Limit to requested count
