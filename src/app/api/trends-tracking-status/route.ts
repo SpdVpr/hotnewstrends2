@@ -5,15 +5,11 @@ export async function GET(request: NextRequest) {
   try {
     console.log('📊 Checking trends tracking status...');
     
-    // Define the exact schedule (7 times daily) - Prague times (converted from UTC in vercel.json)
+    // Define the exact schedule (3 times daily) - Prague times (converted from UTC in vercel.json)
     const updateSchedule = [
-      { time: '09:00', description: 'First update (before first article at 08:00)' },
-      { time: '11:20', description: 'Second update' },
-      { time: '13:40', description: 'Third update' },
-      { time: '16:00', description: 'Fourth update' },
-      { time: '18:20', description: 'Fifth update' },
-      { time: '20:40', description: 'Sixth update' },
-      { time: '23:00', description: 'Last update (before final articles)' }
+      { time: '09:00', description: 'Morning update' },
+      { time: '15:00', description: 'Afternoon update' },
+      { time: '21:00', description: 'Evening update' }
     ];
     
     // Get current time in Prague timezone

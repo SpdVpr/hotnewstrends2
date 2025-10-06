@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: false,
       error: 'Force trends update is disabled to conserve SerpAPI quota. Only scheduled updates are allowed.',
-      message: 'Use the automatic scheduler which updates 6 times per day'
+      message: 'Use the automatic scheduler which updates 3 times per day'
     }, { status: 403 });
     
     console.log(`📊 Received ${trendsData.topics.length} trends from ${trendsData.source}`);

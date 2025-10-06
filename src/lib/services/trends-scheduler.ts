@@ -1,6 +1,6 @@
 /**
  * Trends Scheduler Service
- * Manages 6x daily trend updates and article generation
+ * Manages 3x daily trend updates and article generation
  */
 
 import { googleTrendsService } from './google-trends';
@@ -39,13 +39,13 @@ export interface SchedulerStats {
 
 class TrendsScheduler {
   private intervalId: NodeJS.Timeout | null = null;
-  private readonly UPDATES_PER_DAY = 6;
+  private readonly UPDATES_PER_DAY = 3;
   private readonly ACTIVE_HOURS_START = 6; // 6:00 AM
   private readonly ACTIVE_HOURS_END = 22; // 10:00 PM
   private readonly CHECK_INTERVAL = 30 * 60 * 1000; // Check every 30 minutes
 
-  // Calculate update interval: 16 hours (6:00-22:00) / 6 updates = ~2.67 hours
-  private readonly UPDATE_INTERVAL = Math.floor((16 * 60 * 60 * 1000) / 6); // ~2.67 hours
+  // Calculate update interval: 16 hours (6:00-22:00) / 3 updates = ~5.33 hours
+  private readonly UPDATE_INTERVAL = Math.floor((16 * 60 * 60 * 1000) / 3); // ~5.33 hours
   
   private stats: SchedulerStats = {
     isRunning: false,
@@ -71,7 +71,7 @@ class TrendsScheduler {
   private articleGenerationTimeouts: NodeJS.Timeout[] = [];
 
   /**
-   * Start the trends scheduler with smart timing (6:00-22:00, 6x daily)
+   * Start the trends scheduler with smart timing (6:00-22:00, 3x daily)
    */
   start(): void {
     if (this.intervalId) {
@@ -79,7 +79,7 @@ class TrendsScheduler {
       return;
     }
 
-    console.log('🚀 Starting smart trends scheduler (6x daily, 6:00-22:00)');
+    console.log('🚀 Starting smart trends scheduler (3x daily, 6:00-22:00)');
 
     // Initialize daily counter
     this.resetDailyCounterIfNeeded();
@@ -161,8 +161,8 @@ class TrendsScheduler {
       const lastUpdate = new Date(this.stats.lastUpdate);
       const timeSinceLastUpdate = now.getTime() - lastUpdate.getTime();
 
-      // Minimum 2 hours between updates
-      if (timeSinceLastUpdate < (2 * 60 * 60 * 1000)) {
+      // Minimum 5 hours between updates (for 3x daily)
+      if (timeSinceLastUpdate < (5 * 60 * 60 * 1000)) {
         return false;
       }
     }

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// GET /api/cron/trends-import - Cron job for importing trends (6x daily)
+// GET /api/cron/trends-import - Cron job for importing trends (3x daily)
 export async function GET(request: NextRequest) {
   try {
     // Verify this is a cron request (optional security)

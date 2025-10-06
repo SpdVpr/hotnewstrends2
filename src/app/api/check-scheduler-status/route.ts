@@ -45,10 +45,10 @@ export async function GET(request: NextRequest) {
     
     // Check Vercel cron configuration
     const cronConfig = {
-      expectedSchedule: '0 */4 * * *', // Every 4 hours
-      description: 'Should run trends-scheduler every 4 hours',
+      expectedSchedule: '3x daily', // 3 times per day
+      description: 'Should run trends-scheduler 3 times daily',
       nextRuns: [
-        '00:00', '04:00', '08:00', '12:00', '16:00', '20:00'
+        '08:00', '14:00', '20:00'
       ]
     };
     

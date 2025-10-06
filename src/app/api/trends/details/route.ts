@@ -109,15 +109,28 @@ export async function GET(request: NextRequest) {
     const category = searchParams.get('category') || 'all';
     const limit = parseInt(searchParams.get('limit') || '10');
 
-    console.log(`🎯 Getting trending keywords for content generation: ${category} in ${region}`);
+    console.log(`🎯 Getting trending keywords for content generation: ${category} in ${region} (using Firebase cache)`);
 
-    // Get trending topics
-    let trends;
-    if (category === 'all') {
-      trends = await googleTrendsService.getDailyTrends(region);
-    } else {
-      trends = await googleTrendsService.getTrendsByCategory(category, region);
+    // Use Firebase cached data instead of calling SerpAPI
+    const { firebaseTrendsService } = await import('@/lib/services/firebase-trends');
+    const cachedTrends = await firebaseTrendsService.getLatestTrends(limit * 2); // Get more to filter by category
+
+    // Filter by category if needed
+    let filteredTrends = cachedTrends;
+    if (category !== 'all') {
+      filteredTrends = cachedTrends.filter((trend: any) =>
+        trend.category?.toLowerCase() === category.toLowerCase()
+      );
     }
+
+    // Limit results
+    const trends = {
+      topics: filteredTrends.slice(0, limit),
+      total: filteredTrends.length,
+      source: 'firebase_cache',
+      region,
+      timeframe: 'now'
+    };
 
     // Filter and format for content generation
     const contentKeywords = (trends.topics || [])

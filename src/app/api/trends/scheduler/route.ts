@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
         trendsScheduler.start();
         return NextResponse.json({
           success: true,
-          message: 'Trends scheduler started (6x daily updates)',
+          message: 'Trends scheduler started (3x daily updates)',
           data: trendsScheduler.getStats()
         });
 
