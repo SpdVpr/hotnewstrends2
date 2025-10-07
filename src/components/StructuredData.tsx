@@ -216,9 +216,10 @@ export function StructuredData({ type, data, category }: StructuredDataProps) {
       ];
       break;
     case 'category':
+      // Only include Organization schema for category pages
+      // FAQPage removed to avoid duplicate content issues in Google Search Console
       structuredData = [
-        getOrganizationStructuredData(),
-        getFAQStructuredData(category)
+        getOrganizationStructuredData()
       ];
       break;
     default:
