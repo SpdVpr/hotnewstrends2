@@ -42,18 +42,10 @@ class StartupService {
     console.log('🚀 Initializing server-side application services...');
 
     try {
-      // Start trends scheduler automatically for continuous trend updates
-      console.log('🚀 Starting trends scheduler for automatic trend updates...');
-      try {
-        const scheduler = await getTrendsScheduler();
-        if (scheduler) {
-          scheduler.start();
-          console.log('✅ Trends scheduler started successfully');
-        }
-      } catch (schedulerError) {
-        console.error('❌ Failed to start trends scheduler:', schedulerError);
-        console.log('⚠️ Trends scheduler can be started manually from admin panel');
-      }
+      // Trends scheduler DISABLED - using only Vercel cron jobs (3x daily)
+      console.log('ℹ️ Trends scheduler disabled - using Vercel cron jobs only');
+      console.log('📅 Scheduled updates: 08:00, 14:00, 20:00 UTC (3x daily)');
+      console.log('⚠️ Manual scheduler start available from admin panel if needed');
 
       this.initialized = true;
       console.log('🎉 Server-side application startup complete');
