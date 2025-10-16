@@ -85,12 +85,13 @@ function calculateEngagement(article: any): number {
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    
+
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '10');
     const category = searchParams.get('category') || undefined;
     const status = searchParams.get('status') || undefined;
     const search = searchParams.get('search') || undefined;
+    const tag = searchParams.get('tag') || undefined;
 
     // Get articles from Firebase
     const articles = await firebaseArticlesService.getArticles({
@@ -98,14 +99,16 @@ export async function GET(request: NextRequest) {
       offset: (page - 1) * limit,
       category,
       status,
-      search
+      search,
+      tag
     });
 
     // Get total count for pagination
     const total = await firebaseArticlesService.getArticlesCount({
       category,
       status,
-      search
+      search,
+      tag
     });
 
     const totalPages = Math.ceil(total / limit);
@@ -139,8 +142,24 @@ export async function GET(request: NextRequest) {
       // Calculate performance score based on content quality
       const performanceScore = calculatePerformanceScore(article);
 
+      // Ensure dates are properly serialized as ISO strings
+      const publishedAt = article.publishedAt instanceof Date
+        ? article.publishedAt.toISOString()
+        : article.publishedAt;
+
+      const createdAt = article.createdAt instanceof Date
+        ? article.createdAt.toISOString()
+        : article.createdAt;
+
+      const updatedAt = article.updatedAt instanceof Date
+        ? article.updatedAt.toISOString()
+        : article.updatedAt;
+
       return {
         ...article,
+        publishedAt,
+        createdAt,
+        updatedAt,
         metadata: {
           readingTime,
           wordCount,

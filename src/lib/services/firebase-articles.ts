@@ -449,6 +449,7 @@ class FirebaseArticlesService {
     category?: string;
     status?: string;
     search?: string;
+    tag?: string;
   } = {}): Promise<number> {
     try {
       let q = query(this.articlesCollection);
@@ -465,18 +466,28 @@ class FirebaseArticlesService {
       const snapshot = await getDocs(q);
 
       // Apply search filter if needed (client-side)
+      let filteredDocs = snapshot.docs;
+
       if (filters.search) {
         const searchLower = filters.search.toLowerCase();
-        const filteredDocs = snapshot.docs.filter(doc => {
+        filteredDocs = filteredDocs.filter(doc => {
           const data = doc.data();
           return data.title?.toLowerCase().includes(searchLower) ||
                  data.excerpt?.toLowerCase().includes(searchLower) ||
                  data.content?.toLowerCase().includes(searchLower);
         });
-        return filteredDocs.length;
       }
 
-      return snapshot.size;
+      // Apply tag filter if needed (client-side)
+      if (filters.tag) {
+        const tagLower = filters.tag.toLowerCase();
+        filteredDocs = filteredDocs.filter(doc => {
+          const data = doc.data();
+          return data.tags?.some((tag: string) => tag.toLowerCase() === tagLower);
+        });
+      }
+
+      return filteredDocs.length;
     } catch (error) {
       console.error('❌ Error getting articles count:', error);
       return 0;
@@ -490,11 +501,12 @@ class FirebaseArticlesService {
     category?: string;
     status?: string;
     search?: string;
+    tag?: string;
   } = {}): Promise<FirebaseArticle[]> {
     try {
-      const { limit: limitCount = 10, offset = 0, category, status, search } = options;
+      const { limit: limitCount = 10, offset = 0, category, status, search, tag } = options;
 
-      console.log(`🔍 Getting articles with options:`, { limitCount, offset, category, status, search });
+      console.log(`🔍 Getting articles with options:`, { limitCount, offset, category, status, search, tag });
 
       // Build query based on filters
       let q = query(this.articlesCollection);
@@ -608,6 +620,18 @@ class FirebaseArticlesService {
           article.excerpt.toLowerCase().includes(searchLower) ||
           article.content.toLowerCase().includes(searchLower)
         );
+      }
+
+      // Apply tag filter (client-side)
+      if (tag) {
+        const tagLower = tag.toLowerCase();
+        const beforeCount = articles.length;
+        articles = articles.filter(article =>
+          article.tags?.some(articleTag =>
+            articleTag.toLowerCase() === tagLower
+          )
+        );
+        console.log(`🔍 After tag filter (${tag}): ${articles.length} articles (was ${beforeCount})`);
       }
 
       // Apply pagination after filtering

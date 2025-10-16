@@ -2,9 +2,12 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { CompactArticleCard } from '@/components/ArticleCard';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import { Navigation } from '@/components/Navigation';
+import { Footer } from '@/components/Footer';
 import { Article } from '@/types';
 
 function ArticlesContent() {
@@ -25,9 +28,13 @@ function ArticlesContent() {
       setError(null);
 
       let url = '/api/articles?limit=20&status=published';
-      
+
       if (categoryFilter) {
         url += `&category=${encodeURIComponent(categoryFilter)}`;
+      }
+
+      if (tagFilter) {
+        url += `&tag=${encodeURIComponent(tagFilter)}`;
       }
 
       const response = await fetch(url);
@@ -36,16 +43,8 @@ function ArticlesContent() {
       }
 
       const data = await response.json();
-      let fetchedArticles = data.data || [];
-
-      // Filter by tag on client side if needed
-      if (tagFilter) {
-        fetchedArticles = fetchedArticles.filter((article: Article) =>
-          article.tags?.some(tag => 
-            tag.toLowerCase() === tagFilter.toLowerCase()
-          )
-        );
-      }
+      // API returns data.data.articles (with pagination info)
+      const fetchedArticles = data.data?.articles || data.data || [];
 
       setArticles(fetchedArticles);
     } catch (err) {
@@ -83,6 +82,7 @@ function ArticlesContent() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
+        <Navigation />
         <div className="container mx-auto px-4 py-8">
           <div className="animate-pulse">
             <div className="h-8 bg-surface rounded w-1/3 mb-4"></div>
@@ -98,6 +98,7 @@ function ArticlesContent() {
             </div>
           </div>
         </div>
+        <Footer />
       </div>
     );
   }
@@ -105,6 +106,7 @@ function ArticlesContent() {
   if (error) {
     return (
       <div className="min-h-screen bg-background">
+        <Navigation />
         <div className="container mx-auto px-4 py-8">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-text mb-4">Error Loading Articles</h1>
@@ -114,13 +116,27 @@ function ArticlesContent() {
             </Button>
           </div>
         </div>
+        <Footer />
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8">
+      <Navigation />
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Breadcrumb */}
+        <nav className="flex items-center space-x-2 text-sm text-text-secondary mb-8">
+          <Link href="/" className="hover:text-primary transition-colors">
+            Home
+          </Link>
+          <span>›</span>
+          <span className="text-text">
+            {tagFilter ? `Tag: ${tagFilter}` : categoryFilter ? `Category: ${categoryFilter}` : 'All Articles'}
+          </span>
+        </nav>
+
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-text mb-4">
@@ -194,7 +210,9 @@ function ArticlesContent() {
             </Button>
           </div>
         )}
-      </div>
+      </main>
+
+      <Footer />
     </div>
   );
 }
@@ -203,6 +221,7 @@ export default function ArticlesPage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen bg-background">
+        <Navigation />
         <div className="container mx-auto px-4 py-8">
           <div className="animate-pulse">
             <div className="h-8 bg-surface rounded w-1/3 mb-4"></div>
@@ -218,6 +237,7 @@ export default function ArticlesPage() {
             </div>
           </div>
         </div>
+        <Footer />
       </div>
     }>
       <ArticlesContent />
