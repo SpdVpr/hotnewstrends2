@@ -17,10 +17,11 @@ function ArticlesContent() {
   const searchParams = useSearchParams();
   const tagFilter = searchParams.get('tag');
   const categoryFilter = searchParams.get('category');
+  const searchQuery = searchParams.get('search');
 
   useEffect(() => {
     fetchArticles();
-  }, [tagFilter, categoryFilter]);
+  }, [tagFilter, categoryFilter, searchQuery]);
 
   const fetchArticles = async () => {
     try {
@@ -35,6 +36,10 @@ function ArticlesContent() {
 
       if (tagFilter) {
         url += `&tag=${encodeURIComponent(tagFilter)}`;
+      }
+
+      if (searchQuery) {
+        url += `&search=${encodeURIComponent(searchQuery)}`;
       }
 
       const response = await fetch(url);
@@ -60,6 +65,9 @@ function ArticlesContent() {
   };
 
   const getPageTitle = () => {
+    if (searchQuery) {
+      return `Search results for "${searchQuery}"`;
+    }
     if (tagFilter) {
       return `Articles tagged with "${tagFilter}"`;
     }
@@ -70,6 +78,9 @@ function ArticlesContent() {
   };
 
   const getPageDescription = () => {
+    if (searchQuery) {
+      return `Found ${articles.length} article${articles.length !== 1 ? 's' : ''} matching "${searchQuery}". Explore trending topics and insights.`;
+    }
     if (tagFilter) {
       return `Browse all articles tagged with "${tagFilter}". Stay updated with the latest trends and insights.`;
     }
@@ -133,7 +144,7 @@ function ArticlesContent() {
           </Link>
           <span>›</span>
           <span className="text-text">
-            {tagFilter ? `Tag: ${tagFilter}` : categoryFilter ? `Category: ${categoryFilter}` : 'All Articles'}
+            {searchQuery ? `Search: ${searchQuery}` : tagFilter ? `Tag: ${tagFilter}` : categoryFilter ? `Category: ${categoryFilter}` : 'All Articles'}
           </span>
         </nav>
 
@@ -147,9 +158,14 @@ function ArticlesContent() {
           </p>
 
           {/* Active Filters */}
-          {(tagFilter || categoryFilter) && (
+          {(tagFilter || categoryFilter || searchQuery) && (
             <div className="flex flex-wrap items-center gap-3 mb-6">
               <span className="text-sm text-text-secondary">Active filters:</span>
+              {searchQuery && (
+                <Badge variant="secondary" className="bg-primary/10 text-primary">
+                  Search: {searchQuery}
+                </Badge>
+              )}
               {tagFilter && (
                 <Badge variant="secondary" className="bg-primary/10 text-primary">
                   Tag: {tagFilter}
@@ -160,9 +176,9 @@ function ArticlesContent() {
                   Category: {categoryFilter}
                 </Badge>
               )}
-              <Button 
-                onClick={clearFilters} 
-                variant="ghost" 
+              <Button
+                onClick={clearFilters}
+                variant="ghost"
                 size="sm"
                 className="text-text-secondary hover:text-text"
               >

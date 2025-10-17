@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { SearchInput } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -13,6 +14,7 @@ export interface NavigationProps {
 }
 
 const Navigation: React.FC<NavigationProps> = ({ className }) => {
+  const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -25,10 +27,16 @@ const Navigation: React.FC<NavigationProps> = ({ className }) => {
     { name: 'Health', href: '/category/health', current: false },
   ];
 
-  const handleSearch = (query: string) => {
+  const handleSearchChange = (query: string) => {
     setSearchQuery(query);
-    // TODO: Implement search functionality
-    console.log('Searching for:', query);
+  };
+
+  const handleSearchSubmit = (query: string) => {
+    const searchTerm = query || searchQuery;
+    if (searchTerm.trim()) {
+      router.push(`/articles?search=${encodeURIComponent(searchTerm.trim())}`);
+      setIsMobileMenuOpen(false); // Close mobile menu after search
+    }
   };
 
   const toggleMobileMenu = () => {
@@ -75,7 +83,8 @@ const Navigation: React.FC<NavigationProps> = ({ className }) => {
           <div className="hidden md:flex flex-1 max-w-md mx-4">
             <SearchInput
               placeholder="Search trending topics..."
-              onSearch={handleSearch}
+              onSearchChange={handleSearchChange}
+              onSearch={handleSearchSubmit}
               className="w-full"
             />
           </div>
@@ -111,7 +120,8 @@ const Navigation: React.FC<NavigationProps> = ({ className }) => {
             {/* Mobile Search */}
             <SearchInput
               placeholder="Search trending topics..."
-              onSearch={handleSearch}
+              onSearchChange={handleSearchChange}
+              onSearch={handleSearchSubmit}
               className="w-full"
             />
             

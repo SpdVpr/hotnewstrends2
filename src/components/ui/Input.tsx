@@ -74,25 +74,32 @@ Input.displayName = 'Input';
 // Search Input Component
 export interface SearchInputProps extends Omit<InputProps, 'leftIcon' | 'type'> {
   onSearch?: (value: string) => void;
+  onSearchChange?: (value: string) => void;
   onClear?: () => void;
   showClearButton?: boolean;
 }
 
 const SearchInput = React.forwardRef<HTMLInputElement, SearchInputProps>(
-  ({ className, placeholder = 'Search...', onSearch, onClear, showClearButton = true, value, onChange, ...props }, ref) => {
+  ({ className, placeholder = 'Search...', onSearch, onSearchChange, onClear, showClearButton = true, value, onChange, ...props }, ref) => {
     const [searchValue, setSearchValue] = React.useState(value || '');
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const newValue = e.target.value;
       setSearchValue(newValue);
       onChange?.(e);
-      onSearch?.(newValue);
+      onSearchChange?.(newValue);
     };
 
     const handleClear = () => {
       setSearchValue('');
       onClear?.();
-      onSearch?.('');
+      onSearchChange?.('');
+    };
+
+    const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === 'Enter') {
+        onSearch?.(searchValue);
+      }
     };
 
     const searchIcon = (
@@ -121,6 +128,7 @@ const SearchInput = React.forwardRef<HTMLInputElement, SearchInputProps>(
         rightIcon={clearIcon}
         value={searchValue}
         onChange={handleChange}
+        onKeyPress={handleKeyPress}
         className={className}
         ref={ref}
         {...props}
