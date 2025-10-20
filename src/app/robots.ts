@@ -15,6 +15,10 @@ export default function robots(): MetadataRoute.Robots {
           '/private/',
           '/*.json$',
           '/temp/',
+          '/search?*',           // Block dynamic search URLs
+          '/articles?tag=*',     // Block dynamic tag filter URLs
+          '/articles?search=*',  // Block dynamic search filter URLs
+          '/articles?category=*', // Block dynamic category filter URLs
         ],
         crawlDelay: 1, // Be respectful to servers
       },
@@ -25,6 +29,10 @@ export default function robots(): MetadataRoute.Robots {
           '/api/',
           '/admin/',
           '/private/',
+          '/search?*',           // Block dynamic search URLs
+          '/articles?tag=*',     // Block dynamic tag filter URLs
+          '/articles?search=*',  // Block dynamic search filter URLs
+          '/articles?category=*', // Block dynamic category filter URLs
         ],
       },
       // AI Search Engine Crawlers
@@ -35,6 +43,10 @@ export default function robots(): MetadataRoute.Robots {
           '/api/',
           '/admin/',
           '/private/',
+          '/search?*',
+          '/articles?tag=*',
+          '/articles?search=*',
+          '/articles?category=*',
         ],
       },
       {
@@ -44,6 +56,10 @@ export default function robots(): MetadataRoute.Robots {
           '/api/',
           '/admin/',
           '/private/',
+          '/search?*',
+          '/articles?tag=*',
+          '/articles?search=*',
+          '/articles?category=*',
         ],
       },
       {
@@ -53,6 +69,10 @@ export default function robots(): MetadataRoute.Robots {
           '/api/',
           '/admin/',
           '/private/',
+          '/search?*',
+          '/articles?tag=*',
+          '/articles?search=*',
+          '/articles?category=*',
         ],
       },
       {
@@ -62,6 +82,10 @@ export default function robots(): MetadataRoute.Robots {
           '/api/',
           '/admin/',
           '/private/',
+          '/search?*',
+          '/articles?tag=*',
+          '/articles?search=*',
+          '/articles?category=*',
         ],
       },
     ],

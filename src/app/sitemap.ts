@@ -59,10 +59,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         priority: 1.0,
       },
       {
-        url: `${baseUrl}/search`,
+        url: `${baseUrl}/articles`,
         lastModified: new Date(),
-        changeFrequency: 'daily' as const,
-        priority: 0.8,
+        changeFrequency: 'hourly' as const,
+        priority: 0.9,
       },
       {
         url: `${baseUrl}/about`,

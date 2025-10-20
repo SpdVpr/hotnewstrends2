@@ -143,7 +143,7 @@ class SEOManager {
         "@type": "SearchAction",
         "target": {
           "@type": "EntryPoint",
-          "urlTemplate": `${this.baseUrl}/search?q={search_term_string}`
+          "urlTemplate": `${this.baseUrl}/articles?search={search_term_string}`
         },
         "query-input": "required name=search_term_string"
       },
