@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Navigation } from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
+import { CanonicalURL } from '@/components/CanonicalURL';
 import { Article } from '@/types';
 
 function ArticlesContent() {
@@ -134,6 +135,7 @@ function ArticlesContent() {
 
   return (
     <div className="min-h-screen bg-background">
+      <CanonicalURL noindexParams />
       <Navigation />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

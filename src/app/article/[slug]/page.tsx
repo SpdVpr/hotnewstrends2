@@ -278,28 +278,50 @@ export async function generateMetadata({ params }: ArticlePageProps): Promise<Me
   
   if (!article) {
     return {
-      title: 'Article Not Found | TrendyBlogger',
+      title: 'Article Not Found | HotNewsTrends',
       description: 'The requested article could not be found.',
     };
   }
 
+  const baseUrl = 'https://www.hotnewstrends.com';
+  const canonicalUrl = `${baseUrl}/article/${slug}`;
+
   return {
-    title: article.seoTitle || `${article.title} | TrendyBlogger`,
+    title: article.seoTitle || `${article.title} | HotNewsTrends`,
     description: article.seoDescription || article.excerpt,
     keywords: article.tags.join(', '),
-    authors: [{ name: article.author || 'TrendyBlogger' }],
+    authors: [{ name: article.author || 'HotNewsTrends' }],
+    alternates: {
+      canonical: canonicalUrl,
+    },
     openGraph: {
       title: article.title,
       description: article.excerpt,
       type: 'article',
+      url: canonicalUrl,
       publishedTime: article.publishedAt.toISOString(),
-      authors: [article.author || 'TrendyBlogger'],
+      authors: [article.author || 'HotNewsTrends'],
       tags: article.tags,
+      images: article.image ? [
+        {
+          url: article.image,
+          alt: article.imageAlt || article.title,
+        }
+      ] : undefined,
     },
     twitter: {
       card: 'summary_large_image',
       title: article.title,
       description: article.excerpt,
+      images: article.image ? [article.image] : undefined,
+    },
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+      },
     },
   };
 }

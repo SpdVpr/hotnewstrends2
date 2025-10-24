@@ -11,5 +11,7 @@ export type { CategoryFilterProps, ScrollableCategoryFilterProps } from './Categ
 export { ThemeToggle } from './ThemeToggle';
 export type { ThemeToggleProps } from './ThemeToggle';
 
+export { CanonicalURL } from './CanonicalURL';
+
 // Re-export UI components
 export * from './ui';

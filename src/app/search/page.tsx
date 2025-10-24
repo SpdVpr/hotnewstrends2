@@ -7,6 +7,7 @@ import { ArticleCard } from '@/components/ArticleCard';
 import { SearchInput } from '@/components/ui/Input';
 import { CategoryFilter } from '@/components/CategoryFilter';
 import { Button } from '@/components/ui/Button';
+import { CanonicalURL } from '@/components/CanonicalURL';
 import { Article, Category } from '@/types';
 
 // Mock data - in real app this would come from database/API
@@ -116,6 +117,7 @@ function SearchContent() {
 
   return (
     <div className="min-h-screen bg-background">
+      <CanonicalURL noindexParams />
       <Navigation />
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
